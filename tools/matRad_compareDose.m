@@ -96,8 +96,6 @@ if enable(1)==0
     gammaCube=[];
     gammaPassRate=[];
 end
-%% Load colormap for difference
-load('diffCMap.mat');
 
 %% Calculate iso-center slices and resolution
 if isempty(cst)
@@ -133,7 +131,9 @@ if enable(1)==1
     doseGammaWindow = [0 max(gammaCube(:))];
     relativeDifference = max(abs(differenceCube(:)))/max(max(abs(cube1(:))),max(abs(cube2(:))))*100;
     
-    
+    %% Load colormap for difference
+    diffCMap = matRad_getColormap('diffPolar');
+
     %% Plot everything
     % Plot dose slices
     if contours == false
