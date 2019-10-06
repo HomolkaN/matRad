@@ -2767,9 +2767,13 @@ resultGUI_SelectedCube.physicalDose = resultGUI.(SelectedCube);
 
 if pln.bioParam.bioOpt
     %check if one of the default fields is selected
-    if sum(strcmp(SelectedCube,{'physicalDose','effect','RBE,','RBExD','alpha','beta'})) > 0
+    if sum(strcmp(SelectedCube,{'physicalDose','effect','RBE,','RBExD','RBExDose','alpha','beta'})) > 0
         resultGUI_SelectedCube.physicalDose = resultGUI.physicalDose;
-        resultGUI_SelectedCube.RBExD        = resultGUI.RBExD;
+        if isfield(resultGUI,'RBExD')
+            resultGUI_SelectedCube.RBExD        = resultGUI.RBExD;
+        elseif isfield(resultGUI,'RBExDose')
+            resultGUI_SelectedCube.RBExD        = resultGUI.RBExDose;
+        end
     else
         Idx    = find(SelectedCube == '_');
         SelectedSuffix = SelectedCube(Idx(1):end);
@@ -2784,7 +2788,7 @@ for i = 1:size(cst,1)
     cst{i,5}.Visible = handles.VOIPlotFlag(i);
 end
 
-matRad_indicatorWrapper(cst,pln,resultGUI_SelectedCube);
+matRad_indicatorWrapper(cst,pln,resultGUI_SelectedCube,SelectedCube);
 
 assignin('base','cst',cst);
 

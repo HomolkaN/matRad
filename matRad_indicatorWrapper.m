@@ -1,4 +1,4 @@
-function [dvh,qi] = matRad_indicatorWrapper(cst,pln,resultGUI,refGy,refVol,param)
+function [dvh,qi] = matRad_indicatorWrapper(cst,pln,resultGUI,SelectedCube,refGy,refVol,param)
 % matRad indictor wrapper
 % 
 % call
@@ -35,7 +35,13 @@ function [dvh,qi] = matRad_indicatorWrapper(cst,pln,resultGUI,refGy,refVol,param
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if isfield(resultGUI,'RBExD')
+% if isfield(resultGUI,'RBExD')
+%     doseCube = resultGUI.RBExD;
+% else
+%     doseCube = resultGUI.physicalDose;
+% end
+
+if strcmp(SelectedCube,'RBExD')
     doseCube = resultGUI.RBExD;
 else
     doseCube = resultGUI.physicalDose;
@@ -62,7 +68,7 @@ qi  = matRad_calcQualityIndicators(cst,pln,doseCube,refGy,refVol,param);
 
 figure,set(gcf,'Color',[1 1 1]);
 subplot(2,1,1)
-matRad_showDVH(dvh,cst,pln);
+matRad_showDVH(dvh,cst,pln,1,SelectedCube);
 subplot(2,1,2)
 matRad_showQualityIndicators(qi);
 

@@ -1,4 +1,4 @@
-function matRad_showDVH(dvh,cst,pln,lineStyleIndicator)
+function matRad_showDVH(dvh,cst,pln,lineStyleIndicator,SelectedCube)
 % matRad dvh visualizaion
 % 
 % call
@@ -34,6 +34,10 @@ function matRad_showDVH(dvh,cst,pln,lineStyleIndicator)
 %%
 if ~exist('lineStyleIndicator','var') || isempty(lineStyleIndicator)
     lineStyleIndicator = 1;
+end
+
+if ~exist('SelectedCube','var') || isempty(SelectedCube)
+    SelectedCube = 'RBE';
 end
 
 % create new figure and set default line style indicator if not explictly
@@ -80,8 +84,8 @@ set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
 ylabel('Volume [%]','FontSize',fontSizeValue)
 
 if exist('pln','var') && ~isempty(pln)
-    if strcmp(pln.bioParam.model,'none')
-     xlabel('Dose [Gy]','FontSize',fontSizeValue);
+    if strcmp(pln.bioParam.model,'none') || strcmp(SelectedCube,'physicalDose')
+     xlabel('Physical Dose [Gy]','FontSize',fontSizeValue);
     else
      xlabel('RBE x Dose [Gy(RBE)]','FontSize',fontSizeValue);
     end
