@@ -2765,21 +2765,19 @@ SelectedCube = Content{get(handles.popupDisplayOption,'Value')};
 pln = evalin('base','pln');
 resultGUI_SelectedCube.physicalDose = resultGUI.(SelectedCube);
 
-if pln.bioParam.bioOpt
-    %check if one of the default fields is selected
-    if sum(strcmp(SelectedCube,{'physicalDose','effect','RBE,','RBExD','RBExDose','alpha','beta'})) > 0
-        resultGUI_SelectedCube.physicalDose = resultGUI.physicalDose;
-        if isfield(resultGUI,'RBExD')
-            resultGUI_SelectedCube.RBExD        = resultGUI.RBExD;
-        elseif isfield(resultGUI,'RBExDose')
-            resultGUI_SelectedCube.RBExD        = resultGUI.RBExDose;
-        end
-    else
-        Idx    = find(SelectedCube == '_');
-        SelectedSuffix = SelectedCube(Idx(1):end);
-        resultGUI_SelectedCube.physicalDose = resultGUI.(['physicalDose' SelectedSuffix]);
-        resultGUI_SelectedCube.RBExD        = resultGUI.(['RBExD' SelectedSuffix]);
+%check if one of the default fields is selected
+if sum(strcmp(SelectedCube,{'physicalDose','effect','RBE,','RBExD','RBExDose','alpha','beta'})) > 0
+    resultGUI_SelectedCube.physicalDose = resultGUI.physicalDose;
+    if isfield(resultGUI,'RBExD')
+        resultGUI_SelectedCube.RBExD        = resultGUI.RBExD;
+    elseif isfield(resultGUI,'RBExDose')
+        resultGUI_SelectedCube.RBExD        = resultGUI.RBExDose;
     end
+else
+    Idx    = find(SelectedCube == '_');
+    SelectedSuffix = SelectedCube(Idx(1):end);
+    resultGUI_SelectedCube.physicalDose = resultGUI.(['physicalDose' SelectedSuffix]);
+    resultGUI_SelectedCube.RBExD        = resultGUI.(['RBExD' SelectedSuffix]);
 end
 
 %adapt visibilty
