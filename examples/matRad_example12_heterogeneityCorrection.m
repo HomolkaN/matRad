@@ -28,7 +28,7 @@
 matRad_rc
 
 %% Patient Data Import
-load('BOXPHANTOM_LUNG.mat');
+load('BOXPHANTOM_LUNG_PLN');
 
 %% Treatment Plan
 % The next step is to define your treatment plan labeled as 'pln'. This 
@@ -43,14 +43,14 @@ load('BOXPHANTOM_LUNG.mat');
 % the depth information as a struct. For this purpose, matRad features generic base data in the file
 % 'carbon_GenericAPM.mat'; consequently the machine has to be set accordingly
 pln.radiationMode = 'carbon';            
-pln.machine       = 'HIT_APM';
+pln.machine       = 'GenericAPM';
 
 %%
 % Define the biological optimization model for treatment planning along
 % with the quantity that should be used for optimization. Possible model values 
 % are:
 %('none': physical optimization;
-%'constRBE': constant RBE of 1.1; 
+% 'constRBE': constant RBE of 1.1; 
 % 'MCN': McNamara-variable RBE model for protons; 
 % 'WED':  Wedenberg-variable RBE model for protons
 % 'LEM': local effect model 
@@ -58,7 +58,6 @@ pln.machine       = 'HIT_APM';
 % Therefore we set modelName to LEM
 
 modelName           = 'LEM';
-%modelName           = 'constRBE';
 quantityOpt         = 'RBExD';   
 
 %modelName           = 'none';
@@ -66,7 +65,6 @@ quantityOpt         = 'RBExD';
 
 %%
 % The remaining plan parameters are set like in the previous example files
-pln.numOfFractions        = 30;
 pln.propStf.gantryAngles  = 0;
 pln.propStf.couchAngles   = 0;
 pln.propStf.bixelWidth    = 6;
@@ -123,10 +121,6 @@ carbHetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,carbHomo.w,param);
 % matRad_compareDose(carbHomo.physicalDose,carbHetero.physicalDose,ct,cst,[1 0 0]);
  matRad_compareDose(carbHomo.RBExD,carbHetero.RBExD,ct,cst,[1 0 0]);
 
-
-%%
-% physikalische Dosis mit & ohne heterogenitätskorrektur
-% RBExD mit und ohne heterogenitätskorrektur
-% beides für Protonen 
+ 
 
 
