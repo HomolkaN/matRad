@@ -56,7 +56,7 @@ for i = 1:length(stf)
     title(['Beam ',num2str(i)])
     ylabel('RBE Dose [Gy]')
     xlabel('Distance to source')
-    xlim([6500 6575])
+   % xlim([6500 6575])
 end
 end
 
