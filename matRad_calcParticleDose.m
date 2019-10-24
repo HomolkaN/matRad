@@ -293,7 +293,7 @@ if pln.bioParam.bioOpt
     dij.abX(dij.betaX>0) = dij.alphaX(dij.betaX>0)./dij.betaX(dij.betaX>0);
     
     % only if LEM is used corresponding bio data must be available in the base data set
-    if strcmp(pln.radiationMode,'carbon') || strcmp(pln.radiationMode,'helium')
+    if strcmp(pln.bioParam.model,'LEM')
         
         for i = 1:size(cst,1)
             [~, row] = ismember(vertcat(cst{i,4}{:}),VdoseGrid,'rows');

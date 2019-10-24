@@ -78,7 +78,7 @@ end
 if strcmp(pln.radiationMode,'photons')
   dij = matRad_calcPhotonDose(ct,stf,pln,cst,param);
   %dij = matRad_calcPhotonDoseVmc(ct,stf,pln,cst,5000,4,calcDoseDirect);
-elseif strcmp(pln.radiationMode,'protons') || strcmp(pln.radiationMode,'carbon')
+elseif strcmp(pln.radiationMode,'protons') || strcmp(pln.radiationMode,'carbon') || strcmp(pln.radiationMode,'helium')
   dij = matRad_calcParticleDose(ct,stf,pln,cst,param);
 end
 
