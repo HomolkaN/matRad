@@ -1,4 +1,4 @@
-function matRad_heterogeneityCorrectionWrapper(patient,mode,machine,doseMode,param)
+function matRad_heterogeneityCorrectionWrapper(patient,particle,machine,doseMode,param)
 % matRad wrapper for heterogeneity testing with available preimported
 % patients
 %
@@ -11,7 +11,7 @@ function matRad_heterogeneityCorrectionWrapper(patient,mode,machine,doseMode,par
 %   mode:            particle mode ('protons' or 'carbon')
 %   machine:         machine file as string ('generic' or 'HIT_APM')
 %   doseMode:        dose mode (physicalDose or RBE) as string
-%   param (optional)             
+%   param (optional)
 %
 % output
 %   figure
@@ -31,40 +31,54 @@ function matRad_heterogeneityCorrectionWrapper(patient,mode,machine,doseMode,par
 %%
 if exist('param','var')
     if ~isfield(param,'logLevel')
-       param.logLevel = 1;
-    end 
+        param.logLevel = 1;
+    end
 else
-   param.subIx          = [];
-   param.logLevel       = 1;
+    param.subIx          = [];
+    param.logLevel       = 1;
 end
 
 %% Patient Data Import
-if contains(patient,'006')
-    load('dataImport/lowRes/S00006-ID20180322.mat');
-elseif contains(patient,'001')
-    load('dataImport/lowRes/S00001_ID-20171201.mat');
-elseif contains(patient,'3368')
-    load('dataImport/lowRes/H03368_ID-20171201.mat');
-elseif contains(patient,'Boxphantom')
+% if contains(patient,'006')
+%     load('dataImport/lowRes/S00006-ID20180322.mat');
+% elseif contains(patient,'001')
+%     load('dataImport/lowRes/S00001_ID-20171201.mat');
+% elseif contains(patient,'3368')
+%     load('dataImport/lowRes/H03368_ID-20171201.mat');
+% else
+load(['C:\Home\homolka\git\matRad\dataImport\',patient,'.mat'])
+
+if contains(patient,'Boxphantom')
     load('BOXPHANTOM_LUNG_PLN.mat');
     cst{2,6}.dose = 30;
     pln.numOfFractions = 6;
-else
-    error('patient data not available')
 end
 
+cst = matRad_slimCST(cst);
 %%
-pln.radiationMode = mode;
+pln.radiationMode = particle;
 pln.machine       = machine;
 
-if contains(doseMode,'Physical')
+if contains(doseMode,'physical')
     modelName    = 'none';
     quantityOpt  = 'physicalDose';
+    
 elseif contains(doseMode,'RBE')
-    modelName    = 'LEM';
     quantityOpt  = 'RBExD';
+    
+    if contains(particle,'carbon')
+        modelName    = 'LEM';
+    elseif contains(particle,'helium')
+        modelName    = 'HEL';
+    elseif contains(particle,'proton')
+        if contains(doseMode,'MCN')
+            modelName    = 'MCN';
+        elseif contains(doseMode,'const')
+            modelName = 'constRBE';
+        end
+    end
 else
-    error(['Must choose valid dose cube']);
+    error('Must choose valid dose cube');
 end
 
 
@@ -100,8 +114,9 @@ stf = matRad_generateStf(ct,cst,pln,param);
 
 pln.heterogeneity.calcHetero = true;
 pln.heterogeneity.type = 'complete'; % optional
-pln.heterogeneity.useDoseCurves = true;
+pln.heterogeneity.useDoseCurves = false;
 pln.heterogeneity.useOrgDepths = false;
+
 
 %% Dose Calculation
 % The previously set parameters will be automatically transferred into the
@@ -124,7 +139,7 @@ cstHetero = matRad_cstHeteroAutoassign(cst);
 
 %% Calculate dose again with heterogeneityCorrection
 carbHetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,carbHomo.w,param);
-
+clear dij
 %% Visualize differences
 % try
 %     if contains(doseMode,'Physical')
@@ -137,7 +152,6 @@ carbHetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,carbHomo.w,param);
 %     warning(['Could not compare dose cubes']);
 % end
 
-clear dij exp*
-save(['examples\',patient,'_',mode,'_',machine,'_',doseMode,'_fullRes.mat'])
+save(['Results\',patient,'_',modelName,'_',particle,'_',machine,'_',doseMode,'.mat'])
 
 end

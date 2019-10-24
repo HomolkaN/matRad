@@ -1,4 +1,4 @@
-function [gammaCube,gammaPassRate,hfig] = matRad_compareDose(cube1, cube2, ct, cst,enable , contours, pln, criteria, n,localglobal)
+function [gammaCube,gammaPassRate,hfig] = matRad_compareDose3(cube1, cube2, cube3, ct, cst,enable , contours, pln, criteria, n,localglobal)
 % Comparison of two dose cubes in terms of gamma index, absolute and visual difference
 %
 % call
@@ -126,17 +126,20 @@ if enable(1)==1
     
     
     %%% Calculate absolute difference cube and dose windows for plots
-    differenceCube  = cube1-cube2;
-    doseDiffWindow  = [-max(differenceCube(:)) max(differenceCube(:))];
+    differenceCube1  = cube2-cube1;
+    differenceCube2  = cube3-cube1;
+    differenceCube3  = cube2-cube3;
+    maxim = max([max(differenceCube1(:)),max(differenceCube2(:)),max(differenceCube3(:))]);
+    doseDiffWindow  = [-maxim +maxim];
     doseGammaWindow = [0 max(gammaCube(:))];
-    relativeDifferenceCube = ( differenceCube ./ cube1 )*100;
+    relativeDifferenceCube = ( differenceCube1 ./ cube1 )*100;
     relativeDifferenceCube = relativeDifferenceCube(~isnan(relativeDifferenceCube));
     relativeDifference = round(relativeDifferenceCube(find(relativeDifferenceCube == max(abs(relativeDifferenceCube)))),2);
- %  relativeDifference = max(abs(differenceCube(:)))/max(max(abs(cube1(:))),max(abs(cube2(:))))*100;
+    %  relativeDifference = max(abs(differenceCube(:)))/max(max(abs(cube1(:))),max(abs(cube2(:))))*100;
     
     %% Load colormap for difference
     diffCMap = matRad_getColormap('diffPolar');
-
+    
     %% Plot everything
     % Plot dose slices
     if contours == false
@@ -153,7 +156,7 @@ if enable(1)==1
         set(gcf,'Color',[1 1 1]);
         
         % Plot Dose 1
-        hfig.(planename{plane}).('cube1').Axes = subplot(2,2,1);
+        hfig.(planename{plane}).('cube1').Axes = subplot(2,3,1);
         [hfig.(planename{plane}).('cube1').CMap,...
             hfig.(planename{plane}).('cube1').Dose,...
             hfig.(planename{plane}).('cube1').Ct,...
@@ -164,7 +167,7 @@ if enable(1)==1
         figtitle = figtitle.String;
         
         % Plot Dose 2
-        hfig.(planename{plane}).('cube2').Axes = subplot(2,2,2);
+        hfig.(planename{plane}).('cube2').Axes = subplot(2,3,2);
         [hfig.(planename{plane}).('cube2').CMap,...
             hfig.(planename{plane}).('cube2').Dose,...
             hfig.(planename{plane}).('cube2').Ct,...
@@ -172,37 +175,59 @@ if enable(1)==1
             hfig.(planename{plane}).('cube2').IsoDose] = ...
             matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,jet,doseWindow,[],100);
         
-        % Plot absolute difference
-        hfig.(planename{plane}).('diff').Axes = subplot(2,2,3);
-        [hfig.(planename{plane}).('diff').CMap,...
-            hfig.(planename{plane}).('diff').Dose,...
-            hfig.(planename{plane}).('diff').Ct,...
-            hfig.(planename{plane}).('diff').Contour,...
-            hfig.(planename{plane}).('diff').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow,[],100);
+        % Plot Dose 3
+        hfig.(planename{plane}).('cube3').Axes = subplot(2,3,3);
+        [hfig.(planename{plane}).('cube3').CMap,...
+            hfig.(planename{plane}).('cube3').Dose,...
+            hfig.(planename{plane}).('cube3').Ct,...
+            hfig.(planename{plane}).('cube3').Contour,...
+            hfig.(planename{plane}).('cube3').IsoDose] = ...
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube3,plane,slicename{plane},[],[],colorcube,jet,doseWindow,[],100);
         
-        % Plot gamma analysis
-        hfig.(planename{plane}).('gamma').Axes = subplot(2,2,4);
-        gammaCMap = matRad_getColormap('gammaIndex');
-        [hfig.(planename{plane}).('gamma').CMap,...
-            hfig.(planename{plane}).('gamma').Dose,...
-            hfig.(planename{plane}).('gamma').Ct,...
-            hfig.(planename{plane}).('gamma').Contour,...
-            hfig.(planename{plane}).('gamma').IsoDose]=...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,gammaCube,plane,slicename{plane},[],[],colorcube,gammaCMap,doseGammaWindow,[],100);
+        % Plot absolute difference
+        hfig.(planename{plane}).('diff1').Axes = subplot(2,3,4);
+        [hfig.(planename{plane}).('diff1').CMap,...
+            hfig.(planename{plane}).('diff1').Dose,...
+            hfig.(planename{plane}).('diff1').Ct,...
+            hfig.(planename{plane}).('diff1').Contour,...
+            hfig.(planename{plane}).('diff1').IsoDose] = ...
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube1,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow,[],100);
+        
+        hfig.(planename{plane}).('diff2').Axes = subplot(2,3,5);
+        [hfig.(planename{plane}).('diff2').CMap,...
+            hfig.(planename{plane}).('diff2').Dose,...
+            hfig.(planename{plane}).('diff2').Ct,...
+            hfig.(planename{plane}).('diff2').Contour,...
+            hfig.(planename{plane}).('diff2').IsoDose] = ...
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube2,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow,[],100);
+        
+        hfig.(planename{plane}).('diff3').Axes = subplot(2,3,6);
+        [hfig.(planename{plane}).('diff3').CMap,...
+            hfig.(planename{plane}).('diff3').Dose,...
+            hfig.(planename{plane}).('diff3').Ct,...
+            hfig.(planename{plane}).('diff3').Contour,...
+            hfig.(planename{plane}).('diff3').IsoDose] = ...
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube3,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow,[],100);
         
         set(hfig.(planename{plane}).('fig'),'name',figtitle);
         
         %% Adjusting axes
         
         matRad_plotAxisLabels(hfig.(planename{plane}).('cube1').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'dose w/o correction');
+        set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'ConstRBE = 1.1');
         matRad_plotAxisLabels(hfig.(planename{plane}).('cube2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'dose with correction');
-        matRad_plotAxisLabels(hfig.(planename{plane}).('diff').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff').Axes, 'title'), 'string', ['Absolute difference, rel=',num2str(relativeDifference),'%']);
-        matRad_plotAxisLabels(hfig.(planename{plane}).('gamma').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('gamma').Axes, 'title'), 'string', {[num2str(gammaPassRate{1,2},5) '% of points > ' num2str(relDoseThreshold) '% pass gamma criterion (' num2str(relDoseThreshold) '% / ' num2str(dist2AgreeMm) 'mm)']; ['with ' num2str(2^n-1) ' interpolation points']});
+        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'MCN model');
+        matRad_plotAxisLabels(hfig.(planename{plane}).('cube3').Axes,ct,plane,slicename{plane},[],100);
+        set(get(hfig.(planename{plane}).('cube3').Axes, 'title'), 'string', ['WED model']);
+        
+        matRad_plotAxisLabels(hfig.(planename{plane}).('diff1').Axes,ct,plane,slicename{plane},[],100);
+        set(get(hfig.(planename{plane}).('diff1').Axes, 'title'), 'string', ['MCN model - ConstRBE']);
+        
+        matRad_plotAxisLabels(hfig.(planename{plane}).('diff2').Axes,ct,plane,slicename{plane},[],100);
+        set(get(hfig.(planename{plane}).('diff2').Axes, 'title'), 'string', ['WED model - ConstRBE']);
+        
+        matRad_plotAxisLabels(hfig.(planename{plane}).('diff3').Axes,ct,plane,slicename{plane},[],100);
+        set(get(hfig.(planename{plane}).('diff3').Axes, 'title'), 'string', ['MCN model - WED model']);
         
     end
 end
@@ -275,19 +300,81 @@ if enable(3)==1 && ~isempty(cst)
     disp('Calculating DVH...');
     dvh1=matRad_calcDVH(cst,cube1);
     dvh2=matRad_calcDVH(cst,cube2);
-    dvhWindow = max([dvh1(1).doseGrid dvh2(1).doseGrid]);
+    dvh3=matRad_calcDVH(cst,cube3);
+    dvhWindow = max([dvh1(1).doseGrid dvh2(1).doseGrid dvh3(1).doseGrid]);
     % Plot DVH
     disp('Plotting DVH...');
     
+    cstConst = cst;
+    cstMCN = cst;
+    cstWED = cst;
+    
+    cstConst{1,2} = 'ConstRBE';
+    cstMCN{1,2} = 'MCN';
+    cstWED{1,2} = 'WED';
+    
     hfig.dvh.fig = figure('Renderer', 'painters', 'Position', [10 100 1000 700]);
     set(gcf,'Color',[1 1 1]);
-    matRad_showDVH(dvh1,cst,pln);
+    matRad_showDVH(dvh1,cstConst,pln);
     hold on
-    matRad_showDVH(dvh2,cst,pln,2);
+    matRad_showDVH(dvh2,cstMCN,pln,2);
+    matRad_showDVH(dvh3,cstWED,pln,3);
     xlim([0 dvhWindow*1.2])
-    title('Dose Volume Histrogram, Dose 1: solid, Dose 2: dashed')
+    title('Dose Volume Histrogram, ConstRBE: solid, MCN: dotted, WED: dashed')
+    
+    k = 3;
+    ptv = 2;
+    patient = 'Boxphantom';
+    mode = 'protons';
+    machine = 'HIT_APM';
+    doseMode = 'RBE';
+    
+    rT = [];
+    rT{1,1} = 'patient';
+    rT{1,2} = 'mean [Gy]';
+    rT{1,3} = 'D_5 [Gy]';
+    rT{1,4} = 'D_50 [Gy]';
+    rT{1,5} = 'D_95 [Gy]';
+    rT{1,6} = 'D_98 [Gy]';
+    rT{1,7} = 'Delta D_95 [Gy]';
+    
+    qi1  = matRad_calcQualityIndicators(cstConst,pln,cube1);
+    rT{k,1} = [patient,'_',mode,'_',machine,'_',doseMode,'_noCorr_',qi1(ptv).name];
+    rT{k,2} = qi1(ptv).mean;
+    rT{k,3} = qi1(ptv).D_5;
+    rT{k,4} = qi1(ptv).D_50;
+    rT{k,5} = qi1(ptv).D_95;
+    rT{k,6} = qi1(ptv).D_98;
+    
+    qi2  = matRad_calcQualityIndicators(cstConst,pln,cube2);
+    rT{k+1,1} = [patient,'_',mode,'_',machine,'_',doseMode,'_withCorr_',qi1(ptv).name];
+    rT{k+1,2} = qi2(ptv).mean;
+    rT{k+1,3} = qi2(ptv).D_5;
+    rT{k+1,4} = qi2(ptv).D_50;
+    rT{k+1,5} = qi2(ptv).D_95;
+    rT{k+1,6} = qi2(ptv).D_98;
+    
+    qi3  = matRad_calcQualityIndicators(cstConst,pln,cube3);
+    rT{k+2,1} = [patient,'_',mode,'_',machine,'_',doseMode,'_withCorr_',qi1(ptv).name];
+    rT{k+2,2} = qi3(ptv).mean;
+    rT{k+2,3} = qi3(ptv).D_5;
+    rT{k+2,4} = qi3(ptv).D_50;
+    rT{k+2,5} = qi3(ptv).D_95;
+    rT{k+2,6} = qi3(ptv).D_98;
+    
+    rT{k,7} =   (qi2(ptv).D_95 - qi1(ptv).D_95) / qi1(ptv).D_95;
+    rT{k+1,7} = (qi3(ptv).D_95 - qi1(ptv).D_95) / qi1(ptv).D_95;
+    rT{k+2,7} = (qi2(ptv).D_95 - qi3(ptv).D_95) / qi3(ptv).D_95;
+    
+    clear qi1 qi2 qi3
+    k = k + 6;
+    disp('Done!');
+    filename = 'C:\Users\homolka\Documents\#PhD\#Ergebnisse\ErgebnisseHeterogenitätskorrektur\ModelComparison.xlsx';
+    xlswrite(filename,rT,2)
+    
 end
 %%
+
 disp('Done!');
 
 end

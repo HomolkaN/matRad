@@ -62,7 +62,7 @@ for i = 1:numOfVois
         ix      = max([1 find(dvh(i).volumePoints>0,1,'last')]);
         currDvh = [dvh(i).doseGrid(1:ix);dvh(i).volumePoints(1:ix)];
         
-        plot(currDvh(1,:),currDvh(2,:),'LineWidth',4,'Color',colorMx(i,:), ...
+        plot(currDvh(1,:),currDvh(2,:),'LineWidth',2,'Color',colorMx(i,:), ...
             'LineStyle',lineStyles{lineStyleIndicator},'DisplayName',cst{i,2})
         
         maxDVHvol  = max(maxDVHvol,max(currDvh(2,:)));
