@@ -79,7 +79,7 @@ cst{ixPTV,6}.robustness  = 'none';
 
 
 %% Lets create either a cubic or a spheric phantom
-TYPE = 'spheric';   % either 'cubic' or 'spheric'
+TYPE = 'cubic';   % either 'cubic' or 'spheric'
 
 % first the OAR
 cubeHelper = zeros(ct.cubeDim);
@@ -197,7 +197,7 @@ ct.cubeHU{1}(vIxPTV) = 1;  % assign HU of water
 % need to define a treatment machine to correctly load the corresponding 
 % base data. matRad features generic base data in the file
 % 'photons_Generic.mat'; consequently the machine has to be set to 'Generic'
-pln.radiationMode = 'photons';            
+pln.radiationMode = 'protons';            
 pln.machine       = 'Generic';
 
 %%
@@ -230,11 +230,13 @@ pln.bioParam = matRad_bioModel(pln.radiationMode,quantityOpt,modelName);
 % retrieve nominal scenario for dose calculation and optimziation
 pln.multScen = matRad_multScen(ct,'nomScen'); 
 
+
+
 %% Generate Beam Geometry STF
 stf = matRad_generateStf(ct,cst,pln,param);
 
 %% Dose Calculation
-dij = matRad_calcPhotonDose(ct,stf,pln,cst, param);
+dij = matRad_calcParticleDose(ct,stf,pln,cst, param);
 
 %% Inverse Optimization for intensity-modulated photon therapy
 % The goal of the fluence optimization is to find a set of bixel/spot 
@@ -253,5 +255,6 @@ if param.logLevel == 1
 
 end
 
-
-
+%%
+clearvars -except cst ct
+save('BOXPHANTOM_LUNG_NARROW.mat')

@@ -108,7 +108,7 @@ end
 resolution = [ct.resolution.x ct.resolution.y ct.resolution.z];
 
 slicename = {round(isoCenter(2)./resolution(2)),round(isoCenter(1)./resolution(1)),round(isoCenter(3)./resolution(3))};
-doseWindow = [0 max([cube1(:); cube2(:)])];
+doseWindow = [0 round(max([cube1(:); cube2(:)]),2)];
 planename = {'coronal','sagittal','axial'};
 
 %% Get the gamma cube
@@ -145,7 +145,7 @@ if enable(1)==1
         cstHandle = cst;
     end
     
-    for plane=3
+    for plane=1
         disp(['Plotting ',planename{plane},' plane...']);
         
         % Initialize Figure
@@ -159,7 +159,7 @@ if enable(1)==1
             hfig.(planename{plane}).('cube1').Ct,...
             hfig.(planename{plane}).('cube1').Contour,...
             hfig.(planename{plane}).('cube1').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,jet,doseWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],[],colorcube, jet,doseWindow,[],100);
         figtitle = get(gca,'title');
         figtitle = figtitle.String;
         
@@ -170,7 +170,7 @@ if enable(1)==1
             hfig.(planename{plane}).('cube2').Ct,...
             hfig.(planename{plane}).('cube2').Contour,...
             hfig.(planename{plane}).('cube2').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,jet,doseWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],[],colorcube,jet,doseWindow,[],100);
         
         % Plot absolute difference
         hfig.(planename{plane}).('diff').Axes = subplot(2,2,3);
@@ -179,7 +179,7 @@ if enable(1)==1
             hfig.(planename{plane}).('diff').Ct,...
             hfig.(planename{plane}).('diff').Contour,...
             hfig.(planename{plane}).('diff').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},[],[],[],colorcube,diffCMap,doseDiffWindow,[],100);
         
         % Plot gamma analysis
         hfig.(planename{plane}).('gamma').Axes = subplot(2,2,4);
@@ -189,20 +189,20 @@ if enable(1)==1
             hfig.(planename{plane}).('gamma').Ct,...
             hfig.(planename{plane}).('gamma').Contour,...
             hfig.(planename{plane}).('gamma').IsoDose]=...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,gammaCube,plane,slicename{plane},[],[],colorcube,gammaCMap,doseGammaWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,gammaCube,plane,slicename{plane},[],[],[],colorcube,gammaCMap,doseGammaWindow,[],100);
         
         set(hfig.(planename{plane}).('fig'),'name',figtitle);
         
         %% Adjusting axes
         
         matRad_plotAxisLabels(hfig.(planename{plane}).('cube1').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'dose w/o correction');
+        set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'matRad pencil beam');
         matRad_plotAxisLabels(hfig.(planename{plane}).('cube2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'dose with correction');
+        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'topas');
         matRad_plotAxisLabels(hfig.(planename{plane}).('diff').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff').Axes, 'title'), 'string', ['Absolute difference, rel=',num2str(relativeDifference),'%']);
+        set(get(hfig.(planename{plane}).('diff').Axes, 'title'), 'string', ['Absolute difference']);
         matRad_plotAxisLabels(hfig.(planename{plane}).('gamma').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('gamma').Axes, 'title'), 'string', {[num2str(gammaPassRate{1,2},5) '% of points > ' num2str(relDoseThreshold) '% pass gamma criterion (' num2str(relDoseThreshold) '% / ' num2str(dist2AgreeMm) 'mm)']; ['with ' num2str(2^n-1) ' interpolation points']});
+        set(get(hfig.(planename{plane}).('gamma').Axes, 'title'), 'string', {['\gamma(body) = ' num2str(gammaPassRate{2,2},5) '%'];['\gamma(target) = ' num2str(gammaPassRate{3,2},5) '%']});
         
     end
 end

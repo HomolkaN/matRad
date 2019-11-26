@@ -1,0 +1,1 @@
+addpath(genpath('C:\git\matRad'))

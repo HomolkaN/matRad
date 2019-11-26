@@ -64,8 +64,8 @@ end
 % to guarantee downwards compatibility with data that does not have
 % ct.x/y/z
 if ~any(isfield(ct,{'x','y','z'}))
-    ct.x = ct.resolution.x*[0:ct.cubeDim(1)-1]-ct.resolution.x/2;
-    ct.y = ct.resolution.y*[0:ct.cubeDim(2)-1]-ct.resolution.y/2;
+    ct.x = ct.resolution.x*[0:ct.cubeDim(2)-1]-ct.resolution.x/2;
+    ct.y = ct.resolution.y*[0:ct.cubeDim(1)-1]-ct.resolution.y/2;
     ct.z = ct.resolution.z*[0:ct.cubeDim(3)-1]-ct.resolution.z/2;
 end
 
@@ -88,7 +88,7 @@ dij.doseGrid.x = ct.x(1):dij.doseGrid.resolution.x:ct.x(end);
 dij.doseGrid.y = ct.y(1):dij.doseGrid.resolution.y:ct.y(end);
 dij.doseGrid.z = ct.z(1):dij.doseGrid.resolution.z:ct.z(end);
 
-dij.doseGrid.dimensions  = [numel(dij.doseGrid.x) numel(dij.doseGrid.y) numel(dij.doseGrid.z)];
+dij.doseGrid.dimensions  = [numel(dij.doseGrid.y) numel(dij.doseGrid.x) numel(dij.doseGrid.z)];
 dij.doseGrid.numOfVoxels = prod(dij.doseGrid.dimensions);
 
 dij.ctGrid.resolution.x = ct.resolution.x;
@@ -99,7 +99,7 @@ dij.ctGrid.x = ct.x;
 dij.ctGrid.y = ct.y;
 dij.ctGrid.z = ct.z;
 
-dij.ctGrid.dimensions  = [numel(dij.ctGrid.x) numel(dij.ctGrid.y) numel(dij.ctGrid.z)];
+dij.ctGrid.dimensions  = [numel(dij.ctGrid.y) numel(dij.ctGrid.x) numel(dij.ctGrid.z)];
 dij.ctGrid.numOfVoxels = prod(dij.ctGrid.dimensions);
 
 if param.logLevel == 1
@@ -199,8 +199,8 @@ end
 tmpCube    = zeros(ct.cubeDim);
 tmpCube(VctGrid) = 1;
 % interpolate cube
-VdoseGrid = find(interp3(dij.ctGrid.y,dij.ctGrid.x,   dij.ctGrid.z,tmpCube, ...
-    dij.doseGrid.y,dij.doseGrid.x',dij.doseGrid.z,'nearest'));
+VdoseGrid = find(interp3(dij.ctGrid.x,dij.ctGrid.y,   dij.ctGrid.z,tmpCube, ...
+    dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'nearest'));
 
 % Convert CT subscripts to coarse linear indices.
 [yCoordsV_voxDoseGrid, xCoordsV_voxDoseGrid, zCoordsV_voxDoseGrid] = ind2sub(dij.doseGrid.dimensions,VdoseGrid);

@@ -67,7 +67,7 @@ quantityOpt         = 'RBExD';
 % The remaining plan parameters are set like in the previous example files
 pln.propStf.gantryAngles  = 0;
 pln.propStf.couchAngles   = 0;
-pln.propStf.bixelWidth    = 6;
+pln.propStf.bixelWidth    = 10;
 pln.propStf.numOfBeams    = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter     = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
 pln.propOpt.runDAO        = 0;
