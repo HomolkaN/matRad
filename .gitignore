@@ -237,3 +237,7 @@ topas/ssh2_v2_m1_r7/ganymed-ssh2-m1/ganymed-ssh2-m1-source/src/ch/ethz/ssh2/tran
 topas/ssh2_v2_m1_r7/ganymed-ssh2-m1/ganymed-ssh2-m1-source/src/ch/ethz/ssh2/util/StringEncoder.java
 topas/ssh2_v2_m1_r7/ganymed-ssh2-m1/ganymed-ssh2-m1-source/src/ch/ethz/ssh2/util/TimeoutService.java
 topas/ssh2_v2_m1_r7/ganymed-ssh2-m1/ganymed-ssh2-m1-source/src/ch/ethz/ssh2/util/Tokenizer.java
+topas/DirectComparisonMatRadTOPAS/
+topas/heterogeneity/
+topas/HLUT correction/
+topas/MCsquare_comparison/
