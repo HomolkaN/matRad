@@ -113,7 +113,7 @@ planename = {'coronal','sagittal','axial'};
 
 %% Get the gamma cube
 if enable(1)==1
-    disp('Calculating gamma index cube...');
+   % disp('Calculating gamma index cube...');
     if exist('criteria','var')
         relDoseThreshold = criteria(1); % in [%]
         dist2AgreeMm     = criteria(2); % in [mm]
@@ -122,17 +122,20 @@ if enable(1)==1
         relDoseThreshold = 3; % in [%]
     end
     
-    [gammaCube,gammaPassRate] = matRad_gammaIndex(cube1,cube2,resolution,criteria,[],n,localglobal,cst);
+%     [gammaCube,gammaPassRate] = matRad_gammaIndex(cube1,cube2,resolution,criteria,[],n,localglobal,cst);
     
     
     %%% Calculate absolute difference cube and dose windows for plots
-    differenceCube1  = cube2-cube1;
-    differenceCube2  = cube3-cube1;
-    differenceCube3  = cube3-cube2;
+    differenceCube1  = (cube2-cube1);
+    differenceCube2  = (cube3-cube1);
+    differenceCube3  = (cube3-cube2);
+
+    
+    
     maxim = max([max(differenceCube1(cst{1,4}{1})),max(differenceCube2(cst{1,4}{1})),max(differenceCube3(cst{1,4}{1}))]);
  %   maxim = max([max(differenceCube1(:)),max(differenceCube2(:)),max(differenceCube3(:))]);
     doseDiffWindow  = [-maxim +maxim];
-    doseGammaWindow = [0 max(gammaCube(:))];
+%    doseGammaWindow = [0 max(gammaCube(:))];
     relativeDifferenceCube = ( differenceCube1 ./ cube1 )*100;
     relativeDifferenceCube = relativeDifferenceCube(~isnan(relativeDifferenceCube));
     relativeDifference = round(relativeDifferenceCube(find(relativeDifferenceCube == max(abs(relativeDifferenceCube)))),2);
@@ -150,7 +153,7 @@ if enable(1)==1
     end
     
     windowXY{1} = [10 90];
-    windowXY{2} = [10 130];
+    windowXY{2} = [0 120];
     alpha = .6;
     for plane=3
         disp(['Plotting ',planename{plane},' plane...']);
@@ -218,20 +221,24 @@ if enable(1)==1
         %% Adjusting axes
         
         %matRad_plotAxisLabels(hfig.(planename{plane}).('cube1').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'Homogen matRad');
+        set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', inputname(1));
         %matRad_plotAxisLabels(hfig.(planename{plane}).('cube2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'Heterogen matRad');
+        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', inputname(2));
         %matRad_plotAxisLabels(hfig.(planename{plane}).('cube3').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube3').Axes, 'title'), 'string', 'Heterogen TOPAS');
+        set(get(hfig.(planename{plane}).('cube3').Axes, 'title'), 'string', inputname(3));
+        hfig.(planename{plane}).('cube3').CMap.Label.String = 'Normalized Dose [Gy]';
+        hfig.(planename{plane}).('cube3').CMap.Label.FontSize = 12;
         
         %matRad_plotAxisLabels(hfig.(planename{plane}).('diff1').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff1').Axes, 'title'), 'string', 'Difference matRad');
+        set(get(hfig.(planename{plane}).('diff1').Axes, 'title'), 'string', [inputname(2) ' - ' inputname(1)]);
         
         %matRad_plotAxisLabels(hfig.(planename{plane}).('diff2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff2').Axes, 'title'), 'string', 'TOPAS - matRad(homogen)');
+        set(get(hfig.(planename{plane}).('diff2').Axes, 'title'), 'string', [inputname(3) ' - ' inputname(1)]);
         
         %matRad_plotAxisLabels(hfig.(planename{plane}).('diff3').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff3').Axes, 'title'), 'string', 'TOPAS - matRad(heterogen)');
+        set(get(hfig.(planename{plane}).('diff3').Axes, 'title'), 'string', [inputname(3) ' - ' inputname(2)]);
+        hfig.(planename{plane}).('diff3').CMap.Label.String = 'Absolute difference [Gy]';
+        hfig.(planename{plane}).('diff3').CMap.Label.FontSize = 12;
         
     end
 end

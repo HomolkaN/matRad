@@ -140,7 +140,7 @@ colormap(axesHandle,doseColorMap);
 
 if ~isempty(windowXY)
     if ~(windowXY{2}(2)-windowXY{2}(1) == windowXY{1}(2)-windowXY{1}(1))
-    warning('XY window is not a square, image will be distorted.')
+    warning('XY window is not conformal with dose cube, image may be distorted.')
     end
     xlim(windowXY{1})
     ylim(windowXY{2})
@@ -153,6 +153,7 @@ matRad_plotAxisLabels(axesHandle,ct,plane,slice,[])
 ratios = [1/ct.resolution.x 1/ct.resolution.y 1/ct.resolution.z];
 
 set(axesHandle,'DataAspectRatioMode','manual');
+
 if plane == 1
     res = [ratios(3) ratios(2)]./max([ratios(3) ratios(2)]);
     set(axesHandle,'DataAspectRatio',[res 1])
@@ -169,6 +170,8 @@ if ~suppressCbar
     if ~isempty(colorBarLabel)
         set(get(hCMap,'YLabel'),'String', colorBarLabel,'FontSize',14);
     end
+else
+    hCMap = [];
 end
 end
 

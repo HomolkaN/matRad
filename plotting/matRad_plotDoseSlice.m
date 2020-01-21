@@ -72,8 +72,8 @@ doseHandle = image('CData',dose_rgb,'Parent',axesHandle);
 if ~isempty(threshold)
     mask = alpha * (dose_slice < window(2) & dose_slice > window(1) & abs(dose_slice) > threshold*maxDose);
 else
-%    mask = alpha * ones(size(dose_slice));
-    mask = alpha * (dose_slice < 1.1*window(2) & dose_slice > window(1));
+    mask = alpha * ones(size(dose_slice));
+%     mask = alpha * (dose_slice < 1.1*window(2) & dose_slice > 1.5*window(1));
 end
 
 % alphadata for image objects is not yet implemented in Octave

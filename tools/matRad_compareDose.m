@@ -1,4 +1,4 @@
-function [gammaCube,gammaPassRate,hfig] = matRad_compareDose(cube1, cube2, ct, cst,enable , contours, pln, criteria, n,localglobal)
+function [gammaCube,gammaPassRate,hfig] = matRad_compareDose(cube1, cube2, ct,ct2, cst,enable , contours, pln, criteria, n,localglobal)
 % Comparison of two dose cubes in terms of gamma index, absolute and visual difference
 %
 % call
@@ -63,10 +63,10 @@ if ~exist('localglobal','var')
     localglobal = 'global';
 end
 if ~exist('n','var')
-    n = 0;
+    n = 1;
 end
 if ~exist('criteria','var')
-    criteria = [3 3];
+    criteria = [2 2];
 end
 if ~exist('cst','var') || isempty(cst)
     cst = [];
@@ -126,9 +126,9 @@ if enable(1)==1
     
     
     %%% Calculate absolute difference cube and dose windows for plots
-    differenceCube  = cube1-cube2;
+    differenceCube  = cube2-cube1;
     doseDiffWindow  = [-max(differenceCube(:)) max(differenceCube(:))];
-    doseGammaWindow = [0 max(gammaCube(:))];
+    doseGammaWindow = [0 2];
     relativeDifferenceCube = ( differenceCube ./ cube1 )*100;
     relativeDifferenceCube = relativeDifferenceCube(~isnan(relativeDifferenceCube));
     relativeDifference = round(relativeDifferenceCube(find(relativeDifferenceCube == max(abs(relativeDifferenceCube)))),2);
@@ -145,8 +145,11 @@ if enable(1)==1
         cstHandle = cst;
     end
     
-    for plane=1
+    for plane=3
         disp(['Plotting ',planename{plane},' plane...']);
+        
+        windowXY{1} = [10 90];
+        windowXY{2} = [0 120];
         
         % Initialize Figure
         hfig.(planename{plane}).('fig') = figure('Renderer', 'painters', 'Position', [10 50 800 800]);
@@ -159,7 +162,7 @@ if enable(1)==1
             hfig.(planename{plane}).('cube1').Ct,...
             hfig.(planename{plane}).('cube1').Contour,...
             hfig.(planename{plane}).('cube1').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],[],colorcube, jet,doseWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},windowXY,[],[],colorcube, jet,doseWindow,[],100);
         figtitle = get(gca,'title');
         figtitle = figtitle.String;
         
@@ -170,7 +173,7 @@ if enable(1)==1
             hfig.(planename{plane}).('cube2').Ct,...
             hfig.(planename{plane}).('cube2').Contour,...
             hfig.(planename{plane}).('cube2').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],[],colorcube,jet,doseWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct2,cstHandle,1,cube2,plane,slicename{plane},windowXY,[],[],colorcube,jet,doseWindow,[],100);
         
         % Plot absolute difference
         hfig.(planename{plane}).('diff').Axes = subplot(2,2,3);
@@ -179,7 +182,7 @@ if enable(1)==1
             hfig.(planename{plane}).('diff').Ct,...
             hfig.(planename{plane}).('diff').Contour,...
             hfig.(planename{plane}).('diff').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},[],[],[],colorcube,diffCMap,doseDiffWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},windowXY,[],[],colorcube,diffCMap,doseDiffWindow,[],100);
         
         % Plot gamma analysis
         hfig.(planename{plane}).('gamma').Axes = subplot(2,2,4);
@@ -189,19 +192,20 @@ if enable(1)==1
             hfig.(planename{plane}).('gamma').Ct,...
             hfig.(planename{plane}).('gamma').Contour,...
             hfig.(planename{plane}).('gamma').IsoDose]=...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,gammaCube,plane,slicename{plane},[],[],[],colorcube,gammaCMap,doseGammaWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,gammaCube,plane,slicename{plane},windowXY,[],[],colorcube,gammaCMap,doseGammaWindow,[],100);
         
         set(hfig.(planename{plane}).('fig'),'name',figtitle);
         
         %% Adjusting axes
         
-        matRad_plotAxisLabels(hfig.(planename{plane}).('cube1').Axes,ct,plane,slicename{plane},[],100);
+        matRad_plotAxisLabels(hfig.(planename{plane}).('cube1').Axes,ct,plane,slicename{plane},[],25);
         set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'matRad pencil beam');
-        matRad_plotAxisLabels(hfig.(planename{plane}).('cube2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'topas');
-        matRad_plotAxisLabels(hfig.(planename{plane}).('diff').Axes,ct,plane,slicename{plane},[],100);
+        
+        matRad_plotAxisLabels(hfig.(planename{plane}).('cube2').Axes,ct,plane,slicename{plane},[],25);
+        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'TOPAS');
+        matRad_plotAxisLabels(hfig.(planename{plane}).('diff').Axes,ct,plane,slicename{plane},[],25);
         set(get(hfig.(planename{plane}).('diff').Axes, 'title'), 'string', ['Absolute difference']);
-        matRad_plotAxisLabels(hfig.(planename{plane}).('gamma').Axes,ct,plane,slicename{plane},[],100);
+        matRad_plotAxisLabels(hfig.(planename{plane}).('gamma').Axes,ct,plane,slicename{plane},[],25);
         set(get(hfig.(planename{plane}).('gamma').Axes, 'title'), 'string', {['\gamma(body) = ' num2str(gammaPassRate{2,2},5) '%'];['\gamma(target) = ' num2str(gammaPassRate{3,2},5) '%']});
         
     end
@@ -243,7 +247,7 @@ if enable(2)==1
     xlabel('X [mm]','FontSize',fontsize)
     ylabel(l,'FontSize',fontsize);
     title('x-Profiles');
-    legend({'dose w/o correction','dose with correction'},'Location','southeast')
+    legend({'matRad PB','TOPAS'},'Location','southeast')
     legend boxoff
     
     hfig.profiles.y = subplot(2,2,2);
@@ -253,7 +257,7 @@ if enable(2)==1
     xlabel('Y [mm]','FontSize',fontsize)
     ylabel(l,'FontSize',fontsize);
     title('y-Profiles');
-    legend({'dose w/o correction','dose with correction'},'Location','southeast')
+    legend({'matRad PB','TOPAS'},'Location','southeast')
     legend boxoff
     
     hfig.profiles.z = subplot(2,2,3);
@@ -263,7 +267,7 @@ if enable(2)==1
     xlabel('Z [mm]','FontSize',fontsize)
     ylabel(l,'FontSize',fontsize);
     title('z-Profiles');
-    legend({'dose w/o correction','dose with correction'},'Location','southeast')
+    legend({'matRad PB','TOPAS'},'Location','southeast')
     legend boxoff
     
     set(hfig.profiles.fig,'name',['Profiles:, x=',num2str(slicename{1}),'mm, y=',num2str(slicename{2}),'mm, z=',num2str(slicename{3}),'mm']);

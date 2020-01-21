@@ -45,6 +45,7 @@ load('BOXPHANTOM_LUNG_NARROW_1mm');
 % 'carbon_GenericAPM.mat'; consequently the machine has to be set accordingly
 pln.radiationMode = 'protons';
 pln.machine       = 'generic_TOPAS_cropped_APM';
+% pln.machine       = 'GenericTest';
 
 %%
 % Define the biological optimization model for treatment planning along
@@ -76,6 +77,15 @@ pln.propStf.numOfBeams    = numel(pln.propStf.gantryAngles);
 pln.propStf.isoCenter     = ones(pln.propStf.numOfBeams,1) * matRad_getIsoCenter(cst,ct,0);
 pln.propOpt.runDAO        = 0;
 pln.propOpt.runSequencing = 0;
+
+% pln.propDoseCalc.doseGrid.resolution.x = ct.resolution.x; % [mm]
+% pln.propDoseCalc.doseGrid.resolution.y = ct.resolution.y; % [mm]
+% pln.propDoseCalc.doseGrid.resolution.z = ct.resolution.z; % [mm]
+
+pln.propDoseCalc.doseGrid.resolution.x = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.y = 1; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 1; % [mm]
+
 
 pln.propDoseCalc.resolution = ct.resolution;
 
@@ -131,36 +141,63 @@ resultGUI = matRad_fluenceOptimization(dij,cst,pln,param);
 %resultGUI = rmfield(resultGUI,'physicalDose_beam1');
 %resultGUI = matRad_calcCubes(ones(dij.totalNumOfBixels,1),dij);
 %%
-
+% save('matfiles/Boxphantom_protons/heterogeneity/boxphantom_protons1mm_homogeneous.mat','resultGUI','pln','cst','ct','stf')
 cstHetero = matRad_cstHeteroAutoassign(cst);
-carbHetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,resultGUI.w,param);
-matRad_compareDose(resultGUI.physicalDose,carbHetero.physicalDose, ct, cst,[1 0 0]);
-save('matfiles/Boxphantom_protons/heterogeneity/boxphantom_protons_homogeneous.mat','resultGUI','carbHetero','pln','cst','ct','stf')
-
+resultGUIhetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,resultGUI.w,param);
+%matRad_compareDose(resultGUI.physicalDose,hetero_physicalDose.physicalDose, ct, cst,[1 0 0]);
+save('boxphantom_protons1mm_inhomogeneous.mat','resultGUIhetero','pln','cst','ct','stf')
 
 %%
-% sigma = 0.24;
-% variance = sigma^2;
-% 
-% upper = 1;
-% lower = 0;
-% mu = 0.4;
-% 
-% pd = makedist('beta');
-% pd.a = mu    * ( mu*(1-mu)/variance - 1 );
-% pd.b = (1-mu)* ( mu*(1-mu)/variance - 1 );
-% %%
-% num = length(ct.cube{1}(cst{3,4}{1}));
-% 
-% for n = 1:100
-%     clear X gwn
-%     X = zeros(num,1);
-%     for i = 1:num
-%         X(i) = pd.random;
-%     end
-%     ct.cube{1}(cst{3,4}{1}) = X;
-%     ct.cubeHU{1}(cst{3,4}{1}) = -1000 + 1000 * X;
-%     save(['matfiles/Boxphantom_protons/heterogeneity/files/data_' num2str(n,'%03.f') '.mat'],'resultGUI','pln','cst','ct','stf')
-% end
+p = 0.27;
+variance = p*(1-p);
+display(['Variance is var = ' num2str(variance)]);
+sigma = sqrt(variance);
+
+upper = 1;
+lower = 0;
+mu = 0.4;
+
+% dist = makedist('beta');
+% dist.a = mu    * ( mu*(1-mu)/variance - 1 );
+% dist.b = (1-mu)* ( mu*(1-mu)/variance - 1 );
+
+pd = makedist('Normal');
+pd.mu = mu;
+pd.sigma = sigma;
+dist = truncate(pd,lower,upper);
+
+%
+X = -0.1:0.001:1.1;
+f = figure;
+pDist = pdf(dist,X);
+plot(X,pDist/max(pDist))
+xlim([-0.02 1.02])
+ylim([0 1.1])
+xlabel('Dichte des Voxels')
+ylabel('PDF')
+title(['var = ' num2str(variance) ', p = ' num2str(p)])
+
+%%
+% X = 0:0.01:1;
+% variance = X.*(1-X);
+% figure
+% plot(X,variance)
+
+%%
+num = length(ct.cube{1}(cst{3,4}{1}));
+
+for n = 1:100
+    clear X gwn
+    X = random(dist,1,num);
+    
+    %Bernoulli
+    %X = rand(num,1);
+    %X = double(X < mu);
+    
+    ct.cube{1}(cst{3,4}{1}) = X;
+    ct.cubeHU{1}(cst{3,4}{1}) = -1000 + 1000 * X;
+%   save(['matfiles/Boxphantom_protons/heterogeneity/files/data_' num2str(n,'%03.f') '.mat'],'resultGUI','pln','cst','ct','stf')
+    save(['data/data_' num2str(n,'%03.f') '.mat'],'resultGUI','pln','cst','ct','stf')
+end
 
 

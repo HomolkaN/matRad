@@ -127,8 +127,9 @@ if enable(1)==1
     
     %%% Calculate absolute difference cube and dose windows for plots
     differenceCube1  = cube2-cube1;
-    differenceCube2  = cube4-cube2;
-    differenceCube3  = cube4-cube3;
+    differenceCube2  = cube3-cube2;
+    differenceCube3  = cube4-cube2;
+    differenceCube4  = cube4-cube3;
     maxim = max([max(differenceCube1(cst{1,4}{1})),max(differenceCube2(cst{1,4}{1})),max(differenceCube3(cst{1,4}{1}))]);
     % maxim = max([max(differenceCube1(:)),max(differenceCube2(:)),max(differenceCube3(:))]);
     doseDiffWindow  = [-maxim +maxim];
@@ -149,8 +150,8 @@ if enable(1)==1
         cstHandle = cst;
     end
     
-    windowXY{1} = [10 70]/2;
-    windowXY{2} = [31 130]/2;
+    windowXY{1} = [10 90];
+    windowXY{2} = [10 130];
     alpha = .8;
     for plane=3
         disp(['Plotting ',planename{plane},' plane...']);
@@ -206,7 +207,7 @@ if enable(1)==1
             hfig.(planename{plane}).('diff1').IsoDose] = ...
             matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube1,plane,slicename{plane},windowXY,[],alpha,colorcube,diffCMap,doseDiffWindow,[],100);
         
-        hfig.(planename{plane}).('diff2').Axes = subplot(2,4,7);
+        hfig.(planename{plane}).('diff2').Axes = subplot(2,4,6);
         [hfig.(planename{plane}).('diff2').CMap,...
             hfig.(planename{plane}).('diff2').Dose,...
             hfig.(planename{plane}).('diff2').Ct,...
@@ -214,13 +215,21 @@ if enable(1)==1
             hfig.(planename{plane}).('diff2').IsoDose] = ...
             matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube2,plane,slicename{plane},windowXY,[],alpha,colorcube,diffCMap,doseDiffWindow,[],100);
         
-        hfig.(planename{plane}).('diff3').Axes = subplot(2,4,8);
+        hfig.(planename{plane}).('diff3').Axes = subplot(2,4,7);
         [hfig.(planename{plane}).('diff3').CMap,...
             hfig.(planename{plane}).('diff3').Dose,...
             hfig.(planename{plane}).('diff3').Ct,...
             hfig.(planename{plane}).('diff3').Contour,...
             hfig.(planename{plane}).('diff3').IsoDose] = ...
             matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube3,plane,slicename{plane},windowXY,[],alpha,colorcube,diffCMap,doseDiffWindow,[],100);
+        
+                hfig.(planename{plane}).('diff4').Axes = subplot(2,4,8);
+        [hfig.(planename{plane}).('diff4').CMap,...
+            hfig.(planename{plane}).('diff4').Dose,...
+            hfig.(planename{plane}).('diff4').Ct,...
+            hfig.(planename{plane}).('diff4').Contour,...
+            hfig.(planename{plane}).('diff4').IsoDose] = ...
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube4,plane,slicename{plane},windowXY,[],alpha,colorcube,diffCMap,doseDiffWindow,[],100);
         
         set(hfig.(planename{plane}).('fig'),'name',figtitle);
         
@@ -230,23 +239,26 @@ if enable(1)==1
         set(get(hfig.(planename{plane}).('cube1').Axes, 'title'), 'string', 'matRad Homogen');
         
         % matRad_plotAxisLabels(hfig.(planename{plane}).('cube2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'matRad Heterogen');
+        set(get(hfig.(planename{plane}).('cube2').Axes, 'title'), 'string', 'TOPAS p = 0.4');
         
         % matRad_plotAxisLabels(hfig.(planename{plane}).('cube3').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube3').Axes, 'title'), 'string', 'TOPAS Homogen');
+        set(get(hfig.(planename{plane}).('cube3').Axes, 'title'), 'string', 'TOPAS p = 0.27');
         
         % matRad_plotAxisLabels(hfig.(planename{plane}).('cube4').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('cube4').Axes, 'title'), 'string', 'TOPAS Heterogen');
+        set(get(hfig.(planename{plane}).('cube4').Axes, 'title'), 'string', 'TOPAS p = 0.06');
         
         
         %  matRad_plotAxisLabels(hfig.(planename{plane}).('diff1').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff1').Axes, 'title'), 'string', 'matRad Heterogen - matRad Homogen');
+        set(get(hfig.(planename{plane}).('diff1').Axes, 'title'), 'string', 'TOPAS 0.4 - matRad Homogen');
         
         %  matRad_plotAxisLabels(hfig.(planename{plane}).('diff2').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff2').Axes, 'title'), 'string', 'TOPAS - matRad Heterogen');
+        set(get(hfig.(planename{plane}).('diff2').Axes, 'title'), 'string', 'TOPAS 0.27 - TOPAS 0.4');
         
         %  matRad_plotAxisLabels(hfig.(planename{plane}).('diff3').Axes,ct,plane,slicename{plane},[],100);
-        set(get(hfig.(planename{plane}).('diff3').Axes, 'title'), 'string', 'TOPAS Heterogen - TOPAS Homogen');
+        set(get(hfig.(planename{plane}).('diff3').Axes, 'title'), 'string', 'TOPAS 0.06 - TOPAS 0.4');
+        
+        %  matRad_plotAxisLabels(hfig.(planename{plane}).('diff3').Axes,ct,plane,slicename{plane},[],100);
+        set(get(hfig.(planename{plane}).('diff4').Axes, 'title'), 'string', 'TOPAS 0.06 - TOPAS 0.27');
         
     end
 end
