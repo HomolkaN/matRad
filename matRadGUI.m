@@ -157,9 +157,9 @@ handles.Modalities = {'photons','protons','helium','carbon'};
 for i = 1:length(handles.Modalities)
   pattern = [handles.Modalities{1,i} '_*'];
   if isdeployed
-      Files = dir([ctfroot filesep 'matRad' filesep pattern]);
+      Files = dir([ctfroot filesep 'matRad' filesep 'basedata' filesep pattern]);
   else
-      Files = dir([fileparts(mfilename('fullpath')) filesep pattern]);        
+      Files = dir([fileparts(mfilename('fullpath')) filesep 'basedata' filesep pattern]);        
   end
   for j = 1:length(Files)
       if ~isempty(Files)

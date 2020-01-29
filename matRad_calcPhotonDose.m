@@ -195,7 +195,7 @@ isFieldBasedDoseCalc = strcmp(num2str(pln.propStf.bixelWidth),'field');
 % prepare data for convolution to reduce calculation time
 fileName = [pln.radiationMode '_' pln.machine];
 try
-   load([fileparts(mfilename('fullpath')) filesep fileName]);
+   load([fileparts(mfilename('fullpath')) filesep 'basedata' filesep fileName]);
 catch
    matRad_dispToConsole(['Could not find the following machine file: ' fileName ],param,'error');
 end
