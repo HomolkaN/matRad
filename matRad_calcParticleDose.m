@@ -120,7 +120,17 @@ if param.logLevel == 1
 end
 
 % calculate rED or rSP from HU
-ct = matRad_calcWaterEqD(ct, pln, param);
+if  ~isfield(pln,'propDoseCalc') || ...
+    ~isfield(pln.propDoseCalc,'keepWaterEqD') || ...
+    pln.propDoseCalc.keepWaterEqD == false
+
+    ct = matRad_calcWaterEqD(ct, pln, param);
+else
+    if ~isfield(ct,'cube')
+        warning('Can''t keep old rSP cube because it does not exist');
+        ct = matRad_calcWaterEqD(ct, pln, param);
+    end
+end
 
 % meta information for dij
 dij.numOfBeams         = pln.propStf.numOfBeams;
