@@ -119,7 +119,7 @@ carbHetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,carbHomo.w,param);
 
 %% Visualize differences
 % matRad_compareDose(carbHomo.physicalDose,carbHetero.physicalDose,ct,cst,[1 0 0]);
- matRad_compareDose(carbHomo.RBExD,carbHetero.RBExD,ct,cst,[1 0 0]);
+ matRad_compareDose(carbHomo.RBExD,carbHetero.RBExD,ct,ct,cst,[1 0 0]);
 
  
 

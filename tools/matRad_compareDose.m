@@ -118,8 +118,8 @@ if enable(1)==1
         relDoseThreshold = criteria(1); % in [%]
         dist2AgreeMm     = criteria(2); % in [mm]
     else
-        dist2AgreeMm     = 3; % in [mm]
-        relDoseThreshold = 3; % in [%]
+        dist2AgreeMm     = 2; % in [mm]
+        relDoseThreshold = 2; % in [%]
     end
     
     [gammaCube,gammaPassRate] = matRad_gammaIndex(cube1,cube2,resolution,criteria,[],n,localglobal,cst);
