@@ -88,9 +88,9 @@ cst{ixLung,6}.robustness  = 'none';
 
 
 %% Create a CT image series
-xDim = 160;
-yDim = 100;
-zDim = 100;
+xDim = 50;
+yDim = 120;
+zDim = 50;
 
 ct.cubeDim      = [xDim yDim zDim];
 ct.resolution.x = 1;
@@ -100,17 +100,17 @@ ct.numOfCtScen  = 1;
 
 
 %% Lets create either a cubic or a spheric phantom
-iso = [80,50,50];
+iso = [25,95,25];
 offset = -10;
 % create an ct image series with zeros - it will be filled later
-ct.cubeHU{1} = ones(ct.cubeDim) * -1000;
+ct.cubeHU{1} = ones(ct.cubeDim) * -1024;
 ct.cube{1} = ones(ct.cubeDim) * 0.005;
 
 
 centerP_corr = iso - [15+offset,0,0];
-height_corr = 90;
-width_corr = 80;
-depth_corr = 80;
+height_corr = 120;
+width_corr = 50;
+depth_corr = 50;
 
 
 mask = zeros(ct.cubeDim);
@@ -197,5 +197,5 @@ matRad_plotVoiContourSlice(gca,cst,ct.cube,1,[],plane,slice)
 plot(iso(2),iso(1),'x')
 
 %%
-clearvars -except ct cst
-save('BOXPHANTOM_LUNG_NARROW_1mm.mat')
+%clearvars -except ct cst
+%save('BOXPHANTOM_LUNG_NARROW_1mm.mat')
