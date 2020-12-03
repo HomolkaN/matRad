@@ -25,11 +25,27 @@
 % (vii) how to compare the two results
 
 %% set matRad runtime configuration
-matRad_rc
+clear
+
+param.calcDoseDirect = false;
+param.subIx = [];
+param.logLevel = 1;
 
 %% Patient Data Import
-load('BOXPHANTOM_LUNG_PLN');
+load('BOXPHANTOM_LUNG');
+cstDev = cst;
 
+for i = 1:3
+cst{i,6} = struct;
+cst{i,6}.dose  = cstDev{i,6}{1,1}.parameters{1,1};
+cst{i,6}.penalty = cstDev{i,6}{1,1}.penalty;
+cst{i,6}.robustness = 'none';
+end
+
+cst{1,6}.type = 'square overdosing';
+cst{2,6}.type = 'square deviation';  
+cst{3,6}.type = 'square overdosing';
+clear cstDev
 %% Treatment Plan
 % The next step is to define your treatment plan labeled as 'pln'. This 
 % structure requires input from the treatment planner and defines the most
@@ -42,8 +58,9 @@ load('BOXPHANTOM_LUNG_PLN');
 % base data. In order to use heterogeneity correction, the base data must contain
 % the depth information as a struct. For this purpose, matRad features generic base data in the file
 % 'carbon_GenericAPM.mat'; consequently the machine has to be set accordingly
-pln.radiationMode = 'carbon';            
-pln.machine       = 'GenericAPM';
+
+pln.radiationMode   = 'protons';     % either photons / protons / carbon
+pln.machine         = 'generic_TOPAS_cropped_APM';
 
 %%
 % Define the biological optimization model for treatment planning along
@@ -65,6 +82,8 @@ quantityOpt         = 'RBExD';
 
 %%
 % The remaining plan parameters are set like in the previous example files
+pln.numOfFractions = 6;
+
 pln.propStf.gantryAngles  = 0;
 pln.propStf.couchAngles   = 0;
 pln.propStf.bixelWidth    = 10;
@@ -95,10 +114,41 @@ pln.heterogeneity.type = 'complete'; % optional
 pln.heterogeneity.useDoseCurves = true;
 pln.heterogeneity.useOrgDepths = false;
 
-%% Dose Calculation
-% The previously set parameters will be automatically transferred into the
-% dose calculation and checked for consistency. If nothing is specified, it
-% will automatically be disabled.
+%%
+
+stf1 = stf;
+
+%% Selecting the center ray
+for r = 1:length(stf1.ray)
+    if stf1.ray(r).rayPos_bev(1) == 0 && stf1.ray(r).rayPos_bev(2) == 0 && stf1.ray(r).rayPos_bev(3) == 0
+        break
+    end
+end
+
+% for t = 1:length(stf1.ray)
+%     if stf1.ray(t).rayPos_bev(1) == -10 && stf1.ray(t).rayPos_bev(2) == 0 && stf1.ray(t).rayPos_bev(3) == 0
+%         break
+%     end
+% end
+
+
+stf.ray = stf1.ray(r);
+energyIx = round(numel(stf1.ray(r).energy)/2);
+%stf.ray.energy = stf1.ray(1).energy(energyIx);
+stf.ray.energy = stf1.ray(r).energy(energyIx);
+stf.ray.focusIx = stf1.ray(r).focusIx(energyIx);
+stf.ray.rangeShifter = stf1.ray(r).rangeShifter(energyIx);
+
+% stf.ray(2) = stf1.ray(t);
+% energyIx = round(numel(stf1.ray(t).energy)/2);
+% stf.ray(2).energy = stf1.ray(t).energy(energyIx);
+% stf.ray(2).focusIx = stf1.ray(t).focusIx(energyIx);
+% stf.ray(2).rangeShifter = stf1.ray(t).rangeShifter(energyIx);
+stf.numOfRays = 1;
+stf.numOfBixelsPerRay = 1;
+stf.totalNumOfBixels = 1;
+
+%%
 dij = matRad_calcParticleDose(ct,stf,pln,cst,param);
 
 %% Inverse Optimization  for IMPT based on RBE-weighted dose
@@ -119,8 +169,6 @@ carbHetero = matRad_calcDoseDirect(ct,stf,pln,cstHetero,carbHomo.w,param);
 
 %% Visualize differences
 % matRad_compareDose(carbHomo.physicalDose,carbHetero.physicalDose,ct,cst,[1 0 0]);
- matRad_compareDose(carbHomo.RBExD,carbHetero.RBExD,ct,ct,cst,[1 0 0]);
-
- 
+matRad_compareDose(carbHomo.RBExD,carbHetero.RBExD,ct,ct,cst,[1 1 0]);
 
 

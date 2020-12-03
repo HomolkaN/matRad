@@ -1,4 +1,4 @@
-function resultGUI = matRad_calcDoseDirect(ct,stf,pln,cst,w,param,heteroCorrBio)
+function resultGUI = matRad_calcDoseDirect(ct,stf,pln,cst,w,param)
 % matRad dose calculation wrapper bypassing dij calculation
 % 
 % call

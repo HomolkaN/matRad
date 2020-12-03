@@ -100,7 +100,7 @@ else
     
 end
 
-%%  calculate lateral profiles
+%  calculate lateral profiles
 if isfield(baseData,'sigma1')
     
     L_Narr =  exp( -radialDist_sq ./ (2*sigmaSq_Narr))./(2*pi*sigmaSq_Narr); % Gauss

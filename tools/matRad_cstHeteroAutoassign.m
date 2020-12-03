@@ -25,7 +25,8 @@ function [cstHetero] = matRad_cstHeteroAutoassign(cst)
 
 cstHetero = cst;
 % automatically assign the 'Lung' property to these segmentations
-lungTissue={'Lung','GTV','PTV','CTV','ITV'};  
+% lungTissue={'Lung','GTV','PTV','CTV','ITV'};  
+lungTissue={'Lung'};  
 
 for i = 1:length(cst(:,1))
     if contains(cst{i,2},lungTissue)
