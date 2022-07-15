@@ -41,7 +41,7 @@ if nargin < 5
 end
 
 % Check if correct base data is loaded for heterogeneity correction
-if isempty(heteroCorrDepths) && ~isstruct(baseData.Z)
+if ~isempty(heteroCorrDepths) && ~isstruct(baseData.Z)
     matRad_cfg.dispWarning('calcParticleDoseBixel: heterogeneity correction enabled but no APM base data was loaded.')
 end
 

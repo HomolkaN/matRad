@@ -143,7 +143,7 @@ if pln.propDoseCalc.calcLET
         end
         matRad_cfg.dispInfo('LET computation enabled!\n');
     else
-        matRad_cfg.dispWarning('\tLET not available in the machine data. LET will not be calculated.');
+        matRad_cfg.dispWarning('LET not available in the machine data. LET will not be calculated.');
     end
 end
 
