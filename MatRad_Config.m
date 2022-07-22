@@ -177,7 +177,7 @@ classdef MatRad_Config < handle
             obj.propMC.ompMC_defaultOutputVariance = false;
 
             % Set default histories for MonteCarlo here if necessary
-%             obj.propMC.defaultNumHistories = 100;
+            %             obj.propMC.defaultNumHistories = 100;
 
             %obj.propMC.default_photon_engine = 'ompMC';
             obj.propMC.default_proton_engine = 'MatRad_MCsquareConfig';
@@ -362,39 +362,33 @@ classdef MatRad_Config < handle
             for i = 1:length(fields)
                 currField = fields{i};
 
-                % Check if current field is part of a class
-                if ~(isa(pln.(fields{i}),'MatRad_HeterogeneityConfig') || ...
-                        isa(pln.(fields{i}),'MatRad_TopasConfig') || ...
-                        isa(pln.(fields{i}),'MatRad_MCsquareConfig'))
+                if ismember(currField,standardFields)
+                    % Get defaults for standard fields that can easily be read from set default values
+                    if ~isfield(pln,currField)
+                        pln.(currField) = struct();
+                    end
 
-                    if ismember(currField,standardFields)
-                        % Get defaults for standard fields that can easily be read from set default values
-                        if ~isfield(pln,currField)
-                            pln.(currField) = struct();
-                        end
-
-                        fnames = fieldnames(obj.(currField));
-                        for f = 1:length(fnames)
-                            if contains(fnames{f},'default')
-                                cutName = [lower(fnames{f}(8)) fnames{f}(9:end)];
-                                if ~isfield(pln.(currField),cutName)
-                                    pln.(currField).(cutName) = obj.(currField).(fnames{f});
-                                end
-                            else
-                                if ~isfield(pln.(currField),fnames{f})
-                                    pln.(currField).(fnames{f}) = struct();
-                                end
-                                subfields = fieldnames(obj.(currField).(fnames{f}));
-                                for s = 1:length(subfields)
-                                    if contains(subfields{s},'default')
-                                        if length(subfields{s})==8
-                                            cutName = [subfields{s}(8)];
-                                        else
-                                            cutName = [lower(subfields{s}(8)) subfields{s}(9:end)];
-                                        end
-                                        if ~isfield(pln.(currField).(fnames{f}),cutName)
-                                            pln.(currField).(fnames{f}).(cutName) = obj.(currField).(fnames{f}).(subfields{s});
-                                        end
+                    fnames = fieldnames(obj.(currField));
+                    for f = 1:length(fnames)
+                        if contains(fnames{f},'default')
+                            cutName = [lower(fnames{f}(8)) fnames{f}(9:end)];
+                            if ~isfield(pln.(currField),cutName)
+                                pln.(currField).(cutName) = obj.(currField).(fnames{f});
+                            end
+                        else
+                            if ~isfield(pln.(currField),fnames{f})
+                                pln.(currField).(fnames{f}) = struct();
+                            end
+                            subfields = fieldnames(obj.(currField).(fnames{f}));
+                            for s = 1:length(subfields)
+                                if contains(subfields{s},'default')
+                                    if length(subfields{s})==8
+                                        cutName = [subfields{s}(8)];
+                                    else
+                                        cutName = [lower(subfields{s}(8)) subfields{s}(9:end)];
+                                    end
+                                    if ~isfield(pln.(currField).(fnames{f}),cutName)
+                                        pln.(currField).(fnames{f}).(cutName) = obj.(currField).(fnames{f}).(subfields{s});
                                     end
                                 end
                             end
@@ -435,8 +429,8 @@ classdef MatRad_Config < handle
             elseif nargin == 4
 
             elseif nargin < 4 && ~isstruct(pln.(propName))
-                    % get config name from input field
-                    configName = class(pln.(propName));
+                % get config name from input field
+                configName = class(pln.(propName));
             else
                 obj.dispError('Error in default clasee');
             end
