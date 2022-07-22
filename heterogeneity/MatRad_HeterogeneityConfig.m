@@ -389,6 +389,9 @@ classdef MatRad_HeterogeneityConfig < handle
         end
 
         function resultGUI = accumulateOverSamples(~,resultGUI,resultGUI_mod,samples)
+            % Don't accumulate RBE by default
+            accumulateRBE = false;
+
             % Get number of beams from resultGUI_mod
             fnames = fieldnames(resultGUI_mod);
             fnames = fnames(contains(fnames,'beam','IgnoreCase',true));
