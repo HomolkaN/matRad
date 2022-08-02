@@ -1,7 +1,7 @@
 function outTable = matRad_calcTumorQI(cst,varargin)
 % volumePTV = Volume of the PTV segmentation in [mL] or [cc]
 matRad_cfg = MatRad_Config.instance();
-field = 'PTV';
+field = {'PTV','target'};
 meanDose = [];
 
 for i = 1:nargin-1
