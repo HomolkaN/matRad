@@ -138,7 +138,7 @@ classdef MatRad_HeterogeneityConfig < handle
 
             % assign the 'Lung' property to the segmentations containing the string "lung".
             for i = 1:length(cst(:,1))
-                if contains(cst{i,2},lungTissue)
+                if any(cellfun(@(teststr) ~isempty(strfind(cst{i,2},teststr)), lungTissue))
                     cst{i,5}.HeterogeneityCorrection = 'Lung';
                 end
             end
@@ -252,7 +252,7 @@ classdef MatRad_HeterogeneityConfig < handle
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             % get all unique lung indices from lung segmentations
-            idx = contains(cst(:,2),'Lung');
+            idx = cellfun(@(teststr) ~isempty(strfind(cst(:,2),teststr)), {'Lung'});
             if sum(idx)==0
                 obj.matRad_cfg.dispError('No lung segmentation found in cst.\n');
             end
@@ -342,7 +342,7 @@ classdef MatRad_HeterogeneityConfig < handle
 
             % In case of Monte Carlo simulations, the Hounsfield Units have to be adjusted to work with the respective
             % density to material converters.
-            if any(contains(pln.propHeterogeneity.sampling.mode,{'TOPAS','MCsquare'}))
+            if any(cellfun(@(teststr) ~isempty(strfind(pln.propHeterogeneity.sampling.mode,teststr)), {'TOPAS','MCsquare'}))
                 % Only include different densities that are significantly different (1e-3)
                 % This is done to significantly increase the computation time
                 lung = round(ct.cube{1}(lungIdx),3);
@@ -394,10 +394,11 @@ classdef MatRad_HeterogeneityConfig < handle
 
             % Get number of beams from resultGUI_mod
             fnames = fieldnames(resultGUI_mod);
-            fnames = fnames(contains(fnames,'beam','IgnoreCase',true));
+            
+            fnames = fnames(cellfun(@(teststr) ~isempty(strfind(teststr,'beam')), fnames));
             fnames = cellfun(@(x) strsplit(x,'_'), fnames, 'UniformOutput', false);
             fnames = [fnames{:,1}];
-            fnames = erase(unique(fnames(contains(fnames,'beam','IgnoreCase',true))),'beam');
+            fnames = erase(unique(fnames(cellfun(@(teststr) ~isempty(strfind(teststr,'beam')), fnames))),'beam');
             numOfBeams = max(cellfun(@(x) str2double(x), fnames));
 
             % get beam info
@@ -407,7 +408,7 @@ classdef MatRad_HeterogeneityConfig < handle
             beamInfo(numOfBeams+1).suffix = '';
 
             % Load RBE models if MonteCarlo was calculated for multiple models
-            if any(contains(fieldnames(resultGUI_mod),'RBExD'))
+            if any(cellfun(@(teststr) ~isempty(strfind(teststr,'RBExD')), fieldnames(resultGUI_mod)))
                 accumulateRBE = true;
             end
 

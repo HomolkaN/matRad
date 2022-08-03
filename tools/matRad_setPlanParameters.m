@@ -21,7 +21,7 @@ pln.propStf.longitudinalSpotSpacing = 1;
 
 pln.numOfFractions = 30;
 
-target = find(contains(cst(:,3),'TARGET'));
+target = find(cellfun(@(teststr) ~isempty(strfind(lower(teststr),lower('TARGET'))), cst(:,3)));
 if ~iscell(cst{target(1),6})
     cst = matRad_computeVoiContoursWrapper(cst,ct);
 end
@@ -39,7 +39,7 @@ s = split(baseData,'_');
 pln.radiationMode   = s{1};
 pln.machine = strjoin(s(2:end),'_');
 
-if contains(RBE_model,{'WED','MCN','LEM','RBE','HEL'})
+if any(cellfun(@(teststr) ~isempty(strfind(lower(RBE_model),lower(teststr))), {'WED','MCN','LEM','RBE','HEL'}))
     quantityOpt                 = 'RBExD';
     pln.propOpt.bioOptimization = 'RBExD';
 else

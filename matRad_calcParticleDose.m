@@ -82,7 +82,8 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
         matRad_cfg.dispInfo('Done!\n');
     end
 
-    lungVoxel = unique(cell2mat([cstOriginal{contains(cst(:,2),'lung','IgnoreCase',true),4}]'),'rows'); % get all lung voxel indices
+    % get all lung voxel indices
+    lungVoxel = unique(cell2mat([cstOriginal{cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lung')), cst(:,2)),4}]'),'rows');
     calcHeteroCorrStruct.cubeDim = ct.cubeDim;
     calcHeteroCorrStruct.numOfCtScen = pln.multScen.numOfCtScen;
     calcHeteroCorrStruct.resolution = ct.resolution;

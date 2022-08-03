@@ -10,7 +10,7 @@ pln.prescribedDose = prescriptionDose;
 
 for c = 1:size(cst,1)
     if ~isempty(cst{c,6})
-        if contains(cst{c,3},{'TARGET'})
+        if ~isempty(strfind(lower(cst{c,3}),lower('TARGET')))
                 cst{c,6}{1,1}.parameters{1,1} = prescriptionDose;
         else
                 cst{c,6}{1,1}.parameters{1,1} = prescriptionDose/12;
