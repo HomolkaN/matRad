@@ -30,7 +30,6 @@ classdef MatRad_MCemittanceBaseData
         smy             %Scanning magnet y to isocenter Distance
         monteCarloData  %MC Phase space data struct
         selectedFocus   %array containing selected focus indices per energy
-        FWHMatIso       %array containing FWHM values at iscenter for every energy
         energyspread    %custom energy spread
         rangeShifters   %Stores range shifters
     end
