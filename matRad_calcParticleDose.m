@@ -222,7 +222,7 @@ if pln.bioParam.bioOpt
             matRad_cfg.dispInfo('Done!\n');
 
         else
-            matRad_cfg.dispError('base data is incomplement - alphaX and/or betaX is missing');
+            matRad_cfg.dispError('base data is incomplete - alphaX and/or betaX is missing');
         end
 
     else
