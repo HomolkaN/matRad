@@ -63,7 +63,7 @@ classdef MatRad_HeterogeneityConfig < handle
             out = (1./sqrt(2*pi*ones(numel(x),1) .* SqSigma') .* exp(-bsxfun(@minus,x,mu').^2 ./ (2* ones(numel(x),1) .* SqSigma' ))) * w;
         end
 
-        function sigmaSq = getHeterogeneityCorrSigmaSq(obj,WET)
+        function sigmaSq = getHeterogeneityCorrSigmaSq(obj,WET,Pmod)
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % matRad calculation of Bragg peak degradation due to heterogeneities
             %
@@ -103,8 +103,11 @@ classdef MatRad_HeterogeneityConfig < handle
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+            if nargin < 3
+                Pmod = obj.modPower;
+            end
             % output sigma^2 in mm^2
-            sigmaSq = obj.modPower/1000 .* WET;
+            sigmaSq = Pmod/1000 .* WET;
         end
 
         function cst = cstHeteroAutoassign(~,cst)
@@ -252,7 +255,7 @@ classdef MatRad_HeterogeneityConfig < handle
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             % get all unique lung indices from lung segmentations
-            idx = cellfun(@(teststr) ~isempty(strfind(cst(:,2),teststr)), {'Lung'});
+            idx = cellfun(@(teststr) ~isempty(strfind('lung',lower(teststr))), lower(cst(:,2)));
             if sum(idx)==0
                 obj.matRad_cfg.dispError('No lung segmentation found in cst.\n');
             end
