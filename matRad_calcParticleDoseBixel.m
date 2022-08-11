@@ -188,11 +188,15 @@ if propHeterogeneity.bioOpt
             LET = matRad_interp1(bixel.heteroCorr.coarseGrid,baseData.LET,bixel.heteroCorr.fineGrid,'extrap');
             LET(isnan(LET)) = 0;
 
-            % Convolution
-            bixel.LET = conv(LET,bixel.heteroCorr.Gauss,'same');
+            if bixel.heteroCorr.SigmaSq ~= 0
+                % Convolution
+                bixel.LET = conv(LET,bixel.heteroCorr.Gauss,'same');
 
-            % get values for individual radDepths
-            bixel.LET = matRad_interp1(bixel.heteroCorr.fineGrid,bixel.LET,radDepths,'extrap');
+                % get values for individual radDepths
+                bixel.LET = matRad_interp1(bixel.heteroCorr.fineGrid,bixel.LET,radDepths,'extrap');
+            else
+                bixel.LET = matRad_interp1(bixel.heteroCorr.fineGrid,baseData.LET,radDepths,'extrap');
+            end
             %      figure, plot(x,LET), hold on, plot(x,bixel.LET)
         end
 
@@ -209,12 +213,12 @@ if propHeterogeneity.bioOpt
             if isfield(baseData,'alphaDose') && isstruct(baseData.alphaDose)
                 for i = 1:numel(tissueClasses)
                     ix = vTissueIndex == tissueClasses(i);
-                    bixel.Z_Aij(ix)  = conversionFactor * baseData.LatCutOff.CompFac * ...
+                    bixel.Z_Aij(ix)  = conversionFactor * ...
                         propHeterogeneity.sumGauss(radDepths(ix),baseData.alphaDose(tissueClasses(i)).mean,...
                         (baseData.alphaDose(tissueClasses(i)).width).^2 + bixel.heteroCorr.SigmaSq, ...
                         baseData.alphaDose(tissueClasses(i)).weight);
 
-                    bixel.Z_Bij(ix)  = conversionFactor * baseData.LatCutOff.CompFac * ...
+                    bixel.Z_Bij(ix)  = conversionFactor * ...
                         propHeterogeneity.sumGauss(radDepths(ix),baseData.SqrtBetaDose(tissueClasses(i)).mean,...
                         (baseData.SqrtBetaDose(tissueClasses(i)).width).^2 + bixel.heteroCorr.SigmaSq, ...
                         baseData.SqrtBetaDose(tissueClasses(i)).weight)';
@@ -244,9 +248,9 @@ if propHeterogeneity.bioOpt
 
                 for i = 1:numel(tissueClasses)
                     ix = vTissueIndex == tissueClasses(i);
-                    bixel.Z_Aij(ix) = conversionFactor * baseData.LatCutOff.CompFac * ...
+                    bixel.Z_Aij(ix) = conversionFactor * ...
                         matRad_interp1(bixel.heteroCorr.fineGrid,alphaDoseConv(:,tissueClasses(i)),radDepths(ix),'extrap');
-                    bixel.Z_Bij(ix) = conversionFactor * baseData.LatCutOff.CompFac * ...
+                    bixel.Z_Bij(ix) = conversionFactor * ...
                         matRad_interp1(bixel.heteroCorr.fineGrid,sqrtBetaDoseConv(:,tissueClasses(i)),radDepths(ix),'extrap');
                 end
 

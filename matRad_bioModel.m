@@ -418,11 +418,10 @@ classdef matRad_bioModel
                case {'protons_MCN'}
 
                   if exist('LETin','var') && ~isempty(LETin)
-                      LET = LETin;
+                      bixelLET = LETin;
                   else
-                      LET = baseDataEntry.LET;
+                      bixelLET = matRad_interp1(depths,baseDataEntry.LET,vRadDepths);
                   end
-                  bixelLET = matRad_interp1(depths,LET,vRadDepths);
                   bixelLET(isnan(bixelLET)) = 0;
                    
                   RBEmax     = this.p0_MCN + ((this.p1_MCN * bixelLET )./ vABratio);
@@ -433,11 +432,10 @@ classdef matRad_bioModel
                case {'protons_WED'}
                   
                   if exist('LETin','var') && ~isempty(LETin)
-                      LET = LETin;
+                      bixelLET = LETin;
                   else
-                      LET = baseDataEntry.LET;
+                      bixelLET = matRad_interp1(depths,baseDataEntry.LET,vRadDepths);
                   end
-                  bixelLET = matRad_interp1(depths,LET,vRadDepths);
                   bixelLET(isnan(bixelLET)) = 0;
                   
                   RBEmax     = this.p0_WED + ((this.p1_WED * bixelLET )./ vABratio);
