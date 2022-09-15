@@ -255,7 +255,7 @@ classdef MatRad_HeterogeneityConfig < handle
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             % get all unique lung indices from lung segmentations
-            idx = cellfun(@(teststr) ~isempty(strfind('lung',lower(teststr))), lower(cst(:,2)));
+            idx = cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lung')), cst(:,2));
             if sum(idx)==0
                 obj.matRad_cfg.dispError('No lung segmentation found in cst.\n');
             end

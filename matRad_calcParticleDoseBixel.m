@@ -195,7 +195,7 @@ if propHeterogeneity.bioOpt
                 % get values for individual radDepths
                 bixel.LET = matRad_interp1(bixel.heteroCorr.fineGrid,bixel.LET,radDepths,'extrap');
             else
-                bixel.LET = matRad_interp1(bixel.heteroCorr.fineGrid,baseData.LET,radDepths,'extrap');
+                bixel.LET = matRad_interp1(bixel.heteroCorr.fineGrid,LET,radDepths,'extrap');
             end
             %      figure, plot(x,LET), hold on, plot(x,bixel.LET)
         end

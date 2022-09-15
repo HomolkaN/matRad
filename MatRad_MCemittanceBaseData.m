@@ -117,7 +117,6 @@ classdef MatRad_MCemittanceBaseData
                 %index
                 data = [];
                 energyData = obj.fitPhaseSpaceForEnergy(i);
-                obj.FWHMatIso = [];
                 for j = 1:size(machine.data(i).initFocus.sigma,1)
                     
                     tmp = energyData;
