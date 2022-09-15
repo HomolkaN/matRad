@@ -1983,6 +1983,10 @@ classdef MatRad_TopasConfig < handle
                         fprintf(fID,'s:Ge/Patient/Parent="World"\n');
                         fprintf(fID,'s:Ge/Patient/Type = "TsImageCube"\n');
                         fprintf(fID,'b:Ge/Patient/DumpImagingValues = "True"\n');
+                        if ~(isfield(ct,'modulated') && ct.modulated)
+                            fprintf(fID,'b:Ge/Patient/SchneiderUseVariableDensityMaterials = "True"\n');
+                            fprintf(fID,'b:Ge/Patient/PreLoadAllMaterials = "True"\n');   
+                        end
                         fprintf(fID,'s:Ge/Patient/InputDirectory = "./"\n');
                         fprintf(fID,'s:Ge/Patient/InputFile = "%s"\n',dataFile);
                         fprintf(fID,'s:Ge/Patient/ImagingtoMaterialConverter = "Schneider"\n');
