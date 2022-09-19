@@ -325,7 +325,10 @@ classdef MatRad_MCemittanceBaseData
                 count = count + 1;
             end
             machine = obj.machine;
-            save(strcat('../../', machineName, '.mat'),'machine');
+            machineFilePath = fullfile(obj.matRad_cfg.matRadRoot,'basedata',[machineName '.mat']);
+
+            save(machineFilePath,'machine');
+            obj.matRad_cfg.dispInfo('Saved Emittance to matRad base data in %s\n',machineFilePath);
         end
     end 
     
