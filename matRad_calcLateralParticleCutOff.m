@@ -142,7 +142,7 @@ for energyIx = vEnergiesIx
         cumIntEnergy(peakIxOrg+1):energyStepsTail:cumIntEnergy(end) cumIntEnergy(end)]);
 
     [cumIntEnergy,ix] = unique(cumIntEnergy);
-    depthValues       = matRad_interp1(cumIntEnergy,machine.data(energyIx).depths(ix),vEnergySteps);
+    depthValues       = matRad_interp1(cumIntEnergy,machine.data(energyIx).depths(ix),vEnergySteps');
 
     if isstruct(machine.data(energyIx).Z)
         idd = heterogeneityConfig.sumGauss(depthValues,machine.data(energyIx).Z.mean,...
