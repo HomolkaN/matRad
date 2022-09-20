@@ -85,11 +85,8 @@ switch pln.propMC.engine
         dij = matRad_calcParticleDoseMCtopas(ct,stf,pln,cst,calcDoseDirect);
 end
 
-%dij.numOfBeams = size(stf,2);
-% dij.beamNum = [1:size(stf,2)]';
-
 % calc resulting dose
-if ~pln.propMC.externalCalculation
+if ~isfield(pln.propMC,'externalCalculation') || ~pln.propMC.externalCalculation
     if pln.multScen.totNumScen == 1
         % calculate cubes; use uniform weights here, weighting with actual fluence
         % already performed in dij construction
@@ -129,7 +126,7 @@ end
 if isfield(dij,'nbHistoriesTotal')
     resultGUI.nbHistoriesTotal = dij.nbHistoriesTotal;
     resultGUI.nbParticlesTotal = dij.nbParticlesTotal;
-else
+elseif isfield(pln.propMC,'numHistories')
     resultGUI.historiesMC = pln.propMC.numHistories;
 end
 

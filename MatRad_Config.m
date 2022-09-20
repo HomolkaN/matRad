@@ -163,7 +163,7 @@ classdef MatRad_Config < handle
             obj.propStf.defaultLongitudinalSpotSpacing = 2;
             obj.propStf.defaultAddMargin = true; %expand target for beamlet finding
 
-            obj.propDoseCalc.defaultResolution = struct('x',3,'y',3,'z',3); %[mm]
+            obj.propDoseCalc.doseGrid.defaultResolution = struct('x',3,'y',3,'z',3); %[mm]
             obj.propDoseCalc.defaultLateralCutOff = 0.995; %[rel.]
             obj.propDoseCalc.defaultGeometricCutOff = 50; %[mm]
             obj.propDoseCalc.defaultSsdDensityThreshold = 0.05; %[rel.]

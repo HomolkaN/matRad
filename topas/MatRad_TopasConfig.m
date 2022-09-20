@@ -219,9 +219,14 @@ classdef MatRad_TopasConfig < handle
                 end
 
                 % Get alpha beta parameters from bioParam struct
-                for i = 1:length(pln.bioParam.AvailableAlphaXBetaX)
-                    if ~isempty(strfind(lower(pln.bioParam.AvailableAlphaXBetaX{i,2}),'default'))
-                        break
+                if all(isfield(pln.propMC,{'AlphaX','BetaX'}))
+                    obj.bioParam.AlphaX = pln.propMC.AlphaX;
+                    obj.bioParam.BetaX = pln.propMC.BetaX;
+                else
+                    for i = 1:length(pln.bioParam.AvailableAlphaXBetaX)
+                        if ~isempty(strfind(lower(pln.bioParam.AvailableAlphaXBetaX{i,2}),'default'))
+                            break
+                        end
                     end
                 end
                 obj.bioParam.AlphaX = pln.bioParam.AvailableAlphaXBetaX{5,1}(1);
@@ -233,9 +238,11 @@ classdef MatRad_TopasConfig < handle
             end
 
             % Set material converter properties
-            fnames = fieldnames(pln.propMC.materialConverter);
-            for f = 1:length(fnames)
-                obj.materialConverter.(fnames{f}) = pln.propMC.materialConverter.(fnames{f});
+            if isfield(pln,'propMC') && isfield(pln.propMC,'materialConverter')
+                fnames = fieldnames(pln.propMC.materialConverter);
+                for f = 1:length(fnames)
+                    obj.materialConverter.(fnames{f}) = pln.propMC.materialConverter.(fnames{f});
+                end
             end
 
             % create TOPAS working directory if not set
@@ -494,7 +501,6 @@ classdef MatRad_TopasConfig < handle
             % LICENSE file.
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
             % Process input folder(s)
             if ~isempty(strfind(folder,'*'))% && all(modulation ~= false)
                 folder = dir(folder);
@@ -556,6 +562,7 @@ classdef MatRad_TopasConfig < handle
 
         end
     end
+    
     methods (Access = private)
         function resultGUI = markFieldsAsEmpty(~,resultGUI)
 
@@ -1875,7 +1882,6 @@ classdef MatRad_TopasConfig < handle
                                         addSection = [];
                                     end
                                 otherwise
-                                    addSection = [];
                             end
                             if exist('addSection','var') && ~isempty(addSection)
                                 densityCorrection.density(end+1:end+numel(addSection)) = addSection;
@@ -1884,8 +1890,6 @@ classdef MatRad_TopasConfig < handle
                             % define Hounsfield Unit Sections
                             if ~(isfield(ct,'modulated') && ct.modulated)
                                 ct.sampledDensities = [];
-                            end
-                            switch obj.materialConverter.HUSection
                                 case 'default'
                                     densityCorrection.unitSections = [densityCorrection.boundaries];
                                     densityCorrection.offset = 1;
