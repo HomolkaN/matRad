@@ -261,11 +261,20 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
 
         % Calculate radiological depth cube for heterogeneity correction
         if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
+            matRad_cfg.dispInfo('matRad: calculate radiological depth cube for heterogeneity correction...');
+            heteroCorrDepthV = matRad_rayTracing(stf(i),calcHeteroCorrStruct,VctGrid,rot_coordsV,pln.propDoseCalc.effectiveLateralCutOff);
+
             % HETERO interpolate hetero depth cube to dose grid resolution
             heteroCorrDepthV = matRad_interpRadDepth...
                 (ct,VctGrid,VdoseGrid,dij.doseGrid.x,dij.doseGrid.y,dij.doseGrid.z,heteroCorrDepthV);
             matRad_cfg.dispInfo('Done!\n');
         end
+
+        % Determine lateral cutoff
+        matRad_cfg.dispInfo('matRad: calculate lateral cutoff...');
+        visBoolLateralCutOff = 0;
+        machine = matRad_calcLateralParticleCutOff(machine,pln.propDoseCalc.lateralCutOff,stf(i),visBoolLateralCutOff);
+        matRad_cfg.dispInfo('Done!\n');
 
         for j = 1:stf(i).numOfRays % loop over all rays
 
@@ -325,9 +334,9 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                 else
                     vTissueIndex_j = zeros(size(ix));
                 end
-                             
+
                 for k = 1:stf(i).numOfBixelsPerRay(j) % loop over all bixels per ray
-                                    
+
                     counter       = counter + 1;
                     bixelsPerBeam = bixelsPerBeam + 1;
 
@@ -349,23 +358,23 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         dij.beamNum(counter)  = i;
                         dij.rayNum(counter)   = j;
                         dij.bixelNum(counter) = k;
-                        
+
                         % extract MU data if present (checks for downwards compatability)
                         minMU = 0;
                         if isfield(stf(i).ray(j),'minMU')
                             minMU = stf(i).ray(j).minMU(k);
                         end
-    
+
                         maxMU = Inf;
                         if isfield(stf(i).ray(j),'maxMU')
                             maxMU = stf(i).ray(j).maxMU(k);
                         end
-    
+
                         numParticlesPerMU = 1e6;
                         if isfield(stf(i).ray(j),'numParticlesPerMU')
                             numParticlesPerMU = stf(i).ray(j).numParticlesPerMU(k);
                         end
-    
+
                         dij.minMU(counter,1) = minMU;
                         dij.maxMU(counter,1) = maxMU;
                         dij.numParticlesPerMU(counter,1) = numParticlesPerMU;
@@ -398,7 +407,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                             [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
                             -posX(:,k), -posZ(:,k), rotMat_system_T);
                     end
-                    
+
                     % We do now loop over scenarios that alter voxel
                     % values, e.g. range scenarios or ct phases, as we can
                     % vectorize computations more efficiently than when
@@ -406,7 +415,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                     for ctScen = 1:pln.multScen.numOfCtScen
                         if any(any(pln.multScen.scenMask(ctScen,:,:))) %We don't need it if no scenario for this ct scenario is relevant
                             % precomputations for fine-sampling
-                            if strcmp(pln.propDoseCalc.fineSampling.calcMode, 'fineSampling')   
+                            if strcmp(pln.propDoseCalc.fineSampling.calcMode, 'fineSampling')
                                 % compute radial distances relative to pencil beam
                                 % component
                                 currRadialDist_sq = reshape(bsxfun(@plus,latDistsX,posX(:,k)'),[],1,numOfSub(k)).^2 + reshape(bsxfun(@plus,latDistsZ,posZ(:,k)'),[],1,numOfSub(k)).^2;
@@ -448,7 +457,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
 
                                 % empty bixels may happen during recalculation of error
                                 % scenarios -> skip to next bixel
-                                if ~any(currIx) 
+                                if ~any(currIx)
                                     %Create empty container entries for
                                     %this bixel
                                     doseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,ctScen,shiftScen,rangeShiftScen} = sparse(dij.doseGrid.numOfVoxels,1);
@@ -459,7 +468,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                         alphaDoseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,ctScen,shiftScen,rangeShiftScen} = sparse(VdoseGrid(ix(currIx)),1,bixelAlpha.*bixelDose,dij.doseGrid.numOfVoxels,1);
                                         betaDoseTmpContainer{mod(counter-1,numOfBixelsContainer)+1,ctScen,shiftScen,rangeShiftScen}  = sparse(VdoseGrid(ix(currIx)),1,sqrt(bixelBeta).*bixelDose,dij.doseGrid.numOfVoxels,1);
                                     end
-                                    
+
                                     %skip bixel
                                     continue;
                                 end
@@ -467,7 +476,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                 % adjust radDepth according to range shifter
                                 if  pln.propDoseCalc.airOffsetCorrection
                                     currRadDepths(currIx) = currRadDepths(currIx) + stf(i).ray(j).rangeShifter(k).eqThickness + dR;
-                                    
+
                                     %sanity check due to negative corrections
                                     currRadDepths(currRadDepths < 0) = 0;
                                 else
@@ -507,12 +516,11 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                     % run over components
                                     for c = 1:numOfSub(k)
                                         tmpDose = zeros(size(currIx,1),1);
-                                        bixel = finalWeight(c,k).*...
-                                            matRad_calcParticleDoseBixel(...
-                                                currRadDepths(currIx(:,:,c),1,c), ...
-                                                currRadialDist_sq(currIx(:,:,c),:,c), ...
-                                                sigmaSub(k)^2, ...
-                                                machine.data(energyIx));
+                                        bixel = matRad_calcParticleDoseBixel(...
+                                            currRadDepths(currIx(:,:,c),1,c), ...
+                                            currRadialDist_sq(currIx(:,:,c),:,c), ...
+                                            sigmaSub(k)^2, ...
+                                            machine.data(energyIx));
                                         bixelDose = finalWeight(c,k).* bixel.physDose;
 
                                         tmpDose(currIx(:,:,c)) = bixelDose;
@@ -542,10 +550,10 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                                             vTissueIndex_j(currIx));
                                     else
                                         bixelDose = matRad_calcParticleDoseBixel(...
-                                        currRadDepths(currIx), ...
-                                        currRadialDist_sq(currIx), ...
-                                        sigmaIni_sq, ...
-                                        machine.data(energyIx));
+                                            currRadDepths(currIx), ...
+                                            currRadialDist_sq(currIx), ...
+                                            sigmaIni_sq, ...
+                                            machine.data(energyIx));
                                     end
 
                                     % dij sampling is exluded for particles until we investigated the influence of voxel sampling for particles
