@@ -47,6 +47,8 @@ end
 % toggle rewriting stf if stf is an input
 if exist('stf','var') && nargout > 1
     calcStf = true;
+else
+    calcStf = false;
 end
 
 %% calculate new spots
@@ -87,7 +89,7 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
     [~,beamNumIdx] = unique(dij.beamNum);
     beamNumIdx = [beamNumIdx-1;dij.totalNumOfBixels];
     
-    % loop through 
+    % loop through
     for b = 1:dij.numOfBeams
         % calculate rays and indices in current beam
         currRaysInBeam = dij.rayNum(beamNumIdx(b)+1:beamNumIdx(b+1));
@@ -100,9 +102,16 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
         % write new stf
         if calcStf
             % calculate number of bixels in each ray
-            numOfBixelsPerRay = groupcounts(currRaysInBeam);
+            switch matRad_cfg.env
+                case 'MATLAB'
+                    numOfBixelsPerRay = groupcounts(currRaysInBeam);
+                case 'OCTAVE'
+                    elemts            = unique(currRaysInBeam); % MY ADDITION FOR OCTAVE
+                    numOfBixelsPerRay = histc(currRaysInBeam, elemts); %MY ADDITION FOR OCTAVE
+            end
+
             stf(b).numOfBixelsPerRay = numOfBixelsPerRay';
-            stf(b).totalNumOfBixels = sum(stf(b).numOfBixelsPerRay);     
+            stf(b).totalNumOfBixels = sum(stf(b).numOfBixelsPerRay);
 
             % check if any rays have completely been removed and rewrite to stf
             cutRays = ismember((1:dij.numOfRaysPerBeam(b))',rayCnt);
