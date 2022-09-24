@@ -56,25 +56,27 @@ end
 % become apparent at about 5%, therefore 3% was chosen.
 if ~exist('thres','var')
     thres = 0.03;
-%     thres = 0.00001;
+    %     thres = 0.00001;
 end
 
 % save spots that have larger weight than the set threshold
 newSpots = w>thres*mean(w);
 % newSpots = w>thres*max(w);
 
-
 %% rewrite dij and stf with new spots
 if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any(size(w)>1)
     % save new weights
     dij.cutWeights = w(newSpots);
-    
-    % update bixel book-keeping 
+
+    % update bixel book-keeping
     dij.bixelNum = dij.bixelNum(newSpots);
     dij.rayNum = dij.rayNum(newSpots);
     dij.beamNum = dij.beamNum(newSpots);
     dij.totalNumOfBixels = sum(newSpots);
-    
+
+    % Freshly initialize numOfRaysPerBeam
+    dij.numOfRaysPerBeam = [];
+
     % cut out columns in already calculated sparse matrices
     dij.physicalDose{1} = dij.physicalDose{1}(:,newSpots);
     if isfield(dij,'mAlphaDose')
@@ -85,63 +87,77 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
         dij.mLETDose{1} = dij.mLETDose{1}(:,newSpots);
     end
 
-    % save starting and ending indices of each beam in the weight vector
-    [~,beamNumIdx] = unique(dij.beamNum);
-    beamNumIdx = [beamNumIdx-1;dij.totalNumOfBixels];
-    
-    % loop through
+    % loop through beams
     for b = 1:dij.numOfBeams
-        % calculate rays and indices in current beam
-        currRaysInBeam = dij.rayNum(beamNumIdx(b)+1:beamNumIdx(b+1));
-        currBixelsInRay = dij.bixelNum(beamNumIdx(b)+1:beamNumIdx(b+1));
-        [rayCnt,rayIdx] = unique(currRaysInBeam);
 
-        % save number of rays in current beam
-        dij.numOfRaysPerBeam(b) = numel(rayCnt);
+        % check if any beams have been completely removed and skip those
+        if sum(dij.beamNum == b) ~= 0
+            % calculate rays and indices in current beam
+            currRaysInBeam = dij.rayNum(dij.beamNum == b);
+            currBixelsInRay = dij.bixelNum(dij.beamNum == b);
+            [rayCnt,rayIdx] = unique(currRaysInBeam);
 
-        % write new stf
-        if calcStf
-            % calculate number of bixels in each ray
-            switch matRad_cfg.env
-                case 'MATLAB'
-                    numOfBixelsPerRay = groupcounts(currRaysInBeam);
-                case 'OCTAVE'
-                    elemts            = unique(currRaysInBeam); % MY ADDITION FOR OCTAVE
-                    numOfBixelsPerRay = histc(currRaysInBeam, elemts); %MY ADDITION FOR OCTAVE
+            % save number of rays in current beam
+            dij.numOfRaysPerBeam(b) = numel(rayCnt);
+
+            % write new stf
+            if calcStf
+                % calculate number of bixels in each ray
+                switch matRad_cfg.env
+                    case 'MATLAB'
+                        numOfBixelsPerRay = groupcounts(currRaysInBeam);
+                    case 'OCTAVE'
+                        elemts            = unique(currRaysInBeam); % MY ADDITION FOR OCTAVE
+                        numOfBixelsPerRay = histc(currRaysInBeam, elemts); %MY ADDITION FOR OCTAVE
+                end
+
+                stf(b).numOfBixelsPerRay = numOfBixelsPerRay';
+                stf(b).totalNumOfBixels = sum(stf(b).numOfBixelsPerRay);
+
+                % check if any rays have been completely removed and rewrite to stf
+                cutRays = ismember((1:stf(b).numOfRays)',rayCnt);
+                if any(~cutRays)
+                    stf(b).ray = stf(b).ray(cutRays);
+                    stf(b).numOfRays = sum(cutRays);
+                end
+
+                % loop through new rays and write beam parameters for bixels that have not been removed
+                for i = 1:stf(b).numOfRays
+                    bixelCurrRay = currBixelsInRay(rayIdx(i):rayIdx(i)+numOfBixelsPerRay(i)-1);
+
+                    % get fields that need to be replaced
+                    fnames = fieldnames(stf(b).ray(i));
+                    currFields = find(contains(fnames,{'numParticlesPerMU','minMU','maxMU','energy','focusIx','rangeShifter'}));
+                    for fieldIx = 1:numel(currFields)
+                        stf(b).ray(i).(fnames{currFields(fieldIx)}) = stf(b).ray(i).(fnames{currFields(fieldIx)})(bixelCurrRay);
+                    end
+
+                end
+
+            end
+        else
+            % Output warning for deleted beams and delete those beams from the new dij (and stf)
+            matRad_cfg.dispWarning(['Beam ' num2str(b) ' has been deleted completely.'])
+
+            if calcStf
+                stf(b) = [];
             end
 
-            stf(b).numOfBixelsPerRay = numOfBixelsPerRay';
-            stf(b).totalNumOfBixels = sum(stf(b).numOfBixelsPerRay);
-
-            % check if any rays have completely been removed and rewrite to stf
-            cutRays = ismember((1:dij.numOfRaysPerBeam(b))',rayCnt);
-
-            if any(~cutRays)
-                stf(b).ray = stf(b).ray(cutRays);
-                stf(b).numOfRays = sum(cutRays);
-            end
-
-            % loop through rays and write beam parameters
-            for i = 1:stf(b).numOfRays
-                bixelCurrRay = currBixelsInRay(rayIdx(i):rayIdx(i)+numOfBixelsPerRay(i)-1);
-
-                stf(b).ray(i).energy = stf(b).ray(i).energy(bixelCurrRay);
-                stf(b).ray(i).focusIx = stf(b).ray(i).focusIx(bixelCurrRay);
-                stf(b).ray(i).rangeShifter = stf(b).ray(i).rangeShifter(bixelCurrRay);
-            end
         end
     end
-    
+
     % update total number of rays
     dij.totalNumOfRays = sum(dij.numOfRaysPerBeam);
 
     % save number of removed spots and output to console (as warning to be visible)
     dij.numOfRemovedSpots = sum(~newSpots);
     matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the mean weight.\n'])
+
 else
     % output warning to console
     matRad_cfg.dispWarning('no spots have been removed.')
     dij.cutWeights = w;
+
 end
 end
 
