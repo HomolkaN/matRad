@@ -127,7 +127,7 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
 
                     % get fields that need to be replaced
                     fnames = fieldnames(stf(b).ray(i));
-                    currFields = find(contains(fnames,{'numParticlesPerMU','minMU','maxMU','energy','focusIx','rangeShifter'}));
+                    currFields = find(ismember(fnames,{'numParticlesPerMU','minMU','maxMU','energy','focusIx','rangeShifter'}));
                     for fieldIx = 1:numel(currFields)
                         stf(b).ray(i).(fnames{currFields(fieldIx)}) = stf(b).ray(i).(fnames{currFields(fieldIx)})(bixelCurrRay);
                     end
