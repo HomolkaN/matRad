@@ -1870,6 +1870,10 @@ classdef MatRad_TopasConfig < handle
 
                             end
                             % define additional density sections
+                            % Set sampledDensities to empty if no modulated CT is parsed
+                            if ~(isfield(ct,'modulated') && ct.modulated)
+                                ct.sampledDensities = [];
+                            end
                             switch obj.materialConverter.addSection
                                 case 'lung'
                                     addSection = [0.00012 1.05];
@@ -1888,8 +1892,7 @@ classdef MatRad_TopasConfig < handle
                                 densityCorrection.boundaries(end+1) = densityCorrection.boundaries(end)+numel(addSection);
                             end
                             % define Hounsfield Unit Sections
-                            if ~(isfield(ct,'modulated') && ct.modulated)
-                                ct.sampledDensities = [];
+                            switch obj.materialConverter.HUSection
                                 case 'default'
                                     densityCorrection.unitSections = [densityCorrection.boundaries];
                                     densityCorrection.offset = 1;
