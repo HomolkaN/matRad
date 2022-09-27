@@ -219,14 +219,9 @@ classdef MatRad_TopasConfig < handle
                 end
 
                 % Get alpha beta parameters from bioParam struct
-                if all(isfield(pln.propMC,{'AlphaX','BetaX'}))
-                    obj.bioParam.AlphaX = pln.propMC.AlphaX;
-                    obj.bioParam.BetaX = pln.propMC.BetaX;
-                else
-                    for i = 1:length(pln.bioParam.AvailableAlphaXBetaX)
-                        if ~isempty(strfind(lower(pln.bioParam.AvailableAlphaXBetaX{i,2}),'default'))
-                            break
-                        end
+                for i = 1:length(pln.bioParam.AvailableAlphaXBetaX)
+                    if ~isempty(strfind(lower(pln.bioParam.AvailableAlphaXBetaX{i,2}),'default'))
+                        break
                     end
                 end
                 obj.bioParam.AlphaX = pln.bioParam.AvailableAlphaXBetaX{5,1}(1);
@@ -235,14 +230,6 @@ classdef MatRad_TopasConfig < handle
             end
             if obj.scorer.LET
                 obj.scorer.doseToMedium = true;
-            end
-
-            % Set material converter properties
-            if isfield(pln,'propMC') && isfield(pln.propMC,'materialConverter')
-                fnames = fieldnames(pln.propMC.materialConverter);
-                for f = 1:length(fnames)
-                    obj.materialConverter.(fnames{f}) = pln.propMC.materialConverter.(fnames{f});
-                end
             end
 
             % create TOPAS working directory if not set
