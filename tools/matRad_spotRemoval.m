@@ -74,6 +74,10 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
     dij.beamNum = dij.beamNum(newSpots);
     dij.totalNumOfBixels = sum(newSpots);
 
+    if isfield(dij,'numParticlesPerMU')
+        dij.numParticlesPerMU = dij.numParticlesPerMU(newSpots);
+    end
+
     % Freshly initialize numOfRaysPerBeam
     dij.numOfRaysPerBeam = [];
 
