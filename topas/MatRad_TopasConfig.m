@@ -860,15 +860,51 @@ classdef MatRad_TopasConfig < handle
 
             % Allocate possible scored quantities
             processedQuantities = {'','_std','_batchStd'};
+            topasCubesTallies = unique(erase(topasCubesTallies,processedQuantities(2:end)));
 
-            % Loop through 4C scenarios
+            % Loop through 4D scenarios
             for ctScen = 1:dij.numOfScenarios
 
-                % Process physicalDose and doseToWater fields
+                % Process physicalDose
+                % this is done separately since it's needed for processing the other dose fields
+                if obj.scorer.calcDij
+                    for d = 1:dij.totalNumOfBixels
+                        physDoseFields = strfind(lower(topasCubesTallies),'physicaldose');
+                        physDoseFields = not(cellfun('isempty',physDoseFields));
+                        for j = find(physDoseFields)'
+                            % loop through possible quantities
+                            for p = 1:length(processedQuantities)
+                                % Check if current quantity is available and write to dij
+                                if isfield(topasCubes,[topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) processedQuantities{p} '_beam' num2str(dij.beamNum(d))]) ...
+                                        && iscell(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) processedQuantities{p} '_beam' num2str(dij.beamNum(d))]))
+                                    dij.([topasCubesTallies{j} processedQuantities{p}]){ctScen,1}(:,d) = sum(w)*reshape(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) processedQuantities{p} '_beam' num2str(dij.beamNum(d))]){ctScen},[],1);
+                                end
+                            end
+                        end
+                    end
+                else
+                    for d = 1:dij.numOfBeams
+                        physDoseFields = strfind(lower(topasCubesTallies),'physicaldose');
+                        physDoseFields = not(cellfun('isempty',physDoseFields));
+                        for j = find(physDoseFields)'
+                            for p = 1:length(processedQuantities)
+                                % Check if current quantity is available and write to dij
+                                if isfield(topasCubes,[topasCubesTallies{j} processedQuantities{p} '_beam' num2str(d)]) && iscell(topasCubes.([topasCubesTallies{j} processedQuantities{p} '_beam' num2str(d)]))
+                                    dij.([topasCubesTallies{j} processedQuantities{p}]){ctScen}(:,d) = sum(w)*reshape(topasCubes.([topasCubesTallies{j} processedQuantities{p} '_beam',num2str(d)]){ctScen},[],1);
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                % Remove processed physDoseFields from total tallies
+                topasCubesTallies = topasCubesTallies(~physDoseFields);
+
+                % Process other fields
                 if obj.scorer.calcDij
                     for d = 1:dij.totalNumOfBixels
                         for j = 1:numel(topasCubesTallies)
-                            % Handle dose to medium and dose to water
+                            % Handle dose to water
                             if ~isempty(strfind(lower(topasCubesTallies{j}),'dose'))
                                 % loop through possible quantities
                                 for p = 1:length(processedQuantities)
