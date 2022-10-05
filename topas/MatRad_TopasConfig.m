@@ -492,17 +492,21 @@ classdef MatRad_TopasConfig < handle
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Process input folder(s)
-            if ~isempty(strfind(folder,'*'))% && all(modulation ~= false)
+            if ~isempty(strfind(folder,'*'))
                 folder = dir(folder);
                 for i = 1:length(folder)
-                    if any(isstrprop(folder(i).name(end-4:end),'digit'))
                         folders{i} = [folder(i).folder filesep folder(i).name];
-                    end
                 end
             else
                 folders{1} = folder;
             end
             folders = folders(~cellfun('isempty',folders));
+            
+            % Check if .bin or .csv files are available and sort out unnecessary folders
+            folderIsValid = cellfun(@(x) ~isempty(dir([x '\*.bin'])), folders) | cellfun(@(x) ~isempty(dir([x '\*.csv'])), folders);
+            folders = folders(folderIsValid);
+
+            % Get numOfSamples from number of folders
             numOfSamples = length(folders);
 
             % Allocate empty resultGUI and space for individual physical doses to calculate their standard deviation
@@ -527,16 +531,16 @@ classdef MatRad_TopasConfig < handle
                 resultGUI_mod = obj.getResultGUI(dij);
 
                 if numOfSamples > 1
-                    % Save individual standard deviation
-                    if isfield(resultGUI_mod,'physicalDose_std')
-                        resultGUI.physicalDose_std_individual{i} = resultGUI_mod.physicalDose_std;
-                    end
+                    % Accumulate averaged results
+                    resultGUI = heterogeneityConfig.accumulateOverSamples(resultGUI,resultGUI_mod,numOfSamples);
 
                     % Save individual physical doses to calculate standard deviation
-                    data{i} = resultGUI_mod.physicalDose;
+                    data{f} = resultGUI_mod.physicalDose;
 
-                    % Accumulate averaged results
-                    resultGUI = heterogeneityConfig.accumulateOverSamples(resultGUI,resultGUI_mod,samples);
+                    % Save individual standard deviation
+                    if isfield(resultGUI_mod,'physicalDose_std')
+                        resultGUI.physicalDose_std_individual{f} = resultGUI_mod.physicalDose_std;
+                    end
                 else
                     resultGUI = resultGUI_mod;
                 end
