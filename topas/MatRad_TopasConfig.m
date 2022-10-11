@@ -495,13 +495,13 @@ classdef MatRad_TopasConfig < handle
             if ~isempty(strfind(folder,'*'))
                 folder = dir(folder);
                 for i = 1:length(folder)
-                        folders{i} = [folder(i).folder filesep folder(i).name];
+                    folders{i} = [folder(i).folder filesep folder(i).name];
                 end
             else
                 folders{1} = folder;
             end
             folders = folders(~cellfun('isempty',folders));
-            
+
             % Check if .bin or .csv files are available and sort out unnecessary folders
             folderIsValid = cellfun(@(x) ~isempty(dir([x '\*.bin'])), folders) | cellfun(@(x) ~isempty(dir([x '\*.csv'])), folders);
             folders = folders(folderIsValid);
@@ -900,7 +900,7 @@ classdef MatRad_TopasConfig < handle
                         end
                     end
                 end
-                
+
                 % Remove processed physDoseFields from total tallies
                 topasCubesTallies = topasCubesTallies(~physDoseFields);
 
@@ -1307,6 +1307,7 @@ classdef MatRad_TopasConfig < handle
             % Set variables for loop over beams
             nBeamParticlesTotal = zeros(1,length(stf));
             currentBixel = 1;
+            bixelNotMeetingParticleQuota = 0;
             historyCount = zeros(1,length(stf));
 
             for beamIx = 1:length(stf)
@@ -1432,21 +1433,23 @@ classdef MatRad_TopasConfig < handle
                     end
                 end
 
+                bixelNotMeetingParticleQuota = bixelNotMeetingParticleQuota + (stf(beamIx).totalNumOfBixels-cutNumOfBixel);
+
                 % discard data if the current has unphysical values
                 idx = find([dataTOPAS.current] < 1);
                 dataTOPAS(idx) = [];
-
-                % Sort dataTOPAS according to energy
-                if length(dataTOPAS)>1 && ~issorted([dataTOPAS(:).energy])
-                    [~,ixSorted] = sort([dataTOPAS(:).energy]);
-                    dataTOPAS = dataTOPAS(ixSorted);
-                end
 
                 % Safety check for empty beam (not allowed)
                 if isempty(dataTOPAS)
                     matRad_cfg.dispError('dataTOPAS of beam %i is empty.',beamIx);
                 else
                     cutNumOfBixel = length(dataTOPAS(:));
+                end
+
+                % Sort dataTOPAS according to energy
+                if length(dataTOPAS)>1 && ~issorted([dataTOPAS(:).energy])
+                    [~,ixSorted] = sort([dataTOPAS(:).energy]);
+                    dataTOPAS = dataTOPAS(ixSorted);
                 end
 
                 % Save adjusted beam histories
@@ -1468,6 +1471,7 @@ classdef MatRad_TopasConfig < handle
 
                     newCurr = num2cell(arrayfun(@plus,double([dataTOPAS(randIx).current]),-1*sign(diff)*ones(1,abs(diff))),1);
                     [dataTOPAS(randIx).current] = newCurr{:};
+
                 end
 
                 % Previous histories were set per run
@@ -1741,6 +1745,10 @@ classdef MatRad_TopasConfig < handle
                     end
                     fclose(fileID);
                 end
+            end
+
+            if bixelNotMeetingParticleQuota ~= 0
+                matRad_cfg.dispWarning([num2str(bixelNotMeetingParticleQuota) ' bixels were discarded due to particle threshold.'])
             end
 
             % Bookkeeping

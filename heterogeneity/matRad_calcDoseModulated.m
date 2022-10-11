@@ -73,9 +73,9 @@ end
 %
 % else
 
-% Turn info and warning messages off for modulation
+% Turn info messages off for modulation
 logLevel = matRad_cfg.logLevel;
-matRad_cfg.logLevel = 1;
+matRad_cfg.logLevel = 2;
 
 % Perform resampling to dose grid if necessary (modulation is performed on the resampled grid)
 switch pln.propHeterogeneity.sampling.mode

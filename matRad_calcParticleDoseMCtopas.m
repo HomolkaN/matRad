@@ -69,7 +69,7 @@ end
 pln = matRad_cfg.getDefaultProperties(pln,{'propDoseCalc'});
 
 % override default parameters from external parameters if available
-if isfield(pln,'propHeterogeneity') && isfield(pln.propHeterogeneity,'sampling') && isfield(pln.propHeterogeneity.sampling,'numHistories')
+if isfield(pln,'propHeterogeneity') && isprop(pln.propHeterogeneity,'sampling') && isfield(pln.propHeterogeneity.sampling,'numHistories')
     pln.propMC.numHistories = pln.propHeterogeneity.sampling.numHistories;
 end
 
