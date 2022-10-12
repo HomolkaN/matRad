@@ -1,4 +1,4 @@
-function topasCubes = matRad_calcParticleDoseMCtopas(ct,stf,pln,cst,calcDoseDirect)
+function dij = matRad_calcParticleDoseMCtopas(ct,stf,pln,cst,calcDoseDirect)
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % matRad TOPAS Monte Carlo proton dose calculation wrapper
 %   This calls a TOPAS installation (not included in matRad due to
@@ -91,7 +91,7 @@ end
 matRad_calcDoseInit;
 
 % for TOPAS we explicitly downsample the ct to the dose grid (might not be necessary in future versions with separated grids)
-[ctR,~,~] = pln.propMC.resampleGrid(ct,cst,pln,stf);
+[ctR,~,~] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
 
 % overwrite CT grid in dij in case of modulation.
 if isfield(ctR,'ctGrid')
@@ -167,9 +167,11 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
     % change director back to original directory
     cd(pln.propMC.workingDir);
 
-    % save dij and weights, they are needed for later reading the data back in
+    % Skip local calculation and data readout with this parameter. All necessary parameters to read the data back in
+    % later are stored in the MCparam file that is stored in the folder. The folder is generated in the working
+    % directory and the matRad_plan*.txt file can be manually called with TOPAS.
     if pln.propMC.externalCalculation
-        matRad_cfg.dispInfo('TOPAS simulation skipped for external calculation\n');
+        matRad_cfg.dispInfo(['TOPAS simulation skipped for external calculation\nFiles have been written to: "',replace(pln.propMC.workingDir,'\','\\'),'"']);
     else
         for ctScen = 1:ct.numOfCtScen
             for beamIx = 1:numel(stf)
@@ -233,10 +235,13 @@ end
 %% Simulation(s) finished - read out volume scorers from topas simulation
 % Skip readout if external files were generated
 if ~pln.propMC.externalCalculation
-    topasCubes = pln.propMC.readFiles(pln.propMC.workingDir);
+    dij = pln.propMC.readFiles(pln.propMC.workingDir);
 else
-    topasCubes = [];
+    dij = [];
 end
+
+% Order fields for easier comparison between different dijs
+dij = orderfields(dij);
 
 % manipulate isocenter back
 for k = 1:length(stf)
