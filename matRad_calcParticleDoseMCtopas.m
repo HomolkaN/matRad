@@ -120,7 +120,6 @@ end
 
 % Get photon parameters for RBExD calculation
 if isfield(pln,'bioParam') && strcmp(pln.bioParam.quantityOpt,'RBExD')
-    pln.propMC.scorer.RBE = true;
     [dij.ax,dij.bx] = matRad_getPhotonLQMParameters(cst,dij.doseGrid.numOfVoxels,1,VdoseGrid);
     dij.abx(dij.bx>0) = dij.ax(dij.bx>0)./dij.bx(dij.bx>0);
 end

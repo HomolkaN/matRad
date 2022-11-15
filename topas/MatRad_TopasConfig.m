@@ -688,9 +688,13 @@ classdef MatRad_TopasConfig < handle
             % Set flag for RBE and LET
             if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'alpha')), fieldnames(topasCubes)))
                 obj.scorer.RBE = true;
+            else
+                obj.scorer.RBE = false;
             end
             if any(cellfun(@(teststr) ~isempty(strfind(teststr,'LET')), fieldnames(topasCubes)))
                 obj.scorer.LET = true;
+            else
+                obj.scorer.LET = false;
             end
 
             % Create empty dij

@@ -43,8 +43,8 @@ if any(cellfun(@(teststr) ~isempty(strfind(lower(RBE_model),lower(teststr))), {'
     quantityOpt                 = 'RBExD';
     pln.propOpt.bioOptimization = 'RBExD';
 else
-    quantityOpt                 = 'none';
-    pln.propOpt.bioOptimization = 'none';
+    quantityOpt                 = 'physicalDose';
+    pln.propOpt.bioOptimization = 'physicalDose';
 end
 
 pln.propDoseCalc.lateralCutOff = 0.99;
