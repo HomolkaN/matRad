@@ -185,11 +185,14 @@ classdef MatRad_Config < handle
             % Set default histories for MonteCarlo here if necessary
             %             obj.propMC.defaultNumHistories = 100;
 
-            %obj.propMC.default_photon_engine = 'ompMC';
+            obj.propMC.default_photon_engine = 'matRad_OmpConfig';
+%             obj.propMC.default_photon_engine = 'MatRad_TopasConfig';
             obj.propMC.default_proton_engine = 'MatRad_MCsquareConfig';
             obj.propMC.default_carbon_engine = 'MatRad_TopasConfig';
 
             % Default settings for TOPAS
+            obj.propMC.default_beamProfile_particles = 'biGaussian';
+            obj.propMC.default_beamProfile_photons = 'uniform';
             obj.propMC.defaultExternalCalculation = false;
             obj.propMC.defaultCalcDij = false;
 
@@ -252,7 +255,8 @@ classdef MatRad_Config < handle
             % Set default histories for MonteCarlo
             obj.propMC.defaultNumHistories = 100;
 
-            %obj.propMC.default_photon_engine = 'ompMC';
+            obj.propMC.default_photon_engine = 'matRad_OmpConfig';
+%             obj.propMC.default_photon_engine = 'MatRad_TopasConfig';
             obj.propMC.default_proton_engine = 'MatRad_MCsquareConfig';
             obj.propMC.default_carbon_engine = 'MatRad_TopasConfig';
 
@@ -411,6 +415,8 @@ classdef MatRad_Config < handle
                     case 'propMC'
                         if isfield(pln,'propMC') && strcmp(propName,'propMC') && isfield(pln.propMC,'engine')
                             switch pln.propMC.engine
+                                case 'ompMC'
+                                    configName = 'matRad_OmpConfig';
                                 case 'TOPAS'
                                     configName = 'MatRad_TopasConfig';
                                 case 'MCsquare'
@@ -420,6 +426,8 @@ classdef MatRad_Config < handle
                         else
                             if isfield(pln,'radiationMode') && ~isempty(pln.radiationMode)
                                 switch pln.radiationMode
+                                    case 'photons'
+                                        configName = obj.propMC.default_photon_engine;
                                     case 'protons'
                                         configName = obj.propMC.default_proton_engine;
                                     otherwise
@@ -449,6 +457,9 @@ classdef MatRad_Config < handle
             if isstruct(pln.(propName))
                 % Load configs
                 switch configName
+                    case 'matRad_OmpConfig'
+                        config = matRad_OmpConfig();
+                        pln.propMC.engine = 'ompMC';
                     case 'MatRad_TopasConfig'
                         config = MatRad_TopasConfig();
                         pln.propMC.engine = 'TOPAS';
