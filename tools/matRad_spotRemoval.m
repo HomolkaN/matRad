@@ -59,9 +59,14 @@ if ~exist('thres','var')
     %     thres = 0.00001;
 end
 
-% save spots that have larger weight than the set threshold
+% Save spots that have larger weight than the set threshold
 newSpots = w>thres*mean(w);
-% newSpots = w>thres*max(w);
+
+% Generate new spots according to a percentage of the total spots
+% newSpots = (1:numel(w))';
+% [~,wIdx] = sort(w);
+% wIdx = sort(wIdx(round(thres*numel(w)):end));
+% newSpots = ismember(newSpots,wIdx);
 
 %% rewrite dij and stf with new spots
 if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any(size(w)>1)
@@ -159,6 +164,11 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
     dij.numOfRemovedSpots = sum(~newSpots);
     matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the mean weight.\n'])
 
+    % Set MU to set minimum threshold for optimization
+    dij.maxMU = Inf;
+    dij.minMU = min(dij.cutWeights);
+    dij.numParticlesPerMU = 1e6;
+            
 else
     % output warning to console
     matRad_cfg.dispWarning('no spots have been removed.')
