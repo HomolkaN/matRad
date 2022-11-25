@@ -1740,37 +1740,6 @@ classdef MatRad_TopasConfig < handle
 
                 end
 
-                % Write spot positions
-                fprintf(fileID,'s:Tf/Beam/PosX/Function = "Step"\n');
-                fprintf(fileID,'dv:Tf/Beam/PosX/Times = Tf/Beam/Spot/Times ms\n');
-                fprintf(fileID,'dv:Tf/Beam/PosX/Values = %i ', cutNumOfBixel);
-                fprintf(fileID,'%f ',[dataTOPAS.posX]);
-                fprintf(fileID,' mm\n');
-                fprintf(fileID,'s:Tf/Beam/PosY/Function = "Step"\n');
-                fprintf(fileID,'dv:Tf/Beam/PosY/Times = Tf/Beam/Spot/Times ms\n');
-                fprintf(fileID,'dv:Tf/Beam/PosY/Values = %i ', cutNumOfBixel);
-                fprintf(fileID,'%f ',[dataTOPAS.posY]);
-                fprintf(fileID,' mm\n');
-
-                % Write spot current (translates to the amount of particles in a spot)
-                fprintf(fileID,'s:Tf/Beam/Current/Function = "Step"\n');
-                fprintf(fileID,'dv:Tf/Beam/Current/Times = Tf/Beam/Spot/Times ms\n');
-                fprintf(fileID,'iv:Tf/Beam/Current/Values = %i ', cutNumOfBixel);
-                fprintf(fileID,'%i ',[dataTOPAS.current]);
-                fprintf(fileID,'\n\n');
-
-                % Range shifter in/out
-                if ~isempty(raShis)
-                    fprintf(fileID,'#Range Shifter States:\n');
-                    for r = 1:numel(raShis)
-                        fprintf(fileID,'s:Tf/Beam/%sOut/Function = "Step"\n',raShis(r).topasID);
-                        fprintf(fileID,'dv:Tf/Beam/%sOut/Times = Tf/Beam/Spot/Times ms\n',raShis(r).topasID);
-                        fprintf(fileID,'uv:Tf/Beam/%sOut/Values = %i ', raShis(r).topasID, cutNumOfBixel);
-                        fprintf(fileID,'%f ',[dataTOPAS.raShiOut]);
-                        fprintf(fileID,'\n\n');
-                    end
-                end
-                        
                 % Write previously beam profile
                 fprintf(fileID,'%s\n',TOPAS_beamSetup);
 
