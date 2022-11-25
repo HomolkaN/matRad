@@ -80,9 +80,8 @@ matRad_cfg.logLevel = 2;
 % Perform resampling to dose grid if necessary (modulation is performed on the resampled grid)
 switch pln.propHeterogeneity.sampling.mode
     case 'TOPAS'
-        topasConfig = MatRad_TopasConfig();
         pln.propMC.engine = 'TOPAS';
-        [ctR,cstR,stfR] = topasConfig.resampleGrid(ct,cst,pln,stf);
+        [ctR,cstR,stfR] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
     case 'MCsquare'
         pln.propMC.engine = 'MCsquare';
         ctR = ct;
