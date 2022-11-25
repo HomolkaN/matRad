@@ -78,6 +78,9 @@ if pln.propMC.externalCalculation
     pln.propMC.workingDir = [pln.propMC.thisFolder filesep 'MCrun' filesep];
     pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',datestr(now, 'dd-mm-yy')];
 end
+if isfield(ct,'sampleIdx')
+    pln.propMC.workingDir = [pln.propMC.workingDir '_' num2str(ct.sampleIdx,'%02.f')];
+end
 
 %% Initialize dose grid and dij
 
