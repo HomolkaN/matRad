@@ -362,6 +362,10 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         if isfield(stf(i).ray(j),'minMU')
                             minMU = stf(i).ray(j).minMU(k);
                         end
+                        maxMU = Inf;
+                        if isfield(stf(i).ray(j),'maxMU')
+                            maxMU = stf(i).ray(j).maxMU(k);
+                        end
                         numParticlesPerMU = 1e6;
                         if isfield(stf(i).ray(j),'numParticlesPerMU')
                             numParticlesPerMU = stf(i).ray(j).numParticlesPerMU(k);
@@ -378,6 +382,10 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                     % is generated at soume source to phantom distance
                     % we can explicitly correct for the nozzle to air WEPL in
                     % the current case.
+                    if  pln.propDoseCalc.airOffsetCorrection
+                        nozzleToSkin = ((stf(i).ray(j).SSD + BAMStoIsoDist) - machine.meta.SAD);
+                        dR = 0.0011 * (nozzleToSkin - fitAirOffset);
+                    else
                         dR = 0;
                     end
 
