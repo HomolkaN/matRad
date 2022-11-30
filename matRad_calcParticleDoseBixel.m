@@ -92,7 +92,7 @@ else
 
     %compute lateral sigma
     sigmaSq = X(:,2).^2 + sigmaIni_sq;
-
+    
 end
 
 %  calculate lateral profiles

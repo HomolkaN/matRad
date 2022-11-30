@@ -1462,7 +1462,6 @@ classdef MatRad_TopasConfig < handle
 
                     newCurr = num2cell(arrayfun(@plus,double([dataTOPAS(randIx).current]),-1*sign(diff)*ones(1,abs(diff))),1);
                     [dataTOPAS(randIx).current] = newCurr{:};
-
                 end
 
                 % Previous histories were set per run

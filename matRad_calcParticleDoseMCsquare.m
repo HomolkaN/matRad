@@ -166,7 +166,7 @@ else
     bdFile = [machine.meta.machine '.txt'];
 
     % override base data in case of APM, it is not needed here
-    machine.data = matRad_overrideBaseData(machine.data);
+    machine.data = MatRad_HeterogeneityConfig.overrideBaseData(machine.data);
 
     % Calculate MCsquare base data
     % Argument stf is optional, if given, calculation only for energies given in stf

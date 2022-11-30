@@ -97,7 +97,7 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
 end
 
 if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero && pln.propHeterogeneity.useOriginalDepths
-    machine.data = matRad_overrideBaseData(machine.data);
+    machine.data = MatRad_HeterogeneityConfig.overrideBaseData(machine.data);
 end
 
 % helper function for energy selection
@@ -334,7 +334,6 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                 else
                     vTissueIndex_j = zeros(size(ix));
                 end
-
                 for k = 1:stf(i).numOfBixelsPerRay(j) % loop over all bixels per ray
 
                     counter       = counter + 1;
@@ -358,23 +357,15 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         dij.beamNum(counter)  = i;
                         dij.rayNum(counter)   = j;
                         dij.bixelNum(counter) = k;
-
                         % extract MU data if present (checks for downwards compatability)
                         minMU = 0;
                         if isfield(stf(i).ray(j),'minMU')
                             minMU = stf(i).ray(j).minMU(k);
                         end
-
-                        maxMU = Inf;
-                        if isfield(stf(i).ray(j),'maxMU')
-                            maxMU = stf(i).ray(j).maxMU(k);
-                        end
-
                         numParticlesPerMU = 1e6;
                         if isfield(stf(i).ray(j),'numParticlesPerMU')
                             numParticlesPerMU = stf(i).ray(j).numParticlesPerMU(k);
                         end
-
                         dij.minMU(counter,1) = minMU;
                         dij.maxMU(counter,1) = maxMU;
                         dij.numParticlesPerMU(counter,1) = numParticlesPerMU;
@@ -387,10 +378,6 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                     % is generated at soume source to phantom distance
                     % we can explicitly correct for the nozzle to air WEPL in
                     % the current case.
-                    if  pln.propDoseCalc.airOffsetCorrection
-                        nozzleToSkin = ((stf(i).ray(j).SSD + BAMStoIsoDist) - machine.meta.SAD);
-                        dR = 0.0011 * (nozzleToSkin - fitAirOffset);
-                    else
                         dR = 0;
                     end
 
@@ -407,7 +394,6 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                             [dij.doseGrid.resolution.x dij.doseGrid.resolution.y dij.doseGrid.resolution.z],...
                             -posX(:,k), -posZ(:,k), rotMat_system_T);
                     end
-
                     % We do now loop over scenarios that alter voxel
                     % values, e.g. range scenarios or ct phases, as we can
                     % vectorize computations more efficiently than when

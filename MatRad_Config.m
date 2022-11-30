@@ -166,6 +166,7 @@ classdef MatRad_Config < handle
             obj.propDoseCalc.doseGrid.defaultResolution = struct('x',3,'y',3,'z',3); %[mm]
             obj.propDoseCalc.defaultLateralCutOff = 0.995; %[rel.]
             obj.propDoseCalc.defaultGeometricCutOff = 50; %[mm]
+            obj.propDoseCalc.defaultKernelCutOff = Inf; %[mm]
             obj.propDoseCalc.defaultSsdDensityThreshold = 0.05; %[rel.]
             obj.propDoseCalc.defaultUseGivenEqDensityCube = false; %Use the given density cube ct.cube and omit conversion from cubeHU.
             obj.propDoseCalc.defaultIgnoreOutsideDensities = true; %Ignore densities outside of cst contours
@@ -186,7 +187,7 @@ classdef MatRad_Config < handle
             %             obj.propMC.defaultNumHistories = 100;
 
             obj.propMC.default_photon_engine = 'matRad_OmpConfig';
-%             obj.propMC.default_photon_engine = 'MatRad_TopasConfig';
+            %             obj.propMC.default_photon_engine = 'MatRad_TopasConfig';
             obj.propMC.default_proton_engine = 'MatRad_MCsquareConfig';
             obj.propMC.default_carbon_engine = 'MatRad_TopasConfig';
 

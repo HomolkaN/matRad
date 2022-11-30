@@ -99,7 +99,7 @@ end
 
 % Load and create TOPAS Base Data
 load([pln.radiationMode,'_',pln.machine],'machine');
-machine.data = matRad_overrideBaseData(machine.data);
+machine.data = MatRad_HeterogeneityConfig.overrideBaseData(machine.data);
 
 % Collect given weights
 if calcDoseDirect

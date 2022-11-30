@@ -25,7 +25,7 @@ function stf = matRad_generateStfPencilBeam(pln,ct,energyIx,plane)
 % LICENSE file.
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-global matRad_cfg;
+% Instance of matRad configuration class
 matRad_cfg = MatRad_Config.instance();
 
 matRad_cfg.dispInfo('matRad: Generating pencil beam ...\n');
