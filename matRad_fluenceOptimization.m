@@ -286,7 +286,7 @@ end
 
 switch pln.propOpt.optimizer
     case 'IPOPT'
-        optimizer = matRad_OptimizerIPOPT;
+        optimizer = matRad_OptimizerIPOPT(pln);
     case 'fmincon'
         optimizer = matRad_OptimizerFmincon;
     otherwise
