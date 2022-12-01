@@ -90,7 +90,7 @@ pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario
 % calculation of RBE using fitted alpha and sqrtBeta curves implemented in
 % the APM base data files. 
 
-pln.propHeterogeneity = matRad_HeterogeneityConfig.instance();
+pln.propHeterogeneity = matRad_HeterogeneityConfig();
 
 %% Generate Beam Geometry STF
 % stf = matRad_generateStf(ct,cst,pln);
