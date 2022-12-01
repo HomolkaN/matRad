@@ -173,5 +173,5 @@ matRad_plotSliceWrapper(gca,ct,cst,1,absDiffCube,plane,slice,[],[],colorcube);
 title('absolute difference')
 %%
 % Plot both doses with absolute difference and gamma analysis
-[gammaCube,gammaPassRate,hfigure]=matRad_compareDose(resultGUI_effect.RBExD, resultGUI_tissue.RBExD, ct, cst,[1 1 1],'on');
+[gammaCube,gammaPassRate,hfigure]=matRad_compareDose(resultGUI_effect.RBExD, resultGUI_tissue.RBExD, ct, cst,[1 1 1],'on',pln, [2 2], 0);
 

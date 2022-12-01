@@ -166,5 +166,5 @@ pln.propDoseCalc.fineSampling.calcMode = 'fineSampling';
 resultGUI_FS = matRad_calcDoseDirect(ct,stf,pln,cst,resultGUI.w);
 
 %%  Visual Comparison of results using the "compareDose" helper function
-matRad_compareDose(resultGUI_noise.RBExD,resultGUI.RBExD,ct,cst);
-matRad_compareDose(resultGUI_FS.RBExD,resultGUI.RBExD,ct,cst);
+matRad_compareDose(resultGUI_noise.RBExD,resultGUI.RBExD,ct,cst, [1 1 0] , 'off', pln, [2 2], 0, 'global');
+matRad_compareDose(resultGUI_FS.RBExD,resultGUI.RBExD,ct,cst, [1 1 0] , 'off', pln, [2 2], 0, 'global');

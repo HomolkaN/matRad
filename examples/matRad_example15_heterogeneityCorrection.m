@@ -117,6 +117,6 @@ resultGUI_heterogeneous = matRad_calcDoseDirect(ct,stf,pln,cst_withLungFlag,resu
 
 %% Visualize differences
 % matRad_compareDose(carbHomo.physicalDose,carbHetero.physicalDose,ct,cst,[1 0 0]);
-matRad_compareDose(resultGUI_homogeneous.physicalDose,resultGUI_heterogeneous.physicalDose,ct,cst,[1 1 0]);
+matRad_compareDose(resultGUI_homogeneous.physicalDose,resultGUI_heterogeneous.physicalDose,ct,cst, [1 1 0] , 'off', pln, [2 2], 1, 'global');
 
 

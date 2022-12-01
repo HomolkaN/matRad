@@ -97,6 +97,6 @@ resultGUI2 = matRad_fluenceOptimization(dij2,cst,pln);
 % numOfRemovedSpots = dij2.numOfRemovedSpots;
 
 %% Plot difference of the doses
-matRad_compareDose(resultGUI.RBExD,resultGUI2.RBExD,ct,cst);
+matRad_compareDose(resultGUI.RBExD,resultGUI2.RBExD,ct,cst, [1, 1, 0] , 'off', pln, [2, 2], 1, 'global');
 
 
