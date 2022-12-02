@@ -80,7 +80,7 @@ for s = 1:size(cst,1)
             C = cst{s,7}{1}{slice,plane};
         else
             %If we do not have precomputed contours available, then compute them
-            mask = zeros(size(ct{ctIndex}));
+            mask = zeros(size(ct.cube{ctIndex}));
             mask(cst{s,4}{ctIndex}) = 1;
             
             if plane == 1 && any(any(mask(slice,:,:) > 0))
