@@ -4,7 +4,7 @@ function plotIDD(varargin)
 figure
 hold on
 
-profile = 0;
+profile = 1;
 linestyles1 = {'-',':'};
 linestyles2 = {getMatlabColor('blue'),getMatlabColor('orange')};
 
