@@ -42,6 +42,11 @@ else
     error('postprocessing only implemented for proton and carbon ion therapy')
 end
 
+% Add heterogeneityCorrection flag to 4D resultGUI
+if isfield(dij,'heterogeneityCorrection') && dij.heterogeneityCorrection
+    resultGUI.heterogeneityCorrection = true;
+end
+
 % remember old solution
 resultGUI.optW = resultGUI.w;
 if isequal(pln.bioParam.model,'none')
