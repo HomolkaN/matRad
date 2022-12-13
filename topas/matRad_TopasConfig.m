@@ -45,8 +45,12 @@ classdef matRad_TopasConfig < handle
             'tracking',0,...
             'material',0,...
             'maxinterruptedhistories',1000,...
-            'maxDetailedErrorReports',0);
-
+            'maxDetailedErrorReports',0,...
+            'parameterizationErrorMaxReports',1,...
+            'parameterizationErrorMaxEnergy',0.0001 ...
+        );
+        
+        
         minRelWeight = .00001; %Threshold for discarding beamlets. 0 means all weights are being considered, can otherwise be assigned to min(w)
 
         useOrigBaseData = false; % base data of the original matRad plan will be used?
@@ -536,7 +540,7 @@ classdef matRad_TopasConfig < handle
             correctionFactor = obj.numParticlesPerHistory / double(obj.MCparam.nbHistoriesTotal);
 
             % Get all saved quantities
-            % Make sure that the filename always ends on 'run1_tally'
+            % Make sure that the filename always ends on 'run1_*tally*'
             switch obj.MCparam.outputType
                 case 'csv'
                     files = dir([folder filesep 'score_matRad_plan_field1_run1_*.csv']);
@@ -931,6 +935,10 @@ classdef matRad_TopasConfig < handle
             fprintf(fID,'i:Ts/MaxInterruptedHistories = %d\n',obj.verbosity.maxinterruptedhistories);
             fprintf(fID,'i:Ts/NumberOfThreads = %d\n',obj.numThreads);
             fprintf(fID,'i:Ts/MaximumNumberOfDetailedErrorReports = %d\n',obj.verbosity.maxDetailedErrorReports);
+            
+            fprintf(fID,'i:Ts/ParameterizationErrorMaxReports = %d\n',obj.verbosity.parameterizationErrorMaxReports);
+            fprintf(fID,'d:Ts/ParameterizationErrorMaxEnergy = %d MeV\n',obj.verbosity.parameterizationErrorMaxEnergy);
+            
             fprintf(fID,'i:Ts/ShowHistoryCountAtInterval = %d\n',10^(floor(log10(1/obj.numOfRuns * obj.numHistories))-1));
             fprintf(fID,'\n');
 
