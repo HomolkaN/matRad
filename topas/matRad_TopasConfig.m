@@ -1992,7 +1992,9 @@ classdef matRad_TopasConfig < handle
                                     densityFile = fopen(fname);
                                     densityCorrection.density = fscanf(densityFile,'%f');
                                     fclose(densityFile);
-                                    densityCorrection.boundaries = [-1000 numel(densityCorrection.density)-1000];
+%                                     minHU = floor(min(ct.cubeHU{1}(:)));
+                                    minHU = rspHlut(1,1);
+                                    densityCorrection.boundaries = [minHU numel(densityCorrection.density)+minHU];
 
                             end
 
