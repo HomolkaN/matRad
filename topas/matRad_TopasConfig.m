@@ -1243,8 +1243,6 @@ classdef matRad_TopasConfig < handle
                     matRad_cfg.dispError('Invalid history setting!');
             end
 
-            nParticlesTotal = 0;
-
             %Preread beam setup
             switch obj.beamProfile
                 case 'biGaussian'
@@ -1418,11 +1416,11 @@ classdef matRad_TopasConfig < handle
                     end
                 end
 
-                bixelNotMeetingParticleQuota = bixelNotMeetingParticleQuota + (stf(beamIx).totalNumOfBixels-cutNumOfBixel);
-
                 % discard data if the current has unphysical values
                 idx = find([dataTOPAS.current] < 1);
                 dataTOPAS(idx) = [];
+
+                bixelNotMeetingParticleQuota = bixelNotMeetingParticleQuota + (stf(beamIx).totalNumOfBixels-length(dataTOPAS));
 
                 % Safety check for empty beam (not allowed)
                 if isempty(dataTOPAS)
@@ -1461,6 +1459,9 @@ classdef matRad_TopasConfig < handle
                     randIx = idx(R);
 
                     newCurr = num2cell(arrayfun(@plus,double([dataTOPAS(randIx).current]),-1*sign(diff)*ones(1,abs(diff))),1);
+                    if contains(newCurr,0)
+                        continue
+                    end
                     [dataTOPAS(randIx).current] = newCurr{:};
                 end
 
