@@ -1467,7 +1467,7 @@ classdef matRad_TopasConfig < handle
                     randIx = idx(R);
 
                     newCurr = num2cell(arrayfun(@plus,double([dataTOPAS(randIx).current]),-1*sign(diff)*ones(1,abs(diff))),1);
-                    if contains(newCurr,0)
+                    if ismember(0,cell2mat(newCurr))
                         continue
                     end
                     [dataTOPAS(randIx).current] = newCurr{:};
