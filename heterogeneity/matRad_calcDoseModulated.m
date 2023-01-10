@@ -35,7 +35,7 @@ switch pln.propHeterogeneity.sampling.mode
     case 'MCsquare'
         calcExternal = false;
         numHistories = pln.propMC.numHistories;
-        pln.propMC.materialConverter.addSection = 'sampledDensities';
+%         pln.propMC.materialConverter.addSection = 'sampledDensities';
     case 'matRad'
         calcExternal = false;
     otherwise
@@ -118,7 +118,9 @@ for i = 1:samples
     switch pln.propHeterogeneity.sampling.mode
         case {'TOPAS','MCsquare'}
             % Set TOPAS parameters
-            pln.propMC.numOfRuns = 1;
+            if isa(pln.propMC,'matRad_TopasConfig')
+                pln.propMC.numOfRuns = 1;
+            end
             pln.propHeterogeneity.sampling.numHistories = numHistories/samples;
 
             % Calculate dose with modulated CT
