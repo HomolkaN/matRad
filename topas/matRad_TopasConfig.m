@@ -48,9 +48,9 @@ classdef matRad_TopasConfig < handle
             'maxDetailedErrorReports',0,...
             'parameterizationErrorMaxReports',1,...
             'parameterizationErrorMaxEnergy',0.0001 ...
-        );
-        
-        
+            );
+
+
         minRelWeight = .00001; %Threshold for discarding beamlets. 0 means all weights are being considered, can otherwise be assigned to min(w)
 
         useOrigBaseData = false; % base data of the original matRad plan will be used?
@@ -76,7 +76,9 @@ classdef matRad_TopasConfig < handle
         rsp_basematerial = 'Water';
 
         %Scoring
-        scorer = struct('volume',false,...
+        scorer = struct('filename','constructor',...
+            'tallies',{{'default'}},...
+            'volume',false,...
             'doseToMedium',true,...
             'doseToWater',false,...
             'surfaceTrackCount',false,...
@@ -853,7 +855,7 @@ classdef matRad_TopasConfig < handle
                                 modelName = strsplit(topasCubesTallies{j},'_');
                                 modelName = modelName{end};
                                 if isfield(topasCubes,[topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) '_beam' num2str(dij.beamNum(d))]) ...
-                                    dij.(['mAlphaDose_' modelName]){ctScen,1}(:,d) = reshape(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) '_beam' num2str(dij.beamNum(d))]){ctScen},[],1) .* dij.physicalDose{ctScen,1}(:,d);
+                                        dij.(['mAlphaDose_' modelName]){ctScen,1}(:,d) = reshape(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) '_beam' num2str(dij.beamNum(d))]){ctScen},[],1) .* dij.physicalDose{ctScen,1}(:,d);
                                 end
                             elseif ~isempty(strfind(lower(topasCubesTallies{j}),'beta'))
                                 modelName = modelName{end};
@@ -935,10 +937,10 @@ classdef matRad_TopasConfig < handle
             fprintf(fID,'i:Ts/MaxInterruptedHistories = %d\n',obj.verbosity.maxinterruptedhistories);
             fprintf(fID,'i:Ts/NumberOfThreads = %d\n',obj.numThreads);
             fprintf(fID,'i:Ts/MaximumNumberOfDetailedErrorReports = %d\n',obj.verbosity.maxDetailedErrorReports);
-            
+
             fprintf(fID,'i:Ts/ParameterizationErrorMaxReports = %d\n',obj.verbosity.parameterizationErrorMaxReports);
             fprintf(fID,'d:Ts/ParameterizationErrorMaxEnergy = %d MeV\n',obj.verbosity.parameterizationErrorMaxEnergy);
-            
+
             fprintf(fID,'i:Ts/ShowHistoryCountAtInterval = %d\n',10^(floor(log10(1/obj.numOfRuns * obj.numHistories))-1));
             fprintf(fID,'\n');
 
@@ -1003,206 +1005,227 @@ classdef matRad_TopasConfig < handle
 
             obj.MCparam.outputType = obj.scorer.outputType;
 
-            % write dose to medium scorer
-            if obj.scorer.doseToMedium
-                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_doseToMedium);
-                matRad_cfg.dispDebug('Reading doseToMedium scorer from %s\n',fname);
-                scorerName = fileread(fname);
-                fprintf(fID,'\n%s\n\n',scorerName);
+            switch obj.scorer.filename
+                case 'constructor'
 
-                % Update MCparam.tallies with processed scorer
-                obj.MCparam.tallies = [obj.MCparam.tallies,{'physicalDose'}];
-            end
+                    % write dose to medium scorer
+                    if obj.scorer.doseToMedium
+                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_doseToMedium);
+                        matRad_cfg.dispDebug('Reading doseToMedium scorer from %s\n',fname);
+                        scorerName = fileread(fname);
+                        fprintf(fID,'\n%s\n\n',scorerName);
 
-            % write RBE scorer
-            if obj.scorer.RBE
-                for i = 1:length(obj.scorer.RBE_model)
-                    switch obj.radiationMode
-                        case 'protons'
-                            % Process available varRBE models for protons
+                        % Update MCparam.tallies with processed scorer
+                        obj.MCparam.tallies = [obj.MCparam.tallies,{'physicalDose'}];
+                    end
 
-                            if ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'mcn'))
-                                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_MCN);
-                            elseif ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'wed'))
-                                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_WED);
-                            else
-                                matRad_cfg.dispError(['Model ',obj.scorer.RBE_model{i},' not implemented for ',obj.radiationMode]);
+                    % write RBE scorer
+                    if obj.scorer.RBE
+                        for i = 1:length(obj.scorer.RBE_model)
+                            switch obj.radiationMode
+                                case 'protons'
+                                    % Process available varRBE models for protons
+
+                                    if ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'mcn'))
+                                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_MCN);
+                                    elseif ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'wed'))
+                                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_WED);
+                                    else
+                                        matRad_cfg.dispError(['Model ',obj.scorer.RBE_model{i},' not implemented for ',obj.radiationMode]);
+                                    end
+                                case {'carbon','helium'}
+                                    % Process available varRBE models for carbon and helium
+                                    if ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'libamtrack'))
+                                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_libamtrack);
+                                    elseif ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'lem'))
+                                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_LEM1);
+                                    else
+                                        matRad_cfg.dispError(['Model ',obj.scorer.RBE_model{i},' not implemented for ',obj.radiationMode]);
+                                    end
+                                otherwise
+                                    % Throw error in case an invalid radiationMode has been selected
+                                    matRad_cfg.dispError(['Model ',obj.scorer.RBE_model{i},' not implemented for ',obj.radiationMode]);
                             end
-                        case {'carbon','helium'}
-                            % Process available varRBE models for carbon and helium
-                            if ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'libamtrack'))
-                                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_libamtrack);
-                            elseif ~isempty(strfind(lower(obj.scorer.RBE_model{i}),'lem'))
-                                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_RBE_LEM1);
-                            else
-                                matRad_cfg.dispError(['Model ',obj.scorer.RBE_model{i},' not implemented for ',obj.radiationMode]);
+
+                            % Read appropriate scorer from file and write to config file
+                            matRad_cfg.dispDebug('Reading RBE Scorer from %s\n',fname);
+                            scorerName = fileread(fname);
+                            fprintf(fID,'\n%s\n\n',scorerName);
+                        end
+
+                        % Begin writing biological scorer components: cell lines
+                        switch obj.radiationMode
+                            case 'protons'
+                                fprintf(fID,'\n### Biological Parameters ###\n');
+                                fprintf(fID,'sv:Sc/CellLines = 1 "CellLineGeneric"\n');
+                                fprintf(fID,'d:Sc/CellLineGeneric/Alphax 		= Sc/AlphaX /Gy\n');
+                                fprintf(fID,'d:Sc/CellLineGeneric/Betax 		= Sc/BetaX /Gy2\n');
+                                fprintf(fID,'d:Sc/CellLineGeneric/AlphaBetaRatiox 	= Sc/AlphaBetaX Gy\n\n');
+                            case {'carbon','helium'}
+                                fprintf(fID,'\n### Biological Parameters ###\n');
+                                fprintf(fID,'sv:Sc/CellLines = 1 "CellGeneric_abR2"\n');
+                                fprintf(fID,'d:Sc/CellGeneric_abR2/Alphax = Sc/AlphaX /Gy\n');
+                                fprintf(fID,'d:Sc/CellGeneric_abR2/Betax = Sc/BetaX /Gy2\n\n');
+                                % fprintf(fID,'d:Sc/CellGeneric_abR2/AlphaBetaRatiox 	= Sc/AlphaBetaX Gy\n');
+                            otherwise
+                                matRad_cfg.dispError([obj.radiationMode ' not implemented']);
+                        end
+
+                        % write biological scorer components: dose parameters
+                        matRad_cfg.dispDebug('Writing Biologial Scorer components.\n');
+                        fprintf(fID,'d:Sc/PrescribedDose = %.4f Gy\n',obj.bioParam.PrescribedDose);
+                        fprintf(fID,'b:Sc/SimultaneousExposure = %s\n',obj.bioParam.SimultaneousExposure);
+                        fprintf(fID,'d:Sc/AlphaX = %.4f /Gy\n',obj.bioParam.AlphaX);
+                        fprintf(fID,'d:Sc/BetaX = %.4f /Gy2\n',obj.bioParam.BetaX);
+                        fprintf(fID,'d:Sc/AlphaBetaX = %.4f Gy\n',obj.bioParam.AlphaX/obj.bioParam.BetaX);
+
+                        % Update MCparam.tallies with processed scorer
+                        for i = 1:length(obj.scorer.RBE_model)
+                            obj.MCparam.tallies = [obj.MCparam.tallies,{['alpha_' obj.scorer.RBE_model{i}],['beta_' obj.scorer.RBE_model{i}]}];
+                        end
+                    end
+
+                    % Write share sub-scorer
+                    if obj.scorer.sharedSubscorers && obj.scorer.RBE
+                        % Select appropriate scorer from selected flags
+                        scorerNames = {'Alpha','Beta'};
+                        if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.scorer.RBE_model))
+                            obj.scorer.LET = true;
+                            obj.scorer.doseToWater = true;
+                            scorerPrefix = 'McNamara';
+                        elseif any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.scorer.RBE_model))
+                            obj.scorer.LET = true;
+                            obj.scorer.doseToWater = true;
+                            scorerPrefix = 'Wedenberg';
+                        elseif any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.scorer.RBE_model)) || any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.scorer.RBE_model))
+                            obj.scorer.doseToWater = true;
+                            scorerPrefix = 'tabulated';
+                        end
+
+                        % Write subscorer to config files
+                        for s = 1:length(scorerNames)
+                            if strcmp(obj.radiationMode,'protons')
+                                fprintf(fID,'s:Sc/%s%s/ReferencedSubScorer_LET      = "ProtonLET"\n',scorerPrefix,scorerNames{s});
                             end
-                        otherwise
-                            % Throw error in case an invalid radiationMode has been selected
-                            matRad_cfg.dispError(['Model ',obj.scorer.RBE_model{i},' not implemented for ',obj.radiationMode]);
+                            fprintf(fID,'s:Sc/%s%s/ReferencedSubScorer_Dose     = "Tally_DoseToWater"\n',scorerPrefix,scorerNames{s});
+                        end
                     end
 
-                    % Read appropriate scorer from file and write to config file
-                    matRad_cfg.dispDebug('Reading RBE Scorer from %s\n',fname);
+                    % write dose to water scorer from file
+                    if obj.scorer.doseToWater
+                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_doseToWater);
+                        matRad_cfg.dispDebug('Reading doseToWater scorer from %s\n',fname);
+                        scorerName = fileread(fname);
+                        fprintf(fID,'\n%s\n\n',scorerName);
+
+                        % Update MCparam.tallies with processed scorer
+                        obj.MCparam.tallies = [obj.MCparam.tallies,{'doseToWater'}];
+                    end
+
+                    % write LET scorer from file
+                    if obj.scorer.LET
+                        if strcmp(obj.radiationMode,'protons')
+                            fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_LET);
+                            matRad_cfg.dispDebug('Reading LET Scorer from %s\n',fname);
+                            scorerName = fileread(fname);
+                            fprintf(fID,'\n%s\n\n',scorerName);
+
+                            % Update MCparam.tallies with processed scorer
+                            obj.MCparam.tallies = [obj.MCparam.tallies,{'LET'}];
+                        else
+                            matRad_cfg.dispError('LET in TOPAS only for protons!\n');
+                        end
+                    end
+
+                    % write volume scorer from file
+                    if obj.scorer.volume
+                        fileList = dir(fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,'TOPAS_scorer_volume_*.in'));
+                        for fileIx=1:length(fileList)
+                            fname = fullfile(obj.thisFolder,fileList(fileIx).name);
+                            matRad_cfg.dispDebug('Reading Volume Scorer from %s\n',fname);
+                            scorerName = fileread(fname);
+                            fprintf(fID,'\n%s\n\n',scorerName);
+
+                            tallyLabel = regexprep(fileList(fileIx).name,'TOPAS_scorer_volume_','');
+                            tallyLabel = regexprep(tallyLabel,'.txt.in','');
+
+                            % Update MCparam.tallies with processed scorer
+                            obj.MCparam.tallies = [obj.MCparam.tallies,{tallyLabel}];
+                        end
+                    end
+
+                    % write surface track count from file
+                    if obj.scorer.surfaceTrackCount
+                        fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_surfaceTrackCount);
+                        matRad_cfg.dispDebug('Reading surface scorer from %s\n',fname);
+                        scorerName = fileread(fname);
+                        fprintf(fID,'\n%s\n\n',scorerName);
+
+                        % Update MCparam.tallies with processed scorer
+                        obj.MCparam.tallies = [obj.MCparam.tallies,{'IC'}];
+                    end
+
+
+                    % Write timefeature-splitting in case of dij calculation
+                    if obj.scorer.calcDij
+                        tallyName = cell(1,0);
+                        if obj.scorer.RBE
+                            if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.MCparam.RBE_models))
+                                tallyName{end+1} = 'McNamaraAlpha';
+                                tallyName{end+1} = 'McNamaraBeta';
+                            end
+                            if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.MCparam.RBE_models))
+                                tallyName{end+1} = 'WedenbergAlpha';
+                                tallyName{end+1} = 'WedenbergBeta';
+                            end
+                            if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.MCparam.RBE_models))
+                                tallyName{end+1} = 'tabulatedAlpha';
+                                tallyName{end+1} = 'tabulatedBeta';
+                            end
+                            if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.MCparam.RBE_models))
+                                tallyName{end+1} = 'tabulatedAlpha';
+                                tallyName{end+1} = 'tabulatedBeta';
+                            end
+                        end
+                        if obj.scorer.LET
+                            tallyName{end+1} = 'ProtonLET';
+                        end
+                        if obj.scorer.surfaceTrackCount
+                            tallyName{end+1} = 'IC';
+                        end
+                        if obj.scorer.doseToMedium
+                            tallyName{end+1} = 'Patient/Tally_DoseToMedium';
+                        end
+                        if obj.scorer.doseToMedium
+                            tallyName{end+1} = 'Tally_DoseToWater';
+                        end
+
+                        % We should discuss here if that's something that has to be available for photons as well, turned off for now
+                        if ~strcmp(obj.radiationMode,'photons')
+                            fprintf(fID,'#-- Time feature splitting for dij calculation\n');
+
+                            for i = 1:length(tallyName)
+                                fprintf(fID,['s:Sc/' tallyName{i} '/SplitByTimeFeature = "ImageName"\n']);
+                            end
+                        end
+                    end
+                otherwise
+
+                    fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.scorer.filename);
+                    matRad_cfg.dispInfo('Reading custom scorer from %s\n',fname);
                     scorerName = fileread(fname);
                     fprintf(fID,'\n%s\n\n',scorerName);
-                end
 
-                % Begin writing biological scorer components: cell lines
-                switch obj.radiationMode
-                    case 'protons'
-                        fprintf(fID,'\n### Biological Parameters ###\n');
-                        fprintf(fID,'sv:Sc/CellLines = 1 "CellLineGeneric"\n');
-                        fprintf(fID,'d:Sc/CellLineGeneric/Alphax 		= Sc/AlphaX /Gy\n');
-                        fprintf(fID,'d:Sc/CellLineGeneric/Betax 		= Sc/BetaX /Gy2\n');
-                        fprintf(fID,'d:Sc/CellLineGeneric/AlphaBetaRatiox 	= Sc/AlphaBetaX Gy\n\n');
-                    case {'carbon','helium'}
-                        fprintf(fID,'\n### Biological Parameters ###\n');
-                        fprintf(fID,'sv:Sc/CellLines = 1 "CellGeneric_abR2"\n');
-                        fprintf(fID,'d:Sc/CellGeneric_abR2/Alphax = Sc/AlphaX /Gy\n');
-                        fprintf(fID,'d:Sc/CellGeneric_abR2/Betax = Sc/BetaX /Gy2\n\n');
-                        % fprintf(fID,'d:Sc/CellGeneric_abR2/AlphaBetaRatiox 	= Sc/AlphaBetaX Gy\n');
-                    otherwise
-                        matRad_cfg.dispError([obj.radiationMode ' not implemented']);
-                end
-
-                % write biological scorer components: dose parameters
-                matRad_cfg.dispDebug('Writing Biologial Scorer components.\n');
-                fprintf(fID,'d:Sc/PrescribedDose = %.4f Gy\n',obj.bioParam.PrescribedDose);
-                fprintf(fID,'b:Sc/SimultaneousExposure = %s\n',obj.bioParam.SimultaneousExposure);
-                fprintf(fID,'d:Sc/AlphaX = %.4f /Gy\n',obj.bioParam.AlphaX);
-                fprintf(fID,'d:Sc/BetaX = %.4f /Gy2\n',obj.bioParam.BetaX);
-                fprintf(fID,'d:Sc/AlphaBetaX = %.4f Gy\n',obj.bioParam.AlphaX/obj.bioParam.BetaX);
-
-                % Update MCparam.tallies with processed scorer
-                for i = 1:length(obj.scorer.RBE_model)
-                    obj.MCparam.tallies = [obj.MCparam.tallies,{['alpha_' obj.scorer.RBE_model{i}],['beta_' obj.scorer.RBE_model{i}]}];
-                end
-            end
-
-            % Write share sub-scorer
-            if obj.scorer.sharedSubscorers && obj.scorer.RBE
-                % Select appropriate scorer from selected flags
-                scorerNames = {'Alpha','Beta'};
-                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.scorer.RBE_model))
-                    obj.scorer.LET = true;
-                    obj.scorer.doseToWater = true;
-                    scorerPrefix = 'McNamara';
-                elseif any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.scorer.RBE_model))
-                    obj.scorer.LET = true;
-                    obj.scorer.doseToWater = true;
-                    scorerPrefix = 'Wedenberg';
-                elseif any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.scorer.RBE_model)) || any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.scorer.RBE_model))
-                    obj.scorer.doseToWater = true;
-                    scorerPrefix = 'tabulated';
-                end
-
-                % Write subscorer to config files
-                for s = 1:length(scorerNames)
-                    if strcmp(obj.radiationMode,'protons')
-                        fprintf(fID,'s:Sc/%s%s/ReferencedSubScorer_LET      = "ProtonLET"\n',scorerPrefix,scorerNames{s});
+                    if ismember(obj.scorer.tallies,'default')
+                        % Update MCparam.tallies with processed scorer
+                        obj.MCparam.tallies = {'physicalDose'};
+                    else
+                        for i = 1:length(obj.scorer.tallies)
+                            obj.MCparam.tallies = [obj.MCparam.tallies,{obj.scorer.RBE_model{i}}];
+                        end
                     end
-                    fprintf(fID,'s:Sc/%s%s/ReferencedSubScorer_Dose     = "Tally_DoseToWater"\n',scorerPrefix,scorerNames{s});
-                end
-            end
+                        
 
-            % write dose to water scorer from file
-            if obj.scorer.doseToWater
-                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_doseToWater);
-                matRad_cfg.dispDebug('Reading doseToWater scorer from %s\n',fname);
-                scorerName = fileread(fname);
-                fprintf(fID,'\n%s\n\n',scorerName);
-
-                % Update MCparam.tallies with processed scorer
-                obj.MCparam.tallies = [obj.MCparam.tallies,{'doseToWater'}];
-            end
-
-            % write LET scorer from file
-            if obj.scorer.LET
-                if strcmp(obj.radiationMode,'protons')
-                    fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_LET);
-                    matRad_cfg.dispDebug('Reading LET Scorer from %s\n',fname);
-                    scorerName = fileread(fname);
-                    fprintf(fID,'\n%s\n\n',scorerName);
-
-                    % Update MCparam.tallies with processed scorer
-                    obj.MCparam.tallies = [obj.MCparam.tallies,{'LET'}];
-                else
-                    matRad_cfg.dispError('LET in TOPAS only for protons!\n');
-                end
-            end
-
-            % write volume scorer from file
-            if obj.scorer.volume
-                fileList = dir(fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,'TOPAS_scorer_volume_*.in'));
-                for fileIx=1:length(fileList)
-                    fname = fullfile(obj.thisFolder,fileList(fileIx).name);
-                    matRad_cfg.dispDebug('Reading Volume Scorer from %s\n',fname);
-                    scorerName = fileread(fname);
-                    fprintf(fID,'\n%s\n\n',scorerName);
-
-                    tallyLabel = regexprep(fileList(fileIx).name,'TOPAS_scorer_volume_','');
-                    tallyLabel = regexprep(tallyLabel,'.txt.in','');
-
-                    % Update MCparam.tallies with processed scorer
-                    obj.MCparam.tallies = [obj.MCparam.tallies,{tallyLabel}];
-                end
-            end
-
-            % write surface track count from file
-            if obj.scorer.surfaceTrackCount
-                fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_surfaceTrackCount);
-                matRad_cfg.dispDebug('Reading surface scorer from %s\n',fname);
-                scorerName = fileread(fname);
-                fprintf(fID,'\n%s\n\n',scorerName);
-
-                % Update MCparam.tallies with processed scorer
-                obj.MCparam.tallies = [obj.MCparam.tallies,{'IC'}];
-            end
-
-
-            % Write timefeature-splitting in case of dij calculation
-            if obj.scorer.calcDij
-                tallyName = cell(1,0);
-                if obj.scorer.RBE
-                    if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.MCparam.RBE_models))
-                        tallyName{end+1} = 'McNamaraAlpha';
-                        tallyName{end+1} = 'McNamaraBeta';
-                    end
-                    if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.MCparam.RBE_models))
-                        tallyName{end+1} = 'WedenbergAlpha';
-                        tallyName{end+1} = 'WedenbergBeta';
-                    end
-                    if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.MCparam.RBE_models))
-                        tallyName{end+1} = 'tabulatedAlpha';
-                        tallyName{end+1} = 'tabulatedBeta';
-                    end
-                    if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.MCparam.RBE_models))
-                        tallyName{end+1} = 'tabulatedAlpha';
-                        tallyName{end+1} = 'tabulatedBeta';
-                    end
-                end
-                if obj.scorer.LET
-                    tallyName{end+1} = 'ProtonLET';
-                end
-                if obj.scorer.surfaceTrackCount
-                    tallyName{end+1} = 'IC';
-                end
-                if obj.scorer.doseToMedium
-                    tallyName{end+1} = 'Patient/Tally_DoseToMedium';
-                end
-                if obj.scorer.doseToMedium
-                    tallyName{end+1} = 'Tally_DoseToWater';
-                end
-
-                % We should discuss here if that's something that has to be available for photons as well, turned off for now
-                if ~strcmp(obj.radiationMode,'photons')
-                    fprintf(fID,'#-- Time feature splitting for dij calculation\n');
-
-                    for i = 1:length(tallyName)
-                        fprintf(fID,['s:Sc/' tallyName{i} '/SplitByTimeFeature = "ImageName"\n']);
-                    end
-                end
             end
         end
 
@@ -2001,7 +2024,7 @@ classdef matRad_TopasConfig < handle
                                     densityFile = fopen(fname);
                                     densityCorrection.density = fscanf(densityFile,'%f');
                                     fclose(densityFile);
-%                                     minHU = floor(min(ct.cubeHU{1}(:)));
+                                    %                                     minHU = floor(min(ct.cubeHU{1}(:)));
                                     minHU = rspHlut(1,1);
                                     densityCorrection.boundaries = [minHU numel(densityCorrection.density)+minHU];
 
