@@ -433,7 +433,7 @@ classdef matRad_TopasConfig < handle
             folders = folders(~cellfun('isempty',folders));
 
             % Check if .bin or .csv files are available and sort out unnecessary folders
-            folderIsValid = cellfun(@(x) ~isempty(dir([x '\*.bin'])), folders) | cellfun(@(x) ~isempty(dir([x '\*.csv'])), folders);
+            folderIsValid = cellfun(@(x) ~isempty(dir([x filesep '*.bin'])), folders) | cellfun(@(x) ~isempty(dir([x filesep '*.csv'])), folders);
             folders = folders(folderIsValid);
 
             % Get numOfSamples from number of folders
