@@ -9,7 +9,7 @@ function dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,calcDoseDirect)
 %   ct:                         matRad ct struct
 %   stf:                        matRad steering information struct
 %   pln:                        matRad plan meta information struct
-%   cst:                        matRad cst struct            
+%   cst:                        matRad cst struct
 %   calcDoseDirect:             binary switch to enable forward dose
 %                               calculation
 % output
@@ -22,13 +22,13 @@ function dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,calcDoseDirect)
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Copyright 2019 the matRad development team. 
-% 
-% This file is part of the matRad project. It is subject to the license 
-% terms in the LICENSE file found in the top-level directory of this 
-% distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part 
-% of the matRad project, including this file, may be copied, modified, 
-% propagated, or distributed except according to the terms contained in the 
+% Copyright 2019 the matRad development team.
+%
+% This file is part of the matRad project. It is subject to the license
+% terms in the LICENSE file found in the top-level directory of this
+% distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part
+% of the matRad project, including this file, may be copied, modified,
+% propagated, or distributed except according to the terms contained in the
 % LICENSE file.
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,7 +48,7 @@ set(figureWait,'pointer','watch');
 
 % check if valid machine
 if ~strcmp(pln.radiationMode,'protons')
-    matRad_cfg.dispError('Wrong radiation modality. MCsquare only supports protons!');    
+    matRad_cfg.dispError('Wrong radiation modality. MCsquare only supports protons!');
 end
 
 % Load class variables in pln
@@ -87,9 +87,9 @@ end
 
 %Mex interface for import of sparse matrix
 if ~calcDoseDirect && ~matRad_checkMexFileExists('matRad_sparseBeamletsReaderMCsquare')
-    matRad_cfg.dispWarning('Compiled sparse reader interface not found. Trying to compile it on the fly!');      
+    matRad_cfg.dispWarning('Compiled sparse reader interface not found. Trying to compile it on the fly!');
     try
-        matRad_compileMCsquareSparseReader();        
+        matRad_compileMCsquareSparseReader();
     catch MException
         matRad_cfg.dispError('Could not find/generate mex interface for reading the sparse matrix. \nCause of error:\n%s\n Please compile it yourself.',MException.message);
     end
@@ -155,12 +155,12 @@ for s = 1:ct.numOfCtScen
         dij.doseGrid.x,dij.doseGrid.y',dij.doseGrid.z,'linear');
 end
 
-% switch for using existing BDL file (e.g. to fit matRad basedata), 
+% switch for using existing BDL file (e.g. to fit matRad basedata),
 % or generate BDL file from matRad base data using MCsquareBDL
 if isfield(pln,'loadExistingBDL') && ~isempty(pln.loadExistingBDL)
     % use existing BDL file
     bdFile = pln.loadExistingBDL;
-    
+
 else
     % fit and create BDL file using selected machine file
     bdFile = [machine.meta.machine '.txt'];
@@ -175,39 +175,39 @@ else
     %matRad_createMCsquareBaseDataFile(bdFile,machine,1);
     MCsquareBDL = MCsquareBDL.writeMCsquareData([MCsquareFolder filesep 'BDL' filesep bdFile]);
     MCsquareBDL = MCsquareBDL.saveMatradMachine('savedMatRadMachine');
-    
+
 end
 
 for shiftScen = 1:pln.multScen.totNumShiftScen
-    
+
     % manipulate isocenter
     for k = 1:length(stf)
         stf(k).isoCenter = stf(k).isoCenter + pln.multScen.isoShift(shiftScen,:);
     end
-    
+
     for ctScen = 1:pln.multScen.numOfCtScen
         for rangeShiftScen = 1:pln.multScen.totNumRangeScen
             if pln.multScen.scenMask(ctScen,shiftScen,rangeShiftScen)
-                
+
                 %For direct dose calculation
                 totalWeights = 0;
-                
+
                 %Count the scenarios
                 scenCount = scenCount + 1;
-                
+
                 % We need to adjust the offset used in matRad_calcDoseInit
                 mcSquareAddIsoCenterOffset = [dij.doseGrid.resolution.x/2 dij.doseGrid.resolution.y/2 dij.doseGrid.resolution.z/2] ...
                     - [dij.ctGrid.resolution.x   dij.ctGrid.resolution.y   dij.ctGrid.resolution.z];
                 mcSquareAddIsoCenterOffset = mcSquareAddIsoCenterOffset - offset;
-                
+
                 % MCsquare settings
-                MCsquareConfigFile = sprintf('MCsquareConfig.txt');
-                              
+                MCsquareConfigFile = 'MCsquareConfig.txt';
+
                 pln.propMC.BDL_Machine_Parameter_File = ['BDL/' bdFile];
                 pln.propMC.BDL_Plan_File = 'currBixels.txt';
                 pln.propMC.CT_File       = 'MC2patientCT.mhd';
                 pln.propMC.Num_Threads   = nbThreads;
-                pln.propMC.RNG_Seed      = 1234;              
+                pln.propMC.RNG_Seed      = 1234;
 
                 % turn simulation of individual beamlets
                 pln.propMC.Beamlet_Mode = ~calcDoseDirect;
@@ -217,13 +217,13 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                 pln.propMC.Dose_Sparse_Output = ~calcDoseDirect;
                 % set threshold of sparse matrix generation
                 pln.propMC.Dose_Sparse_Threshold = relDoseCutOff;
-                
+
                 %Matrices for LET
                 if pln.propDoseCalc.calcLET
                     pln.propMC.LET_MHD_Output		 = calcDoseDirect;
                     pln.propMC.LET_Sparse_Output	 = ~calcDoseDirect;
                 end
-                 
+
                 counter = 0;
                 for i = 1:length(stf)
                     %Let's check if we have a unique or no range shifter, because MCsquare
@@ -237,13 +237,13 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                             raShiField = [raShiField zeros(size(stf(i).ray(j).energies))];
                         end
                     end
-                    
+
                     raShiField = unique(raShiField); %unique range shifter
                     raShiField(raShiField == 0) = []; %no range shifter
                     if numel(raShiField) > 1
                         matRad_cfg.dispError('MCsquare does not support different range shifter IDs per field! Aborting.\n');
                     end
-                    
+
                     if ~isempty(raShiField)
                         stfMCsquare(i).rangeShifterID = raShiField;
                         stfMCsquare(i).rangeShifterType = 'binary';
@@ -251,13 +251,13 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         stfMCsquare(i).rangeShifterID = 0;
                         stfMCsquare(i).rangeShifterType = 'binary';
                     end
-                    
+
                     stfMCsquare(i).gantryAngle = mod(180-stf(i).gantryAngle,360); %Different MCsquare geometry
                     stfMCsquare(i).couchAngle  = stf(i).couchAngle;
                     stfMCsquare(i).isoCenter   = stf(i).isoCenter + mcSquareAddIsoCenterOffset;
                     stfMCsquare(i).energies    = unique([stf(i).ray.energy]);
                     stfMCsquare(i).SAD         = stf(i).SAD;
-                    
+
                     % allocate empty target point container
                     for j = 1:numel(stfMCsquare(i).energies)
                         stfMCsquare(i).energyLayer(j).targetPoints   = [];
@@ -265,7 +265,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         stfMCsquare(i).energyLayer(j).rayNum         = [];
                         stfMCsquare(i).energyLayer(j).bixelNum       = [];
                     end
-                    
+
                     for j = 1:stf(i).numOfRays
                         for k = 1:stf(i).numOfBixelsPerRay(j)
                             counter = counter + 1;
@@ -273,49 +273,49 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                             dij.rayNum(counter)   = j;
                             dij.bixelNum(counter) = k;
                         end
-                        
+
                         for k = 1:numel(stfMCsquare(i).energies)
-                             
-                             %Check if ray has a spot in the current energy layer
-                             if any(stf(i).ray(j).energy == stfMCsquare(i).energies(k))
-                                 %Set up the ray geometries and add current ray to energy
-                                 %layer
-                                 energyIx = find(stf(i).ray(j).energy == stfMCsquare(i).energies(k));
-                                 stfMCsquare(i).energyLayer(k).rayNum   = [stfMCsquare(i).energyLayer(k).rayNum j];
-                                 stfMCsquare(i).energyLayer(k).bixelNum = [stfMCsquare(i).energyLayer(k).bixelNum energyIx];
-                                 stfMCsquare(i).energyLayer(k).targetPoints = [stfMCsquare(i).energyLayer(k).targetPoints; ...
-                                     -stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)];
-                                 
-                                 %Number of primaries depending on beamlet-wise or field-based compuation (direct dose calculation)                    
-                                 if calcDoseDirect
-                                     stfMCsquare(i).energyLayer(k).numOfPrimaries = [stfMCsquare(i).energyLayer(k).numOfPrimaries ...
-                                         round(stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k))*pln.propMC.numHistories)];
-                                     
-                                     totalWeights = totalWeights + stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k));
-                                 else
-                                     stfMCsquare(i).energyLayer(k).numOfPrimaries = [stfMCsquare(i).energyLayer(k).numOfPrimaries ...
-                                         pln.propMC.numHistories];
-                                 end
-                                 
-                                 %Now add the range shifter
-                                 raShis = stf(i).ray(j).rangeShifter(energyIx);
-                                                                  
-                                 %sanity check range shifters
-                                 raShiIDs = unique([raShis.ID]);
-                                 %raShiIDs = raShiIDs(raShiIDs ~= 0);
-                                 
-                                 if ~isscalar(raShiIDs)
-                                     matRad_cfg.dispError('MCsquare only supports one range shifter setting (on or off) per energy! Aborting.\n');
-                                 end
-                                 
-                                 stfMCsquare(i).energyLayer(k).rangeShifter = raShis(1);
-                             end
+
+                            %Check if ray has a spot in the current energy layer
+                            if any(stf(i).ray(j).energy == stfMCsquare(i).energies(k))
+                                %Set up the ray geometries and add current ray to energy
+                                %layer
+                                energyIx = find(stf(i).ray(j).energy == stfMCsquare(i).energies(k));
+                                stfMCsquare(i).energyLayer(k).rayNum   = [stfMCsquare(i).energyLayer(k).rayNum j];
+                                stfMCsquare(i).energyLayer(k).bixelNum = [stfMCsquare(i).energyLayer(k).bixelNum energyIx];
+                                stfMCsquare(i).energyLayer(k).targetPoints = [stfMCsquare(i).energyLayer(k).targetPoints; ...
+                                    -stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)];
+
+                                %Number of primaries depending on beamlet-wise or field-based compuation (direct dose calculation)
+                                if calcDoseDirect
+                                    stfMCsquare(i).energyLayer(k).numOfPrimaries = [stfMCsquare(i).energyLayer(k).numOfPrimaries ...
+                                        round(stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k))*pln.propMC.numHistories)];
+
+                                    totalWeights = totalWeights + stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k));
+                                else
+                                    stfMCsquare(i).energyLayer(k).numOfPrimaries = [stfMCsquare(i).energyLayer(k).numOfPrimaries ...
+                                        pln.propMC.numHistories];
+                                end
+
+                                %Now add the range shifter
+                                raShis = stf(i).ray(j).rangeShifter(energyIx);
+
+                                %sanity check range shifters
+                                raShiIDs = unique([raShis.ID]);
+                                %raShiIDs = raShiIDs(raShiIDs ~= 0);
+
+                                if ~isscalar(raShiIDs)
+                                    matRad_cfg.dispError('MCsquare only supports one range shifter setting (on or off) per energy! Aborting.\n');
+                                end
+
+                                stfMCsquare(i).energyLayer(k).rangeShifter = raShis(1);
+                            end
                         end
-                        
+
                     end
-                    
+
                 end
-                
+
                 % remember order
                 counterMCsquare = 0;
                 MCsquareOrder = NaN * ones(dij.totalNumOfBixels,1);
@@ -326,12 +326,12 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                             ix = find(i                                         == dij.beamNum & ...
                                 stfMCsquare(i).energyLayer(j).rayNum(k)   == dij.rayNum & ...
                                 stfMCsquare(i).energyLayer(j).bixelNum(k) == dij.bixelNum);
-                            
+
                             MCsquareOrder(ix) = counterMCsquare;
                         end
                     end
                 end
-                
+
                 if any(isnan(MCsquareOrder))
                     matRad_cfg.dispError('Invalid ordering of Beamlets for MCsquare computation!');
                 end
@@ -340,42 +340,42 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                 % override HU_Density_Conversion_File and HU_Material_Conversion_File in case of Heterogeneity density sampling
                 if isfield(ct,'modulated') && ct.modulated
                     % copy and override with default HU conversion files
-                    if ~isfolder(['Scanners' filesep 'densitySampling'])
-                        mkdir(['Scanners' filesep 'densitySampling'])
+                    if ~isfolder(['Scanners' '/' 'densitySampling'])
+                        mkdir(['Scanners' '/' 'densitySampling'])
                     end
-                    copyfile(pln.propMC.HU_Density_Conversion_File,['Scanners' filesep 'densitySampling' filesep 'HU_Density_Conversion.txt'])
-                    copyfile(pln.propMC.HU_Material_Conversion_File,['Scanners' filesep 'densitySampling' filesep 'HU_Material_Conversion.txt'])
+                    copyfile(pln.propMC.HU_Density_Conversion_File,['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'])
+                    copyfile(pln.propMC.HU_Material_Conversion_File,['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'])
 
                     % prepare sampled densities and combine with HU
                     sampledDensities(1,:) = 6000:5999+length(ct.sampledDensities);
                     sampledDensities(2,:) = ct.sampledDensities;
 
                     % write sampled densities
-                    fID = fopen(['Scanners' filesep 'densitySampling' filesep 'HU_Density_Conversion.txt'],'a');
+                    fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'],'a');
                     fprintf(fID,'\n%i       %.3f',sampledDensities);
                     fclose(fID);
-                    
+
                     % write material conversion
-                    fID = fopen(['Scanners' filesep 'densitySampling' filesep 'HU_Material_Conversion.txt'],'a');
-                    fprintf(fID,'\n6000    40      # Schneider_Lung');
-%                     fprintf(fID,'\n6000    17      # Water');
+                    fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'],'a');
+                    % fprintf(fID,'\n6000    40      # Schneider_Lung');
+                    fprintf(fID,'\n6000    17      # Water');
                     fclose(fID);
 
                     % set custom HU conversion files to be used by MCsquare
-                    MCsquareConfig.HU_Density_Conversion_File = ['Scanners' filesep 'densitySampling' filesep 'HU_Density_Conversion.txt'];
-                    MCsquareConfig.HU_Material_Conversion_File = ['Scanners' filesep 'densitySampling' filesep 'HU_Material_Conversion.txt'];
+                    pln.propMC.HU_Density_Conversion_File = ['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'];
+                    pln.propMC.HU_Material_Conversion_File = ['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'];
                 end
 
                 % write patient data
                 MCsquareBinCubeResolution = [dij.doseGrid.resolution.x ...
                     dij.doseGrid.resolution.y ...
                     dij.doseGrid.resolution.z];
-                
+
                 pln.propMC.writeMhd(HUcube{ctScen},MCsquareBinCubeResolution);
 
                 % write config file
                 pln.propMC.writeMCsquareinputAllFiles(MCsquareConfigFile,stfMCsquare);
-                
+
                 %% MC computation and dij filling
                 % run MCsquare
                 mcSquareCall = [mcSquareBinary ' ' MCsquareConfigFile];
@@ -384,7 +384,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
 
                 mask = false(dij.doseGrid.numOfVoxels,1);
                 mask(VdoseGrid) = true;
-                
+
                 % read output
                 if ~calcDoseDirect
                     %Read Sparse Matrix
@@ -393,7 +393,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         dij.doseGrid.dimensions, ...
                         dij.totalNumOfBixels, ...
                         mask);
-                    
+
                     %Read sparse LET
                     if pln.propDoseCalc.calcLET
                         dij.mLETDose{1} =  absCalibrationFactorMC2 * matRad_sparseBeamletsReaderMCsquare ( ...
@@ -404,19 +404,19 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                     end
                 else
                     %Read dose cube
-                    cube = pln.propMC.readMhd('Dose.mhd');
+                    cube = pln.propMC.readMhd([pln.propMC.Output_Directory filesep 'Dose.mhd']);
                     dij.physicalDose{1} = absCalibrationFactorMC2 * totalWeights * ...
                         sparse(VdoseGrid,ones(numel(VdoseGrid),1), ...
-                            cube(VdoseGrid), ...
-                            dij.doseGrid.numOfVoxels,1);
-                    
+                        cube(VdoseGrid), ...
+                        dij.doseGrid.numOfVoxels,1);
+
                     %Read LET cube
                     if pln.propDoseCalc.calcLET
-                        cube = pln.propMC.readMhd('LET.mhd');
+                        cube = pln.propMC.readMhd([pln.propMC.Output_Directory filesep 'LET.mhd']);
                         dij.mLETDose{1} = absCalibrationFactorMC2 * totalWeights * ...
                             sparse(VdoseGrid,ones(numel(VdoseGrid),1), ...
-                                cube(VdoseGrid), ...
-                                dij.doseGrid.numOfVoxels,1);
+                            cube(VdoseGrid), ...
+                            dij.doseGrid.numOfVoxels,1);
                     end
 
                     % Postprocessing for dij:
@@ -431,7 +431,7 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                     dij.totalNumOfRays = 1;
                     dij.numOfRaysPerBeam = 1;
                 end
-                
+
                 % reorder influence matrix to comply with matRad default ordering
                 if pln.propMC.Beamlet_Mode
                     dij.physicalDose{1} = dij.physicalDose{1}(:,MCsquareOrder);
@@ -439,9 +439,9 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                         dij.mLETDose{1} = dij.mLETDose{1}(:,MCsquareOrder);
                     end
                 end
-                
+
                 matRad_cfg.dispInfo('Simulation finished!\n');
-                
+
                 %% Clear data
                 delete([pln.propMC.CT_File(1:end-4) '.*']);
                 delete('currBixels.txt');
@@ -451,21 +451,26 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
                 if strcmp(env,'OCTAVE')
                     rmdirConfirmState = confirm_recursive_rmdir(0);
                 end
-                rmdir(pln.propMC.Output_Directory,'s');
+
+                try
+                    rmdir(pln.propMC.Output_Directory,'s');
+                catch
+                    matRad_cfg.dispInfo('Processed files could not be deleted, consider deleting them manually.')
+                end
 
                 %Reset to old confirmatoin state
                 if strcmp(env,'OCTAVE')
                     confirm_recursive_rmdir(rmdirConfirmState);
                 end
-                
+
             end
         end
     end
-    
+
     % manipulate isocenter
     for k = 1:length(stf)
         stf(k).isoCenter = stf(k).isoCenter - pln.multScen.isoShift(shiftScen,:);
-    end   
+    end
 end
 
 % Order fields for easier comparison between different dijs

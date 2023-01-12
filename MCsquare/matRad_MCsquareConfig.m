@@ -346,7 +346,7 @@ classdef matRad_MCsquareConfig
             fclose(dataFileHandle);
         end
 
-        function cube = readMhd(obj,filename)
+        function cube = readMhd(~,filename)
             % matRad mhd file reader
             %
             % call
@@ -374,9 +374,14 @@ classdef matRad_MCsquareConfig
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+            %% Extract folder
+            filearray = strsplit(filename,filesep);
+            foldername = join(filearray(1:end-1),filesep);
+            foldername = foldername{1};
+            filename = filearray{end};
 
-            %% read header
-            headerFileHandle = fopen([obj.Output_Directory, filesep filename],'r');
+            %% read header          
+            headerFileHandle = fopen([foldername filesep filename],'r');
 
             s = textscan(headerFileHandle, '%s', 'delimiter', '\n');
 
@@ -397,7 +402,7 @@ classdef matRad_MCsquareConfig
             fclose(headerFileHandle);
 
             %% read data
-            dataFileHandle = fopen([obj.Output_Directory filesep dataFilename],'r');
+            dataFileHandle = fopen([foldername filesep dataFilename],'r');
             cube = reshape(fread(dataFileHandle,inf,type),dimensions);
             cube = permute(cube,[2 1 3]);
             cube = flip(cube,2);
