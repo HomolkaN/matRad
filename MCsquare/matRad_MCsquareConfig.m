@@ -376,7 +376,7 @@ classdef matRad_MCsquareConfig
 
             %% Extract folder
             filearray = strsplit(filename,filesep);
-            foldername = join(filearray(1:end-1),filesep);
+            foldername = strjoin(filearray(1:end-1),filesep);
             foldername = foldername{1};
             filename = filearray{end};
 
