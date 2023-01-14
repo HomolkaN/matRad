@@ -681,6 +681,9 @@ function [m2t, pgfEnvironments] = handleAllChildren(m2t, h)
 
             case 'line'
                 [m2t, str] = handleObject(m2t, child, @drawLine);
+                
+            case 'constantline'
+                [m2t, str] = handleObject(m2t, child, @drawConstantLine);
 
             case 'patch'
                 [m2t, str] = handleObject(m2t, child, @drawPatch);
@@ -712,6 +715,12 @@ function [m2t, pgfEnvironments] = handleAllChildren(m2t, h)
 
             case 'rectangle'
                 [m2t, str] = handleObject(m2t, child, @drawRectangle);
+		
+	    case 'doubleendarrowshape'
+                [m2t, str] = handleObject(m2t, child, @drawArrow);
+	
+	    case 'arrowshape'
+                [m2t, str] = handleObject(m2t, child, @drawArrow);
 
             case 'histogram'
                 [m2t, str] = handleObject(m2t, child, @drawHistogram);
@@ -1132,9 +1141,14 @@ function entries = getLegendEntries(m2t)
 
     switch getEnvironment()
         case 'Octave'
-            % See set(hlegend, "deletefcn", {@deletelegend2, ca, [], [], t1, hplots}); in legend.m
-            delfun  = get(legendHandle,'deletefcn');
-            entries = delfun{6};
+            if isappdata(legendHandle,'__peer_objects__')
+                % Octave version 6.x or newer with refactored legend
+                entries = getappdata(legendHandle,'__peer_objects__')
+            else
+                % See set(hlegend, "deletefcn", {@deletelegend2, ca, [], [], t1, hplots}); in legend.m
+                delfun  = get(legendHandle,'deletefcn');
+                entries = delfun{6};
+            end
 
             % Bubble-up legend entry properties from child to hggroup root
             % for guessable objects
@@ -2280,6 +2294,36 @@ function [tikzMarker, markOptions] = ...
     end
 end
 % ==============================================================================
+function [m2t, str] = drawConstantLine(m2t, h, custom)
+    % Draws a 'constantline' object such as those produced by 'yline()'
+    
+    interceptaxis = get(h, 'InterceptAxis');
+    value = get(h, 'Value');
+    xLim = get(h.Parent, 'XLim');
+    yLim = get(h.Parent, 'Ylim');
+    
+    % create line from object properties
+    switch interceptaxis
+        case 'x'
+            xdata = [value value];
+            ydata = yLim;
+        case 'y'
+            xdata = xLim;
+            ydata = [value value];
+        otherwise
+            warning('ConstantLine: invalid InterceptAxis. Ignoring...')
+            return
+    end
+    l = line(xdata, ydata);
+    
+    % Pass on color and line options
+    l.Color = h.Color;
+    l.LineStyle = h.LineStyle;
+    l.LineWidth = h.LineWidth;
+    
+    [m2t, str] = drawLine(m2t, l, custom);
+end
+% ==============================================================================
 function [m2t, str] = drawPatch(m2t, handle, custom)
     % Draws a 'patch' graphics object (as found in contourf plots, for example).
     %
@@ -3232,6 +3276,10 @@ function m2t = drawAnnotationsHelper(m2t,h)
             % Rectangle
         case {'scribe.scriberect', 'matlab.graphics.shape.Rectangle'}
             [m2t, str] = handleObject(m2t, h, @drawRectangle);
+            
+        case guitypes()
+            % don't do anything for GUI objects and their children
+            [m2t, str] = handleObject(m2t, h, @drawNothing);                
 
         otherwise
             userWarning(m2t, 'Don''t know annotation ''%s''.', cl);
