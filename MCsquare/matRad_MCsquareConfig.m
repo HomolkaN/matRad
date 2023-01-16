@@ -377,7 +377,6 @@ classdef matRad_MCsquareConfig
             %% Extract folder
             filearray = strsplit(filename,filesep);
             foldername = strjoin(filearray(1:end-1),filesep);
-            foldername = foldername{1};
             filename = filearray{end};
 
             %% read header          
