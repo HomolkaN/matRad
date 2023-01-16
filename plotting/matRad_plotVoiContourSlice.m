@@ -60,6 +60,7 @@ end
 
 if isempty(selection) || numel(selection) ~= size(cst,1)
     selection = true(size(cst,1),1);
+%     selection = [cell2mat(cst(:,5)).Visible]';
 end
 
 voiContourHandles = cell(0);
