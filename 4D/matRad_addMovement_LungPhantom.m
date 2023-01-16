@@ -99,14 +99,15 @@ for i = 1:numOfCtScen
         cube_temp{i}   = imwarp(ct.cube{1},   ct.dvf{i},'FillValues',1);
     end
 
-    lungEnds = 35;
-
+    % only voxel after the lung are deformed in order to preserve the lung
+    % "lungEnds" is the cutoff point of the deformation
+    lungEnds = 32;
     for zi = lungEnds:ct.cubeDim(1)
         for xi = 1:ct.cubeDim(2)
             for yi = 1:ct.cubeDim(3)
                 ct.cubeHU{i}(zi,xi,yi) = cubeHU_temp{i}(zi,xi,yi);
                 if isfield(ct,'cube')
-                    ct.cubeHU{i}(zi,xi,yi) = cubeHU_temp{i}(zi,xi,yi);
+                    ct.cube{i}(zi,xi,yi) = cube_temp{i}(zi,xi,yi);
                 end
             end
         end
@@ -144,20 +145,6 @@ if visBool
 end
 
 end
-
-function newCube = displaceOctave(cube,vectorfield,interpMethod,fillValue)
-x = 1:size(cube,1);
-y = 1:size(cube,2);
-z = 1:size(cube,3);
-
-[X,Y,Z] = meshgrid(x,y,z);
-Xnew = X + vectorfield(:,:,:,1);
-Ynew = Y + vectorfield(:,:,:,2);
-Znew = Z + vectorfield(:,:,:,3);
-
-newCube = interp3(X,Y,Z,cube,Xnew,Ynew,Znew,interpMethod,fillValue);
-end
-
 
 
 
