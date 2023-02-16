@@ -138,7 +138,9 @@ end
 % Export histories to resultGUI
 if isfield(dij,'nbHistoriesTotal')
     resultGUI.nbHistoriesTotal = dij.nbHistoriesTotal;
-    resultGUI.nbParticlesTotal = dij.nbParticlesTotal;
+    if isfield(dij,'nbParticlesTotal')
+        resultGUI.nbParticlesTotal = dij.nbParticlesTotal;
+    end
 elseif isprop(pln.propMC,'numHistories')
     resultGUI.historiesMC = pln.propMC.numHistories;
 end
