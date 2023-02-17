@@ -353,83 +353,81 @@ for scenarioIx = 1:pln.multScen.totNumScen
             matRad_cfg.dispError('Invalid ordering of Beamlets for MCsquare computation!');
         end
 
-                %% Write config files
-                % override HU_Density_Conversion_File and HU_Material_Conversion_File in case of Heterogeneity density sampling
-                if isfield(ct,'modulated') && ct.modulated
-                    % copy and override with default HU conversion files
-                    if ~isfolder(['Scanners' '/' 'densitySampling'])
-                        mkdir(['Scanners' '/' 'densitySampling'])
-                    end
-                    copyfile(pln.propMC.HU_Density_Conversion_File,['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'])
-                    copyfile(pln.propMC.HU_Material_Conversion_File,['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'])
-
-                    % prepare sampled densities and combine with HU
-                    sampledDensities(1,:) = 6000:5999+length(ct.sampledDensities);
-                    sampledDensities(2,:) = ct.sampledDensities;
-
-                    % write sampled densities
-                    fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'],'a');
-                    fprintf(fID,'\n%i       %.3f',sampledDensities);
-                    fclose(fID);
-
-                    % write material conversion
-                    fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'],'a');
-                    % fprintf(fID,'\n6000    40      # Schneider_Lung');
-                    fprintf(fID,'\n6000    17      # Water');
-                    fclose(fID);
-
-                    % set custom HU conversion files to be used by MCsquare
-                    pln.propMC.HU_Density_Conversion_File = ['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'];
-                    pln.propMC.HU_Material_Conversion_File = ['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'];
-                end
-
-                % write patient data
-                MCsquareBinCubeResolution = [dij.doseGrid.resolution.x ...
-                    dij.doseGrid.resolution.y ...
-                    dij.doseGrid.resolution.z];
-                pln.propMC.writeMhd(HUcube{ctScen},MCsquareBinCubeResolution);
-
-                % write config file
-                pln.propMC.writeMCsquareinputAllFiles(MCsquareConfigFile,stfMCsquare);
-
-                % write parameters to a MCparam file that can be used to later read the dose back in
-                MCparam.dij = dij; % this can be done here since the dij is not filled at this point
-                MCparam.VdoseGrid = VdoseGrid;
-                MCparam.calcDoseDirect = calcDoseDirect;
-                MCparam.totalWeights = totalWeights;
-                MCparam.Beamlet_Mode = pln.propMC.Beamlet_Mode;
-                MCparam.nbHistoriesTotal = pln.propMC.numHistories;
-                MCparam.MCsquareOrder = MCsquareOrder;
-
-                % Generate output folder and save MCparam
-                if ~exist(pln.propMC.Output_Directory,'dir')
-                    mkdir(pln.propMC.Output_Directory)
-                end
-                save([pln.propMC.Output_Directory '/' 'MCparam.mat'],'MCparam')
-                
-                %% MC computation and dij filling
-                % run MCsquare
-                if ~pln.propMC.externalCalculation
-                    mcSquareCall = [mcSquareBinary ' ' MCsquareConfigFile];
-                    matRad_cfg.dispInfo(['Calling Monte Carlo Engine: ' mcSquareCall]);
-                    [status,cmdout] = system(mcSquareCall,'-echo');
-                end
-
-                % Skip readout if external files were generated
-                if ~pln.propMC.externalCalculation
-                    dij = pln.propMC.readFiles(strrep(pln.propMC.Output_Directory, '/', filesep));
-                else
-                    dij = struct([]);
-                end
-
-                if ~pln.propMC.externalCalculation
-                    matRad_cfg.dispInfo('Simulation finished!\n');
-                else
-                    matRad_cfg.dispInfo('Files generated for external calculation!\n');
-                end
-
+        %% Write config files
+        % override HU_Density_Conversion_File and HU_Material_Conversion_File in case of Heterogeneity density sampling
+        if isfield(ct,'modulated') && ct.modulated
+            % copy and override with default HU conversion files
+            if ~isfolder(['Scanners' '/' 'densitySampling'])
+                mkdir(['Scanners' '/' 'densitySampling'])
             end
+            copyfile(pln.propMC.HU_Density_Conversion_File,['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'])
+            copyfile(pln.propMC.HU_Material_Conversion_File,['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'])
+
+            % prepare sampled densities and combine with HU
+            sampledDensities(1,:) = 6000:5999+length(ct.sampledDensities);
+            sampledDensities(2,:) = ct.sampledDensities;
+
+            % write sampled densities
+            fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'],'a');
+            fprintf(fID,'\n%i       %.3f',sampledDensities);
+            fclose(fID);
+
+            % write material conversion
+            fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'],'a');
+            % fprintf(fID,'\n6000    40      # Schneider_Lung');
+            fprintf(fID,'\n6000    17      # Water');
+            fclose(fID);
+
+            % set custom HU conversion files to be used by MCsquare
+            pln.propMC.HU_Density_Conversion_File = ['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'];
+            pln.propMC.HU_Material_Conversion_File = ['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'];
         end
+
+        % write patient data
+        MCsquareBinCubeResolution = [dij.doseGrid.resolution.x ...
+            dij.doseGrid.resolution.y ...
+            dij.doseGrid.resolution.z];
+        pln.propMC.writeMhd(HUcube{ctScen},MCsquareBinCubeResolution);
+
+        % write config file
+        pln.propMC.writeMCsquareinputAllFiles(MCsquareConfigFile,stfMCsquare);
+
+        % write parameters to a MCparam file that can be used to later read the dose back in
+        MCparam.dij = dij; % this can be done here since the dij is not filled at this point
+        MCparam.VdoseGrid = VdoseGrid;
+        MCparam.calcDoseDirect = calcDoseDirect;
+        MCparam.totalWeights = totalWeights;
+        MCparam.Beamlet_Mode = pln.propMC.Beamlet_Mode;
+        MCparam.nbHistoriesTotal = pln.propMC.numHistories;
+        MCparam.MCsquareOrder = MCsquareOrder;
+
+        % Generate output folder and save MCparam
+        if ~exist(pln.propMC.Output_Directory,'dir')
+            mkdir(pln.propMC.Output_Directory)
+        end
+        save([pln.propMC.Output_Directory '/' 'MCparam.mat'],'MCparam')
+
+        %% MC computation and dij filling
+        % run MCsquare
+        if ~pln.propMC.externalCalculation
+            mcSquareCall = [mcSquareBinary ' ' MCsquareConfigFile];
+            matRad_cfg.dispInfo(['Calling Monte Carlo Engine: ' mcSquareCall]);
+            [status,cmdout] = system(mcSquareCall,'-echo');
+        end
+
+        % Skip readout if external files were generated
+        if ~pln.propMC.externalCalculation
+            dij = pln.propMC.readFiles(strrep(pln.propMC.Output_Directory, '/', filesep));
+        else
+            dij = struct([]);
+        end
+
+        if ~pln.propMC.externalCalculation
+            matRad_cfg.dispInfo('Simulation finished!\n');
+        else
+            matRad_cfg.dispInfo('Files generated for external calculation!\n');
+        end
+
     end
 
     % manipulate isocenter
