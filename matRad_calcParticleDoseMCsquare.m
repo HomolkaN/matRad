@@ -394,6 +394,12 @@ for scenarioIx = 1:pln.multScen.totNumScen
 
         % write parameters to a MCparam file that can be used to later read the dose back in
         MCparam.dij = dij; % this can be done here since the dij is not filled at this point
+        if isfield(dij,'physicalDose')
+            MCparam.dij = rmfield(MCparam.dij,'physicalDose');
+        end
+        if isfield(dij,'mLETDose')
+            MCparam.dij = rmfield(MCparam.dij,'mLETDose');
+        end
         MCparam.VdoseGrid = VdoseGrid;
         MCparam.calcDoseDirect = calcDoseDirect;
         MCparam.totalWeights = totalWeights;

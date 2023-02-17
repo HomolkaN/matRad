@@ -514,6 +514,7 @@ classdef matRad_MCsquareConfig
             mask = false(dij.doseGrid.numOfVoxels,1);
             mask(MCparam.VdoseGrid) = true;
 
+            
             % read output
             if ~MCparam.calcDoseDirect
                 %Read Sparse Matrix
