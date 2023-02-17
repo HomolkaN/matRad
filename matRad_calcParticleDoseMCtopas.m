@@ -127,9 +127,12 @@ currDir = cd;
 
 for shiftScen = 1:pln.multScen.totNumShiftScen
     
+    %Find first instance of the shift to select the shift values
+    ixShiftScen = find(pln.multScen.linearMask(:,2) == shiftScen,1);
+    
     % manipulate isocenter
-    for k = 1:length(stf)
-        stf(k).isoCenter = stf(k).isoCenter + pln.multScen.isoShift(shiftScen,:);
+    for k = 1:numel(stf)
+        stf(k).isoCenter = stf(k).isoCenter + pln.multScen.isoShift(ixShiftScen,:);
     end
     
     % Delete previous topas files so there is no mix-up
@@ -245,6 +248,6 @@ dij = orderfields(dij);
 
 % manipulate isocenter back
 for k = 1:length(stf)
-    stf(k).isoCenter = stf(k).isoCenter - pln.multScen.isoShift(shiftScen,:);
+    stf(k).isoCenter = stf(k).isoCenter - pln.multScen.isoShift(ixShiftScen,:);
 end
 end

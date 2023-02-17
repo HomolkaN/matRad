@@ -70,7 +70,7 @@ classdef MatRad_Config < handle
 
             %Configure Environment
             obj.configureEnvironment();
-            
+
             %Just to catch people messing with the properties in the file
             if ~isempty(obj.writeLog) && obj.writeLog
                 logFile = [obj.matRadRoot filesep 'matRad.log'];
@@ -85,7 +85,7 @@ classdef MatRad_Config < handle
             %might not be desired by users
             %rmpath(genpath(matRad_cfg.matRadRoot));
         end
-        
+
         function displayToConsole(obj,type,formatSpec,varargin)
             %displayToConsole lowest-level logging function for matRad.
             %   Display to console will be called from the public wrapper

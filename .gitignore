@@ -1,6 +1,6 @@
 MCsquare/bin/Materials/
-matlab2tikz/
-openstack/access
+matlab2tikz
+openstack
 topas/materialConverter/originalConverters
 topas/MCrun
 *.phsp
