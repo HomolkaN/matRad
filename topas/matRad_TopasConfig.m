@@ -1197,7 +1197,7 @@ classdef matRad_TopasConfig < handle
                         if obj.scorer.doseToMedium
                             tallyName{end+1} = 'Patient/Tally_DoseToMedium';
                         end
-                        if obj.scorer.doseToMedium
+                        if obj.scorer.doseToWater
                             tallyName{end+1} = 'Tally_DoseToWater';
                         end
 
@@ -1261,7 +1261,6 @@ classdef matRad_TopasConfig < handle
             end
 
             nParticlesTotalBixel = round(obj.numParticlesPerHistory * w);
-            nParticlesTotal = sum(nParticlesTotalBixel);
             maxParticlesBixel = obj.numParticlesPerHistory * max(w(:));
             minParticlesBixel = round(max([obj.minRelWeight*maxParticlesBixel,1]));
 
