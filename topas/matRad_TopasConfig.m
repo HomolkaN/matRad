@@ -273,6 +273,8 @@ classdef matRad_TopasConfig < handle
             obj.MCparam.cubeDim = ct.cubeDim;
             obj.MCparam.ctResolution = ct.resolution;
             obj.MCparam.numOfCtScen = ct.numOfCtScen;
+            segmentationIndices = [cst{:,4}];
+            obj.MCparam.patientVoxelIndices = unique(vertcat(segmentationIndices{:}));
             % Save used RBE models
             if obj.scorer.RBE
                 obj.MCparam.RBE_models = obj.scorer.RBE_model;
@@ -362,6 +364,9 @@ classdef matRad_TopasConfig < handle
 
             % Fill empty Dij with fields from topasCubes
             dij = obj.fillDij(topasCubes,dij);
+
+            % Remove dose voxels that are not inside of the patient body
+            dij = obj.maskDij(dij);
 
         end
 
@@ -485,6 +490,21 @@ classdef matRad_TopasConfig < handle
     end
 
     methods (Access = private)
+        function dij = maskDij(obj,dij)
+
+            % Clip dose to patient body
+            mask = true(obj.MCparam.ctGrid.dimensions);
+            mask(obj.MCparam.patientVoxelIndices) = 0;
+
+            uniqueTallies = unique(obj.MCparam.tallies);
+            for t = 1:length(uniqueTallies)
+                for scenarioIx = 1:dij.numOfScenarios
+                    dij.(uniqueTallies{t}){scenarioIx}(mask,:) = 0;
+                end
+            end
+
+        end
+
         function topasCubes = markFieldsAsEmpty(obj,topasCubes)
 
             matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
