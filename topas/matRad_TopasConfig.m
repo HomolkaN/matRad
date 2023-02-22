@@ -217,6 +217,9 @@ classdef matRad_TopasConfig < handle
             if obj.scorer.RBE
                 obj.scorer.doseToMedium = true;
                 if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'default')), obj.scorer.RBE_model))
+                    if isfield(pln,'bioParam') && isprop(pln.bioParam,'model')
+                        obj.scorer.RBE_model = {pln.bioParam.model};
+                    else
                     switch obj.radiationMode
                         case 'protons'
                             obj.scorer.RBE_model = obj.scorer.defaultModelProtons;
@@ -224,6 +227,7 @@ classdef matRad_TopasConfig < handle
                             obj.scorer.RBE_model = obj.scorer.defaultModelCarbon;
                         otherwise
                             matRad_cfg.dispError(['No RBE model implemented for ',obj.radiationMode]);
+                    end
                     end
                 end
 

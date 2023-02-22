@@ -80,7 +80,11 @@ if pln.propMC.externalCalculation
     pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',datestr(now, 'dd-mm-yy')];
 end
 if pln.propMC.scorer.RBE
-    pln.propMC.workingDir = [pln.propMC.workingDir '_' pln.bioParam.model];
+    if strcmp(pln.propMC.scorer.RBE_model,'default')
+        pln.propMC.workingDir = [pln.propMC.workingDir '_' pln.bioParam.model];
+    else
+        pln.propMC.workingDir = [pln.propMC.workingDir '_' strjoin(pln.propMC.scorer.RBE_model,'_')];
+    end
 end
 if isfield(ct,'sampleIdx')
     pln.propMC.workingDir = [pln.propMC.workingDir '_' num2str(ct.sampleIdx,'%02.f')];
