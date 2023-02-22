@@ -274,7 +274,8 @@ classdef matRad_TopasConfig < handle
             obj.MCparam.ctResolution = ct.resolution;
             obj.MCparam.numOfCtScen = ct.numOfCtScen;
             segmentationIndices = [cst{:,4}];
-            obj.MCparam.patientVoxelIndices = unique(vertcat(segmentationIndices{:}));
+            obj.MCparam.patientVoxelIndices = false(ct.cubeDim);
+            obj.MCparam.patientVoxelIndices(unique(vertcat(segmentationIndices{:}))) = true;
             % Save used RBE models
             if obj.scorer.RBE
                 obj.MCparam.RBE_models = obj.scorer.RBE_model;
