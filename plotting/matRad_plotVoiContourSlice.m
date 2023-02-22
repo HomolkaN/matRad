@@ -74,7 +74,7 @@ end
 
 for s = 1:size(cst,1)
     
-    if ~strcmp(cst{s,3},'IGNORED') && selection(s)
+    if cst{s,5}.Visible && selection(s)
         %Check for precalculated contours
         C =[];
         if size(cst,2) >= 7 && ~isempty(cst{s,7})

@@ -84,13 +84,6 @@ end
 if ~exist('contours','var') || isempty(contours)
     contours = true;
 end
-if exist('contours','var') || ~isempty(contours)
-    if strcmp(contours,'on')
-        contours = true;
-    else
-        contours = false;
-    end
-end
 
 if (~exist('enable','var') || isempty(enable)) || strcmp(enable,'all')
     enable = [1 1 1];
@@ -119,7 +112,7 @@ if isfield(ct,'peakLocation')
 else
     slicename = {round(isoCenter(2)./resolution(2)),round(isoCenter(1)./resolution(1)),round(isoCenter(3)./resolution(3))};
 end
-doseWindow = [0 max([cube1(:); cube2(:)])];
+doseWindow = [1e-3 max([cube1(:); cube2(:)])];
 planename = {'coronal','sagittal','axial'};
 
 %% Integral Energy Output
@@ -173,7 +166,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('cube1').Ct,...
             hfig.(planename{plane}).('cube1').Contour,...
             hfig.(planename{plane}).('cube1').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,jet,doseWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,jet,doseWindow);
         
         % Plot Dose 2
         hfig.(planename{plane}).('cube2').Axes = subplot(2,2,2);
@@ -182,7 +175,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('cube2').Ct,...
             hfig.(planename{plane}).('cube2').Contour,...
             hfig.(planename{plane}).('cube2').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,jet,doseWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,jet,doseWindow);
         
         % Plot absolute difference
         hfig.(planename{plane}).('diff').Axes = subplot(2,2,3);
@@ -191,7 +184,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('diff').Ct,...
             hfig.(planename{plane}).('diff').Contour,...
             hfig.(planename{plane}).('diff').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow,[],100);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,differenceCube,plane,slicename{plane},[],[],colorcube,diffCMap,doseDiffWindow);
         
         % Plot gamma analysis
         hfig.(planename{plane}).('gamma').Axes = subplot(2,2,4);
@@ -301,6 +294,9 @@ if enable(3) == 1 && ~isempty(cst)
     matRad_showDVH(dvh2,cst,pln,2);
     xlim([0 dvhWindow*1.2])
     title('Dose Volume Histrogram, Dose 1: solid, Dose 2: dashed')
+
+    % Remove second half of the legend since it gets too cluttered
+    hfig.dvh.fig.Children(1).String(end/2+1:end) = [];
 end
 %%
 matRad_cfg.dispInfo('Done!\n');
