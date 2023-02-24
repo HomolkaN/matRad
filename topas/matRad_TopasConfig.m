@@ -1554,7 +1554,11 @@ classdef matRad_TopasConfig < handle
 
                     % Write actual energies
                     % WARNING: Transform total energy with atomic number
-                    fprintf(fileID,'%f ',particleA*[dataTOPAS.energy]);
+                    if isPhoton
+                        fprintf(fileID,'%f ',[dataTOPAS.energy]);
+                    else
+                        fprintf(fileID,'%f ',particleA*[dataTOPAS.energy]);
+                    end
                     fprintf(fileID,' MeV\n');
                 end
 
