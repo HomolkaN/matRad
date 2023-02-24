@@ -80,7 +80,7 @@ stf.ray.targetPoint = stf.ray.targetPoint_bev*rotMat_vectors_T;
 % loop over all rays to determine meta information for each ray    
 stf.numOfBixelsPerRay = 1;
 
-stf.ray.energy = 100;
+stf.ray.energy = 6;
 
 stf.ray.rangeShifter.ID = 0;
 stf.ray.rangeShifter.eqThickness = 0;
