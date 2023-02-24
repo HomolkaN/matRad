@@ -103,13 +103,22 @@ if ~isprop(pln.propMC,'externalCalculation') || ~pln.propMC.externalCalculation
     if pln.multScen.numOfCtScen == 1
         % calculate cubes; use uniform weights here, weighting with actual fluence
         % already performed in dij construction
-        if size(dij.physicalDose{1},2) ~= dij.numOfBeams || size(dij.physicalDose{1},2) ~= numel(dij.beamNum)
-            matRad_cfg.dispWarning('Number of beams stored not the same as size of dij. Using singular weight for MC');
-            % This parameter should be 1 since calcDoseDirect is true and all weights are used in the simulation already
-            dij.numOfBeams = size(dij.physicalDose{1},2);
-            dij.beamNum = (1:dij.numOfBeams)';
+        switch pln.propMC.engine
+            case {'TOPAS','MCsquare'}
+                if size(dij.physicalDose{1},2) ~= dij.numOfBeams || size(dij.physicalDose{1},2) ~= numel(dij.beamNum)
+                    matRad_cfg.dispWarning('Number of beams stored not the same as size of TOPAS dij. Using singular weight for MC');
+                    % This parameter should be 1 since calcDoseDirect is true and all weights are used in the simulation already
+                    dij.numOfBeams = size(dij.physicalDose{1},2);
+                    dij.beamNum = (1:dij.numOfBeams)';
+                end
+                resultGUI    = matRad_calcCubes(ones(dij.numOfBeams,1),dij,1);
+            case 'ompMC'
+                if size(dij.physicalDose{1},2) ~= dij.totalNumOfBixels || size(dij.physicalDose{1},2) ~= numel(dij.beamNum)
+                    matRad_cfg.dispWarning('Number of bixels stored not the same as size of ompMC dij. Using singular weight for MC');
+                    dij.totalNumOfBixels = size(dij.physicalDose{1},2);
+                end
+                resultGUI    = matRad_calcCubes(w,dij,1);
         end
-        resultGUI    = matRad_calcCubes(ones(dij.numOfBeams,1),dij,1);
 
         % calc individual scenarios
     else
