@@ -81,7 +81,7 @@ for i = 1:numOfVois
     maxDVHdose = max(maxDVHdose,max(currDvh(1,:)));
 end
 
-fontSizeValue = 14;
+fontSizeValue = 12;
 myLegend = legend('show','location','NorthEast');
 set(myLegend,'FontSize',10,'Interpreter','none');
 legend boxoff
@@ -91,7 +91,7 @@ xlim([0 1.2*maxDVHdose]);
 
 grid on,grid minor
 box(gca,'on');
-set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
+% set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
 ylabel('Volume [%]','FontSize',fontSizeValue)
 
 if exist('pln','var') && ~isempty(pln)
