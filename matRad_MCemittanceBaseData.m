@@ -303,18 +303,18 @@ classdef matRad_MCemittanceBaseData
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 350] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
                     meanEnergy = @(x) 11.39 * x^0.628 + 11.24;
-                    mcDataEnergy.MeanEnergy = meanEnergy(r80);
+                    mcDataEnergy.MeanEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * meanEnergy(r80);
                     % reading in a potential given energyspread could go here directly. How would you parse the energyspread
                     % into the function? Through a field in the machine?
-                    mcDataEnergy.EnergySpread = obj.defaultRelativeEnergySpread;
+                    mcDataEnergy.EnergySpread = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * obj.defaultRelativeEnergySpread;
                 case 'helium'
                     % Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 350] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
                     meanEnergy = @(x) 7.57* x.^0.5848 + 3.063;
-                    mcDataEnergy.MeanEnergy = meanEnergy(r80);
-                    mcDataEnergy.EnergySpread = obj.defaultRelativeEnergySpread;
+                    mcDataEnergy.MeanEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * meanEnergy(r80);
+                    mcDataEnergy.EnergySpread = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * obj.defaultRelativeEnergySpread;
                 otherwise
                     error('not implemented')
             end
