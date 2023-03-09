@@ -376,7 +376,7 @@ classdef matRad_BioModel
                 this.description = value;
             else
                 matRad_cfg = MatRad_Config.instance();
-                matRad_cfg.dispError('matRad: Cannot set description option')
+                matRad_cfg.dispWarning('matRad: Cannot set description option')
             end
         end
         
