@@ -1,4 +1,4 @@
-function matRad_showDVH(dvh,cst,pln,lineStyleIndicator)
+function p = matRad_showDVH(dvh,cst,pln,lineStyleIndicator)
 % matRad dvh visualizaion
 % 
 % call
@@ -43,6 +43,11 @@ end
 % specified
 hold on;
 
+if lineStyleIndicator > 1
+    visible = 'off';
+else
+    visible = 'on';
+end
 lineWidth = 2;
 %reduce cst
 visibleIx = cellfun(@(c) c.Visible == 1,cst(:,5));
@@ -74,8 +79,8 @@ for i = 1:numOfVois
     ix      = max([1 find(dvh(i).volumePoints>0,1,'last')]);
     currDvh = [dvh(i).doseGrid(1:ix);dvh(i).volumePoints(1:ix)];
     
-    plot(currDvh(1,:),currDvh(2,:),'LineWidth',lineWidth,'Color',colorMx(i,:), ...
-        'LineStyle',lineStyles{lineStyleIndicator},'DisplayName',cstNames{i})
+    p(i) = plot(currDvh(1,:),currDvh(2,:),'LineWidth',lineWidth,'Color',colorMx(i,:), ...
+        'LineStyle',lineStyles{lineStyleIndicator},'DisplayName',cstNames{i},'HandleVisibility',visible);
     
     maxDVHvol  = max(maxDVHvol,max(currDvh(2,:)));
     maxDVHdose = max(maxDVHdose,max(currDvh(1,:)));
