@@ -58,7 +58,7 @@ classdef matRad_OmpConfig < handle
         end
 
 
-        function ompMCoptions = getOmpMCoptions(obj,machine)
+        function ompMCoptions = getOmpMCoptions(obj,machine,pln)
             matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
             
             %display options
@@ -86,7 +86,7 @@ classdef matRad_OmpConfig < handle
             ompMCoptions.global_pcut = 0.010;
             
             % Relative Threshold for dose
-            ompMCoptions.relDoseThreshold = 1 - matRad_cfg.propDoseCalc.defaultLateralCutOff;
+            ompMCoptions.relDoseThreshold = 1 - pln.propDoseCalc.lateralCutOff;
             
             % Output folders
             ompMCoptions.outputFolder = [obj.omcFolder filesep 'output' filesep];
