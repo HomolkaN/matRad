@@ -108,7 +108,7 @@ classdef matRad_MCemittanceBaseData
             
             obj.selectedFocus(obj.energyIndex) = focusIndex;
             
-            count = 1;
+            % Loop through all required energies
             for i = 1:length(obj.energyIndex)
                 ixE = obj.energyIndex(i);
                 
@@ -133,6 +133,7 @@ classdef matRad_MCemittanceBaseData
                     energyData.ProtonsMU = 1e6; %Standard w calibration
                 end
                 
+                %% Skip emittance approximation if emittance was found in base data
                 if isfield(machine.data(ixE).initFocus,'emittance') && ~obj.forceEmittanceApproximation 
                     data = [];
                     emittance = machine.data(ixE).initFocus.emittance;
@@ -210,7 +211,6 @@ classdef matRad_MCemittanceBaseData
 
                                 
                 obj.monteCarloData = [obj.monteCarloData, data];
-                count = count + 1;
             end
             
             %throw out warning if there was a problem in calculating the
@@ -222,93 +222,91 @@ classdef matRad_MCemittanceBaseData
         
         
         function mcDataEnergy = fitPhaseSpaceForEnergy(obj,energyIx)
-            %function to calculate mean energy and energy spread used by
-            %mcSquare for given energy
+            % function to calculate mean energy and energy spread used by mcSquare for given energy
             
-            %Considers air distance from nozzle to phantom surface
-            %used in the machine data. 0 means fitted to vacuum simulations
-            %with surface at isocenter
+            % Considers air distance from nozzle to phantom surface used in the machine data.
+            % 0 means fitted to vacuum simulations with surface at isocenter
             if ~isfield(obj.machine.meta, 'fitAirOffset')
                 fitAirOffset = 0;
-                %               warning('Could not find fitAirOffset. Using default value (no correction / fit in vacuum).');
+                % warning('Could not find fitAirOffset. Using default value (no correction / fit in vacuum).');
             else
                 fitAirOffset = obj.machine.meta.fitAirOffset;
             end
-            dR = 0.0011 * (fitAirOffset);
+            % Introduce air offset correction
+            airOffsetCorrection = 0.0011 * (fitAirOffset);
+                        
+            % Save given energy as nominal energy
+            mcDataEnergy.NominalEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * obj.machine.data(energyIx).energy;
             
-            i = energyIx;
+            % Interpolate depth dose to fine grid
+            newDepths = linspace(0,obj.machine.data(energyIx).depths(end),numel(obj.machine.data(energyIx).depths) * 100);
+            newDose   = interp1(obj.machine.data(energyIx).depths, obj.machine.data(energyIx).Z, newDepths, 'spline');
             
-            mcDataEnergy.NominalEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * obj.machine.data(i).energy;
-            
-            newDepths = linspace(0,obj.machine.data(i).depths(end),numel(obj.machine.data(i).depths) * 100);
-            newDose   = interp1(obj.machine.data(i).depths, obj.machine.data(i).Z, newDepths, 'spline');
-            
-            %find FWHM w50 of bragg peak and range of 80% does fall off
+            % Find range of 80% does fall off
             [maxV, maxI] = max(newDose);
             [~, r80ind] = min(abs(newDose(maxI:end) - 0.8 * maxV));
             r80ind = r80ind - 1;
             r80 = interp1(newDose(maxI + r80ind - 1:maxI + r80ind + 1), ...
-                newDepths(maxI + r80ind - 1:maxI + r80ind + 1), 0.8 * maxV);% ...
-            % + obj.machine.data(i).offset + dR;
+                newDepths(maxI + r80ind - 1:maxI + r80ind + 1), 0.8 * maxV);
             
-            %Correct r80 with dR
-            r80 = r80 + dR + obj.machine.data(i).offset;
+            % Correct r80 with air offset and potential offset from basedata
+            r80 = r80 + airOffsetCorrection + obj.machine.data(energyIx).offset;
             
+            % Calculate FWHM of bragg peak 
             [~, d50rInd] = min(abs(newDose(maxI:end) - 0.5 * maxV));
             d50rInd = d50rInd - 1;
             d50_r = interp1(newDose(maxI + d50rInd - 1:maxI + d50rInd + 1), ...
                 newDepths(maxI + d50rInd - 1:maxI + d50rInd + 1), 0.5 * maxV);
             
+            % Calculate left d50 if the plateau is lower than 50% of the max Dose
             if (newDose(1) < 0.5 * maxV)
                 [~, d50lInd] = min(abs(newDose(1:maxI) - 0.5*maxV));
                 d50_l = interp1(newDose(d50lInd - 1:d50lInd + 1), ...
                     newDepths(d50lInd - 1:d50lInd + 1), 0.5 * maxV);
-                w50 = d50_r - d50_l;
-                %if width left of peak cannot be determined use r80 as width
+                FWHM = d50_r - d50_l;
             else
+                % if width left of peak cannot be determined use r80 as width
                 % d50_l = newDepths(maxI);
-                w50 = r80;
+                FWHM = r80;
                 obj.problemSigma = true;
             end
             
-            %calcualte mean energy used my mcSquare with a formula fitted
-            %to TOPAS data
+            % Calcualte mean energy used my mcSquare with a formula fitted to TOPAS data
             switch obj.machine.meta.radiationMode
                 case 'protons'
+                    %%% Approximate mean energy
                     meanEnergy = @(x) 5.762374661332111e-20 * x^9 - 9.645413625310569e-17 * x^8 + 7.073049219034644e-14 * x^7 ...
                         - 2.992344292008054e-11 * x^6 + 8.104111934547256e-09 * x^5 - 1.477860913846939e-06 * x^4 ...
                         + 1.873625800704108e-04 * x^3 - 1.739424343114980e-02 * x^2 + 1.743224692623838e+00 * x ...
                         + 1.827112816899668e+01;
                     mcDataEnergy.MeanEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * meanEnergy(r80);
                     
-                    %calculate energy straggling using formulae deducted from paper
-                    %"An analytical approximation of the Bragg curve for therapeutic
-                    %proton beams" by T. Bortfeld et al.
-                    totalSigmaSq = ((w50) / 6.14)^2;
+                    %%% Calculate energy spread:
+                    % Calculate energy straggling using formulae deducted from paper
+                    % "An analytical approximation of the Bragg curve for therapeutic proton beams" by T. Bortfeld et al.
+                    totalSigmaSq = (FWHM / 6.14)^2;
                     
                     totalSpreadSq = @(x) 2.713311945114106e-20 * x^9 - 4.267890251195303e-17 * x^8 + 2.879118523083018e-14 * x^7 ...
                         - 1.084418008735459e-11 * x^6 + 2.491796224784373e-09 * x^5 - 3.591462823163767e-07 * x^4 ...
                         + 3.232810400304542e-05 * x^3 - 1.584729282376364e-03 * x^2 + 5.228413840446568e-02 * x ...
                         - 6.547482267336220e-01;
                     
-                    % use formula deducted from Bragg Kleeman rule to calcuate
-                    % energy straggling given the total sigma and the range
-                    % straggling
+                    % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma and the range straggling
                     energySpread = (totalSigmaSq - totalSpreadSq(r80)) / (0.022^2 * 1.77^2 * meanEnergy(r80)^(2*1.77-2));
                     energySpread(energySpread < 0) = 0;
                     mcDataEnergy.EnergySpread = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * sqrt(energySpread);
                 case 'carbon'
-                    % Fit to Range-Energy relationship
+                    %%% Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 350] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
                     meanEnergy = @(x) 11.39 * x^0.628 + 11.24;
                     mcDataEnergy.MeanEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * meanEnergy(r80);
-                    % reading in a potential given energyspread could go here directly. How would you parse the energyspread
+                    % Reading in a potential given energyspread could go here directly. How would you parse the energyspread
                     % into the function? Through a field in the machine?
                     mcDataEnergy.EnergySpread = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * obj.defaultRelativeEnergySpread;
                 case 'helium'
-                    % Fit to Range-Energy relationship
+                    %%% Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 350] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
