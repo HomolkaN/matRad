@@ -94,8 +94,12 @@ legend boxoff
 ylim([0 1.1*maxDVHvol]);
 xlim([0 1.2*maxDVHdose]);
 
-grid on,grid minor
-box(gca,'on');
+grid on
+ax = gca;
+ax.XMinorGrid = 'on';
+ax.YMinorGrid = 'on';
+
+box(ax,'on');
 % set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
 ylabel('Volume [%]','FontSize',fontSizeValue)
 

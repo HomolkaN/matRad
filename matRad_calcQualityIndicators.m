@@ -136,7 +136,7 @@ for c = 1:size(cst,1)
                 end
             end
             %We do it this way so the percentages in the string are not interpreted as format specifiers
-            matRad_cfg.dispInfo('%s\n',voiPrint);
+%             matRad_cfg.dispInfo('%s\n',voiPrint);
         end
     else
         % matRad_cfg.dispInfo('%d %s - No dose information.',cst{c,1},cst{c,2});
