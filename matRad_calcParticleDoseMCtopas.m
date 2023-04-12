@@ -74,11 +74,9 @@ if isfield(pln,'propHeterogeneity') && isprop(pln.propHeterogeneity,'sampling') 
     matRad_cfg.dispWarning('Histories have been overwritten by heterogeneity correction! New histories: %.2e',pln.propMC.numHistories)
 end
 
-% set nested folder structure if external calculation is turned on (this will put new simulations in subfolders)
-if pln.propMC.externalCalculation
-    pln.propMC.workingDir = [pln.propMC.thisFolder filesep 'MCrun' filesep];
-    pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',datestr(now, 'dd-mm-yy')];
-end
+% set nested folder structure (this will put new simulations in subfolders)
+pln.propMC.workingDir = [pln.propMC.thisFolder filesep 'MCrun' filesep];
+pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',datestr(now, 'dd-mm-yy')];
 if pln.propMC.scorer.RBE
     if strcmp(pln.propMC.scorer.RBE_model,'default')
         pln.propMC.workingDir = [pln.propMC.workingDir '_' pln.bioParam.model];
