@@ -2139,17 +2139,18 @@ classdef matRad_TopasConfig < handle
                             materials = strsplit(fileread(fname),'\n')';
                             switch obj.materialConverter.HUToMaterial
                                 case 'default'
-                                    fprintf(fID,'%s \n',materials{1:end-1});
+                                    fprintf(fID,'%s',materials{1:end-1});
                                     ExcitationEnergies = str2double(strsplit(materials{end}(strfind(materials{end},'=')+4:end-3)));
                                     if any(cellfun(@(teststr) ~isempty(strfind(lower(obj.materialConverter.addSection),lower(teststr))), {'lung','sampled'}))
+                                        % Write Lung material composition
                                         fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 5 0.10404040 0.75656566 0.03131313 0.10606061 0.00202020\n',length(materials)-2);
                                         ExcitationEnergies = [ExcitationEnergies 75.3];
                                     end
                                     fprintf(fID,['dv:Ge/Patient/SchneiderMaterialMeanExcitationEnergy = %i',repmat(' %.6g',1,numel(ExcitationEnergies)),' eV\n'],numel(ExcitationEnergies),ExcitationEnergies);
                                 case 'advanced'
-                                    fprintf(fID,'\n%s\n',materials{:});
+                                    fprintf(fID,'\n%s',materials{:});
                                 case 'MCsquare'
-                                    fprintf(fID,'\n%s\n',materials{:});
+                                    fprintf(fID,'\n%s',materials{:});
                             end
 
                             switch obj.materialConverter.HUToMaterial
@@ -2165,7 +2166,7 @@ classdef matRad_TopasConfig < handle
                         else
                             fname = fullfile(obj.thisFolder,filesep,obj.converterFolder,filesep,obj.infilenames.matConv_Schneider_loadFromFile);
                             converter = fileread(fname);
-                            fprintf(fID,'\n%s\n',converter);
+                            fprintf(fID,'\n%s',converter);
                         end
 
                         % write patient environment
@@ -2175,7 +2176,7 @@ classdef matRad_TopasConfig < handle
                         fprintf(fID,'s:Ge/Patient/Type = "TsImageCube"\n');
                         fprintf(fID,'b:Ge/Patient/DumpImagingValues = "True"\n');
                         if isfield(ct,'modulated') && ct.modulated
-                            fprintf(fID,'b:Ge/Patient/SchneiderUseVariableDensityMaterials = "True"\n');
+                            %fprintf(fID,'b:Ge/Patient/SchneiderUseVariableDensityMaterials = "True"\n');
                             fprintf(fID,'b:Ge/Patient/PreLoadAllMaterials = "True"\n');
                         end
                         fprintf(fID,'s:Ge/Patient/InputDirectory = "./"\n');
