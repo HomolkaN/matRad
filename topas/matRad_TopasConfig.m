@@ -220,14 +220,14 @@ classdef matRad_TopasConfig < handle
                     if isfield(pln,'bioParam') && isprop(pln.bioParam,'model')
                         obj.scorer.RBE_model = {pln.bioParam.model};
                     else
-                    switch obj.radiationMode
-                        case 'protons'
-                            obj.scorer.RBE_model = obj.scorer.defaultModelProtons;
-                        case {'carbon','helium'}
-                            obj.scorer.RBE_model = obj.scorer.defaultModelCarbon;
-                        otherwise
-                            matRad_cfg.dispError(['No RBE model implemented for ',obj.radiationMode]);
-                    end
+                        switch obj.radiationMode
+                            case 'protons'
+                                obj.scorer.RBE_model = obj.scorer.defaultModelProtons;
+                            case {'carbon','helium'}
+                                obj.scorer.RBE_model = obj.scorer.defaultModelCarbon;
+                            otherwise
+                                matRad_cfg.dispError(['No RBE model implemented for ',obj.radiationMode]);
+                        end
                     end
                 end
 
@@ -952,8 +952,8 @@ classdef matRad_TopasConfig < handle
             end
             fprintf(fID,'\n');
 
+            % Write verbosity parameters
             logicalString = {'"False"', '"True"'};
-
             fprintf(fID,'i:Ma/Verbosity = %d\n',obj.verbosity.material);
             fprintf(fID,'i:Ts/TrackingVerbosity = %d\n',obj.verbosity.tracking);
             fprintf(fID,'i:Ts/EventVerbosity = %d\n',obj.verbosity.event);
@@ -982,15 +982,13 @@ classdef matRad_TopasConfig < handle
             fprintf(fID,'\n');
             fprintf(fID,['i:Ts/Seed = ',num2str(runIx),'\n']);
 
-            %fprintf(fID,'includeFile = %s/TOPAS_Simulation_Setup.txt\n',obj.thisFolder);
-            %fprintf(fID,'includeFile = %s/TOPAS_matRad_geometry.txt\n',obj.thisFolder);
-            %fprintf(fID,'includeFile = %s/TOPAS_scorer_surfaceIC.txt\n',obj.thisFolder);
         end
 
         function writeFieldHeader(obj,fID,ctScen)
 
             matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
 
+            % Write beamProfile simulation parameters
             if ~strcmp(obj.beamProfile,'phasespace')
                 fprintf(fID,'u:Sim/HalfValue = %d\n',0.5);
                 fprintf(fID,'u:Sim/SIGMA2FWHM = %d\n',2.354818);
@@ -1845,14 +1843,6 @@ classdef matRad_TopasConfig < handle
                     end
                 end
 
-                % Translate patient according to beam isocenter
-                fprintf(fileID,'d:Ge/Patient/TransX      = %f mm\n',0.5*ct.resolution.x*(ct.cubeDim(2)+1)-stf(beamIx).isoCenter(1));
-                fprintf(fileID,'d:Ge/Patient/TransY      = %f mm\n',0.5*ct.resolution.y*(ct.cubeDim(1)+1)-stf(beamIx).isoCenter(2));
-                fprintf(fileID,'d:Ge/Patient/TransZ      = %f mm\n',0.5*ct.resolution.z*(ct.cubeDim(3)+1)-stf(beamIx).isoCenter(3));
-                fprintf(fileID,'d:Ge/Patient/RotX=0. deg\n');
-                fprintf(fileID,'d:Ge/Patient/RotY=0. deg\n');
-                fprintf(fileID,'d:Ge/Patient/RotZ=0. deg\n');
-
                 % Load topas modules depending on the particle type
                 fprintf(fileID,'\n# MODULES\n');
                 moduleString = cellfun(@(s) sprintf('"%s"',s),modules,'UniformOutput',false);
@@ -1928,6 +1918,16 @@ classdef matRad_TopasConfig < handle
             % therefore, the maximum length of the vector is 32768
 
             matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
+
+            % Save filenames
+            paramFile = obj.outfilenames.patientParam;
+            dataFile = obj.outfilenames.patientCube;
+
+            % Open file to write in data
+            outfile = fullfile(obj.workingDir, paramFile);
+            matRad_cfg.dispInfo('Writing data to %s\n',outfile)
+            fID = fopen(outfile,'w+');
+
             medium = obj.rsp_basematerial;
             if isequal(obj.arrayOrdering,'C')
                 if matRad_cfg.logLevel > 2
@@ -1948,10 +1948,6 @@ classdef matRad_TopasConfig < handle
             obj.MCparam.imageCubeDim = ct.cubeDim;
             obj.MCparam.imageVoxelDimension = ct.resolution;
 
-            % Save filenames
-            paramFile = obj.outfilenames.patientParam;
-            dataFile = obj.outfilenames.patientCube;
-
             % Add ctScen number to filenames
             if isfield(ct,'currCtScen')
                 ctScen = ct.currCtScen;
@@ -1963,11 +1959,6 @@ classdef matRad_TopasConfig < handle
             else
                 ctScen = 1;
             end
-
-            % Open file to write in data
-            outfile = fullfile(obj.workingDir, paramFile);
-            matRad_cfg.dispInfo('Writing data to %s\n',outfile)
-            fID = fopen(outfile,'w+');
 
             % Write material converter
             switch obj.materialConverter.mode
@@ -2014,12 +2005,11 @@ classdef matRad_TopasConfig < handle
                     fprintf(fID,'sv:Ge/Patient/MaterialNames = %d ',length(unique_hu));
                     fprintf(fID,'"%s"',strjoin(unique_materials,'" "'));
                     fprintf(fID,'\n');
-                    fclose(fID);
 
                     % write data
-                    fID = fopen(fullfile(obj.workingDir, dataFile),'w');
-                    fwrite(fID,huCube,'short');
-                    fclose(fID);
+                    fID_hu = fopen(fullfile(obj.workingDir, dataFile),'w');
+                    fwrite(fID_hu,huCube,'short');
+                    fclose(fID_hu);
                     cube = huCube;
 
 
@@ -2172,25 +2162,23 @@ classdef matRad_TopasConfig < handle
                         % write patient environment
                         matRad_cfg.dispInfo('TOPAS: Writing patient environment\n');
                         fprintf(fID,'\n# -- Patient parameters\n');
-                        fprintf(fID,'s:Ge/Patient/Parent="World"\n');
-                        fprintf(fID,'s:Ge/Patient/Type = "TsImageCube"\n');
+                        fprintf(fID,'s:Ge/Patient/Parent            = "World"\n');
+                        fprintf(fID,'s:Ge/Patient/Type              = "TsImageCube"\n');
                         fprintf(fID,'b:Ge/Patient/DumpImagingValues = "True"\n');
                         if isfield(ct,'modulated') && ct.modulated
                             %fprintf(fID,'b:Ge/Patient/SchneiderUseVariableDensityMaterials = "True"\n');
                             fprintf(fID,'b:Ge/Patient/PreLoadAllMaterials = "True"\n');
                         end
-                        fprintf(fID,'s:Ge/Patient/InputDirectory = "./"\n');
-                        fprintf(fID,'s:Ge/Patient/InputFile = "%s"\n',dataFile);
-                        fprintf(fID,'s:Ge/Patient/ImagingtoMaterialConverter = "Schneider"\n');
-                        fprintf(fID,'i:Ge/Patient/NumberOfVoxelsX = %d\n',ct.cubeDim(2));
-                        fprintf(fID,'i:Ge/Patient/NumberOfVoxelsY = %d\n',ct.cubeDim(1));
-                        fprintf(fID,'iv:Ge/Patient/NumberOfVoxelsZ = 1 %d\n',ct.cubeDim(3));
-                        fprintf(fID,'d:Ge/Patient/VoxelSizeX       = %.3f mm\n',ct.resolution.x);
-                        fprintf(fID,'d:Ge/Patient/VoxelSizeY       = %.3f mm\n',ct.resolution.y);
-                        fprintf(fID,'dv:Ge/Patient/VoxelSizeZ       = 1 %.3f mm\n',ct.resolution.z);
-                        fprintf(fID,'s:Ge/Patient/DataType  = "SHORT"\n');
-
-                        fclose(fID);
+                        fprintf(fID,'s:Ge/Patient/InputDirectory                = "./"\n');
+                        fprintf(fID,'s:Ge/Patient/InputFile                     = "%s"\n',dataFile);
+                        fprintf(fID,'s:Ge/Patient/ImagingtoMaterialConverter    = "Schneider"\n');
+                        fprintf(fID,'i:Ge/Patient/NumberOfVoxelsX               = %d\n',ct.cubeDim(2));
+                        fprintf(fID,'i:Ge/Patient/NumberOfVoxelsY               = %d\n',ct.cubeDim(1));
+                        fprintf(fID,'iv:Ge/Patient/NumberOfVoxelsZ              = 1 %d\n',ct.cubeDim(3));
+                        fprintf(fID,'d:Ge/Patient/VoxelSizeX                    = %.3f mm\n',ct.resolution.x);
+                        fprintf(fID,'d:Ge/Patient/VoxelSizeY                    = %.3f mm\n',ct.resolution.y);
+                        fprintf(fID,'dv:Ge/Patient/VoxelSizeZ                   = 1 %.3f mm\n',ct.resolution.z);
+                        fprintf(fID,'s:Ge/Patient/DataType                      = "SHORT"\n');
 
                         % write HU data
                         matRad_cfg.dispInfo('TOPAS: Export patient cube\n');
@@ -2199,9 +2187,9 @@ classdef matRad_TopasConfig < handle
                         end
                         huCube = int32(permute(ct.cubeHU{ctScen},permutation));
 
-                        fID = fopen(fullfile(obj.workingDir, dataFile),'w');
-                        fwrite(fID,huCube,'short');
-                        fclose(fID);
+                        fID_hu = fopen(fullfile(obj.workingDir, dataFile),'w');
+                        fwrite(fID_hu,huCube,'short');
+                        fclose(fID_hu);
                         cube = huCube;
                     catch ME
                         matRad_cfg.dispWarning(ME.message);
@@ -2211,7 +2199,21 @@ classdef matRad_TopasConfig < handle
                 otherwise
                     matRad_cfg.dispError('Material Conversion rule "%s" not implemented (yet)!\n',obj.materialConverter.mode);
             end
+
+            % Translate patient according to beam isocenter
+            fprintf(fileID,'d:Ge/Patient/TransX     = %f mm\n',0.5*ct.resolution.x*(ct.cubeDim(2)+1)-stf(beamIx).isoCenter(1));
+            fprintf(fileID,'d:Ge/Patient/TransY     = %f mm\n',0.5*ct.resolution.y*(ct.cubeDim(1)+1)-stf(beamIx).isoCenter(2));
+            fprintf(fileID,'d:Ge/Patient/TransZ     = %f mm\n',0.5*ct.resolution.z*(ct.cubeDim(3)+1)-stf(beamIx).isoCenter(3));
+            fprintf(fileID,'d:Ge/Patient/RotX       = 0. deg\n');
+            fprintf(fileID,'d:Ge/Patient/RotY       = 0. deg\n');
+            fprintf(fileID,'d:Ge/Patient/RotZ       = 0. deg\n');
+
+            % Close converter file
+            fclose(fID);
+
+            % Remeber imageCube in MCparam
             obj.MCparam.imageCube{ctScen} = cube;
+
 
 
         end
