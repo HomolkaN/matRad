@@ -84,8 +84,19 @@ if pln.propMC.scorer.RBE
         pln.propMC.workingDir = [pln.propMC.workingDir '_' strjoin(pln.propMC.scorer.RBE_model,'_')];
     end
 end
+
+% Set numOfRuns to 1 if phaseSpace is being calculated
+if strcmp(pln.propMC.scorer.scorePhaseSpace,'write')
+    pln.propMC.numOfRuns = 1;
+    pln.propMC.workingDir = [pln.propMC.workingDir '_scorePhaseSpace'];
+    matRad_cfg.dispInfo('numOfRuns overwritten with 1 by phase space scoring!\n');
+elseif strcmp(pln.propMC.scorer.scorePhaseSpace,'read')
+    pln.propMC.workingDir = [pln.propMC.workingDir '_readPhaseSpace'];
+end
+
+% Write sampleIdx to foldername
 if isfield(ct,'sampleIdx')
-    pln.propMC.workingDir = [pln.propMC.workingDir '_' num2str(ct.sampleIdx,'%02.f')];
+    pln.propMC.workingDir = [pln.propMC.workingDir '_sample' num2str(ct.sampleIdx,'%02.f')];
 end
 
 %% Initialize dose grid and dij
