@@ -325,72 +325,52 @@ classdef matRad_MCemittanceBaseData
         
         
         function mcDataOptics = fitBeamOpticsForEnergy(obj,energyIx, focusIndex)
-            %function to calculate beam optics used by mcSquare for given
-            %energy
+            % function to calculate beam optics used by mcSquare (and TOPAS) for given energy          
             
-            i = energyIx;
-            
-            %calculate geometric distances and extrapolate spot size at nozzle
-            SAD = obj.machine.meta.SAD;
-            z     = -(obj.machine.data(i).initFocus.dist(focusIndex,:) - SAD);
-            sigma = obj.machine.data(i).initFocus.sigma(focusIndex,:);
+            % calculate geometric distances and extrapolate spot size at nozzle
+            SAD     = obj.machine.meta.SAD;
+            z       = -(obj.machine.data(energyIx).initFocus.dist(focusIndex,:) - SAD);
+            sigma   = obj.machine.data(energyIx).initFocus.sigma(focusIndex,:);
             sigmaSq = sigma.^2;
-            
-            
+
+            % Calculate sigma at z=0;
+            sigmaInit = interp1(z,sigma,0);
+
+            % fit Courant-Synder equation to data using ipopt, formulae given in mcSquare documentation
+            qRes = @(rho, sigmaT) (sigmaSq -  (sigmaInit^2 - 2*sigmaInit*rho*sigmaT.*z + sigmaT^2.*z.^2));
+
             % fitting for either matlab or octave_core_file_limit
+            % Define optimization parameters
+            start = [0.9; 0.1];
+            options.lb = [-0.99, -Inf];
+            options.ub = [ 0.99,  Inf];
+
+            funcs.objective = @(x) sum(qRes(x(1), x(2)).^2);
+            funcs.gradient  = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaInit * x(2) * z));
+                2 * sum(qRes(x(1), x(2)) .* (2 * sigmaInit * x(1) * z  - 2 * x(2) * z.^2))];
+
+            % Perform optimization in MATLAB or octave
             if ~obj.matRad_cfg.isOctave
-                
-                %fit Courant-Synder equation to data using ipopt, formulae
-                %given in mcSquare documentation
-                sigmaNull = sqrt(interp1(z,sigmaSq,0));
-                
-                qRes = @(rho, sigmaT) (sigmaSq -  (sigmaNull^2 - 2*sigmaNull*rho*sigmaT.*z + sigmaT^2.*z.^2));
-                
-                funcs.objective = @(x) sum(qRes(x(1), x(2)).^2);
-                funcs.gradient  = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaNull * x(2) * z));
-                    2 * sum(qRes(x(1), x(2)) .* (2 * sigmaNull * x(1) * z  - 2 * x(2) * z.^2))];
-                
-                options.lb = [-0.99, -Inf];
-                options.ub = [ 0.99,  Inf];
-                
                 options.ipopt.hessian_approximation = 'limited-memory';
                 options.ipopt.limited_memory_update_type = 'bfgs';
                 options.ipopt.print_level = 1;
-                
-                start = [0.9; 0.1];
+
                 [result, ~] = ipopt (start, funcs, options);
-                rho    = result(1);
-                sigmaT = result(2);
-                
             else
-                
-                %fit Courant-Synder equation to data using ipopt, formulae
-                %given in mcSquare documentation
-                sigmaNull = sqrt(interp1(z,sigmaSq,0));
-                
-                qRes = @(rho, sigmaT) (sigmaSq -  (sigmaNull^2 - 2*sigmaNull*rho*sigmaT.*z + sigmaT^2.*z.^2));
-                
-                phi{1} = @(x) sum(qRes(x(1), x(2)).^2);
-                phi{2} = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaNull * x(2) * z));
-                    2 * sum(qRes(x(1), x(2)) .* (2 * sigmaNull * x(1) * z  - 2 * x(2) * z.^2))];
-                
-                lb = [-0.99, -Inf];
-                ub = [ 0.99,  Inf];
-                
-                start = [0.9; 0.1];
-                [result, ~] = sqp (start, phi, [], [], lb, ub);
-                rho    = result(1);
-                sigmaT = result(2);
-                
+                [result, ~] = sqp (start, {funcs.objective,funcs.gradient}, [], [], options.lb, options.ub);
             end
+
+            % Write optimized parameters
+            rho    = result(1);
+            sigmaT = result(2);
             
-            %calculate divergence, spotsize and correlation at nozzle
+            % Calculate divergence, spotsize and correlation at nozzle
             DivergenceAtNozzle  = sigmaT;
-            SpotsizeAtNozzle    = sqrt(sigmaNull^2 - 2 * rho * sigmaNull * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
-            CorrelationAtNozzle = (rho * sigmaNull - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
+            SpotsizeAtNozzle    = sqrt(sigmaInit^2 - 2 * rho * sigmaInit * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
+            CorrelationAtNozzle = (rho * sigmaInit - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
             
             
-            %save calcuated beam optics data in mcData
+            % Save calcuated beam optics data in mcData
             mcDataOptics.ProtonsMU     = 1e6;
             
             mcDataOptics.Weight1       = 1;
@@ -401,15 +381,6 @@ classdef matRad_MCemittanceBaseData
             mcDataOptics.Divergence1y  = DivergenceAtNozzle;
             mcDataOptics.Correlation1y = CorrelationAtNozzle;
             
-            visBool = false;
-            if visBool
-                figure, plot(z,sigmaSq,'x');
-                zNew = linspace(z(1),z(end),100);
-                y = sigmaNull^2 - 2*rho*sigmaNull*sigmaT * zNew + sigmaT^2 * zNew.^2;
-                hold on; plot(zNew,y);
-            end
-            
-            
             mcDataOptics.Weight2       = 0;
             mcDataOptics.SpotSize2x    = 0;
             mcDataOptics.Divergence2x  = 0;
@@ -417,7 +388,16 @@ classdef matRad_MCemittanceBaseData
             mcDataOptics.SpotSize2y    = 0;
             mcDataOptics.Divergence2y  = 0;
             mcDataOptics.Correlation2y = 0;
-            mcDataOptics.FWHMatIso = 2.355 * sigmaNull;
+
+            visBool = false;
+            if visBool
+                figure, plot(z,sigmaSq,'x');
+                zNew = linspace(z(1),z(end),100);
+                y = sigmaInit^2 - 2*rho*sigmaInit*sigmaT * zNew + sigmaT^2 * zNew.^2;
+                hold on; plot(zNew,y);
+            end
+            
+            mcDataOptics.FWHMatIso = 2.355 * sigmaInit;
         end
         
         
