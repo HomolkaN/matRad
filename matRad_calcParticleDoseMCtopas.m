@@ -260,7 +260,9 @@ else
 end
 
 % Write number of discarded bixels as information
-dij.numOfDiscardedSpots = pln.propMC.MCparam.numOfDiscardedSpots;
+if isfield(pln.propMC.MCparam,'numOfDiscardedSpots')
+    dij.numOfDiscardedSpots = pln.propMC.MCparam.numOfDiscardedSpots;
+end
 
 % Order fields for easier comparison between different dijs
 dij = orderfields(dij);
