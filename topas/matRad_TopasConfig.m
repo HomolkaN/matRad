@@ -1271,6 +1271,13 @@ classdef matRad_TopasConfig < handle
             maxParticlesBixel = obj.numParticlesPerHistory * max(w(:));
             minParticlesBixel = round(max([obj.minRelWeight*maxParticlesBixel,1]));
 
+            % Output projected bixels that will be discarded due to particle theshold
+            projectedDiscardedBixel = sum((obj.numHistories ./ sum(nParticlesTotalBixel)*nParticlesTotalBixel /obj.numOfRuns) < (minParticlesBixel-0.5));
+            if projectedDiscardedBixel > 0
+                matRad_cfg.dispWarning('%d bixels will most likely be discarded, set histories to at least %.2e to avoid this!', projectedDiscardedBixel,ceil(max(sum(w)./w*obj.numOfRuns*abs(minParticlesBixel-0.5))/10000)*10000)
+            end
+
+            % Set history mode
             switch obj.modeHistories
                 case 'num'
                     obj.fracHistories = obj.numHistories ./ sum(nParticlesTotalBixel);

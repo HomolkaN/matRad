@@ -59,7 +59,7 @@ classdef matRad_OmpConfig < handle
 
 
         function ompMCoptions = getOmpMCoptions(obj,machine,pln)
-            matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
+            matRad_cfg = MatRad_Config.instance(); % Instance of matRad configuration class
             
             %display options
             ompMCoptions.verbose = matRad_cfg.logLevel - 1;
@@ -71,6 +71,7 @@ classdef matRad_OmpConfig < handle
             ompMCoptions.randomSeeds = [97 33];
             
             %start source definition
+            % TODO make spectrum file a variable that can be loaded in and changed
             ompMCoptions.spectrumFile       = [obj.omcFolder filesep 'spectra' filesep 'mohan6.spectrum'];
             ompMCoptions.monoEnergy         = 0.1;
             ompMCoptions.charge             = 0;
@@ -232,7 +233,7 @@ classdef matRad_OmpConfig < handle
                 end
                 
                 cubeRho{s} = interp1(hlut(:,1),hlut(:,2),HUcube{s});
-                
+                 
             end
         end
                 
