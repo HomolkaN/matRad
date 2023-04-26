@@ -49,6 +49,7 @@ if exist('stf','var') && nargout > 1
     calcStf = true;
 else
     calcStf = false;
+    stf = [];
 end
 
 %% calculate new spots
@@ -163,6 +164,7 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
     % save number of removed spots and output to console (as warning to be visible)
     dij.numOfRemovedSpots = sum(~newSpots);
     matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the mean weight.\n'])
+    % matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the number of weight.\n'])
 
     % Set MU to set minimum threshold for optimization
     dij.maxMU = Inf;
