@@ -1301,8 +1301,7 @@ classdef matRad_TopasConfig < handle
             end
 
             nParticlesTotalBixel = round(obj.numParticlesPerHistory * w);
-            maxParticlesBixel = obj.numParticlesPerHistory * max(w(:));
-            minParticlesBixel = round(max([obj.minRelWeight*maxParticlesBixel,1]));
+            minParticlesBixel = round(max([obj.minRelWeight*max(nParticlesTotalBixel),1]));
 
             % Output projected bixels that will be discarded due to particle theshold
             projectedDiscardedBixel = sum((obj.numHistories ./ sum(nParticlesTotalBixel)*nParticlesTotalBixel /obj.numOfRuns) < (minParticlesBixel-0.5));
