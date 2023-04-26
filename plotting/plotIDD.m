@@ -1,12 +1,12 @@
 function plotIDD(varargin)
 %PLOTIDD Summary of this function goes here
 %   Detailed explanation goes here
-figure
+% figure
 hold on
 
 profile = 1;
-linestyles1 = {'-',':'};
-linestyles2 = {getMatlabColor('blue'),getMatlabColor('orange')};
+linestyles1 = {'-',':','-.'};
+linestyles2 = {getMatlabColor('blue'),getMatlabColor('orange'),getMatlabColor('green')};
 
 
 if sum(cellfun(@(x) iscell(x), varargin)) == 2
@@ -26,9 +26,11 @@ for i = 1:counter
     plot(matRad_calcIDD(varargin{i},profile),'LineWidth',1.5, 'DisplayName', inputname(i),'LineStyle',varargin{counter+1}{i},'Color',varargin{counter+2}{i})
 end
 if profile
-    ylabel('profile / RBExD')
+    % ylabel('profile / RBExD (Gy)')
+    ylabel('profile / physical dose (Gy)')
 else
-    ylabel('IDD / RBExD')
+    % ylabel('IDD / RBExD (Gy)')
+    ylabel('IDD / physical dose (Gy)')
 end
 xlabel('depth [voxel]')
 
