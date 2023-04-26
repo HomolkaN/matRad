@@ -1863,10 +1863,13 @@ classdef matRad_TopasConfig < handle
                     end
                 end
 
-                fprintf(fileID,'\n# Shift of the isocenter per beam\n');
-                fprintf(fileID,'d:Ge/IsoTransX     = %f mm\n',0.5*ct.resolution.x*(ct.cubeDim(2)+1)-stf(beamIx).isoCenter(1));
-                fprintf(fileID,'d:Ge/IsoTransY     = %f mm\n',0.5*ct.resolution.y*(ct.cubeDim(1)+1)-stf(beamIx).isoCenter(2));
-                fprintf(fileID,'d:Ge/IsoTransZ     = %f mm\n',0.5*ct.resolution.z*(ct.cubeDim(3)+1)-stf(beamIx).isoCenter(3));
+                % Translate patient according to beam isocenter
+                fprintf(fileID,'d:Ge/Patient/TransX      = %f mm\n',0.5*ct.resolution.x*(ct.cubeDim(2)+1)-stf(beamIx).isoCenter(1));
+                fprintf(fileID,'d:Ge/Patient/TransY      = %f mm\n',0.5*ct.resolution.y*(ct.cubeDim(1)+1)-stf(beamIx).isoCenter(2));
+                fprintf(fileID,'d:Ge/Patient/TransZ      = %f mm\n',0.5*ct.resolution.z*(ct.cubeDim(3)+1)-stf(beamIx).isoCenter(3));
+                fprintf(fileID,'d:Ge/Patient/RotX=0. deg\n');
+                fprintf(fileID,'d:Ge/Patient/RotY=0. deg\n');
+                fprintf(fileID,'d:Ge/Patient/RotZ=0. deg\n');
 
                 % Load topas modules depending on the particle type
                 fprintf(fileID,'\n# MODULES\n');
@@ -2237,14 +2240,6 @@ classdef matRad_TopasConfig < handle
                         matRad_cfg.dispError('Material Conversion rule "%s" not implemented (yet)!\n',obj.materialConverter.mode);
                 end
 
-                % Translate patient according to beam isocenter
-                fprintf(fID,'d:Ge/Patient/TransX     = Ge/IsoTransX mm\n');
-                fprintf(fID,'d:Ge/Patient/TransY     = Ge/IsoTransY mm\n');
-                fprintf(fID,'d:Ge/Patient/TransZ     = Ge/IsoTransZ mm\n');
-                fprintf(fID,'d:Ge/Patient/RotX       = 0. deg\n');
-                fprintf(fID,'d:Ge/Patient/RotY       = 0. deg\n');
-                fprintf(fID,'d:Ge/Patient/RotZ       = 0. deg\n');
-
                 % Remeber imageCube in MCparam
                 obj.MCparam.imageCube{ctScen} = cube;
             end
@@ -2355,11 +2350,6 @@ classdef matRad_TopasConfig < handle
                 fprintf(fileID,'%s\n',TOPAS_beamSetup);
 
                 fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../" + Sim/ScoreLabel + "_phaseSpace"\n');
-
-                fprintf(fileID,'\n# Shift of the isocenter per beam\n');
-                fprintf(fileID,'d:Ge/IsoTransX     = %f mm\n',0.5*ct.resolution.x*(ct.cubeDim(2)+1)-stf(beamIx).isoCenter(1));
-                fprintf(fileID,'d:Ge/IsoTransY     = %f mm\n',0.5*ct.resolution.y*(ct.cubeDim(1)+1)-stf(beamIx).isoCenter(2));
-                fprintf(fileID,'d:Ge/IsoTransZ     = %f mm\n',0.5*ct.resolution.z*(ct.cubeDim(3)+1)-stf(beamIx).isoCenter(3));
 
                 % Load topas modules depending on the particle type
                 %Write modality specific info
