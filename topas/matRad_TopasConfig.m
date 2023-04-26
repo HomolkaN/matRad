@@ -471,6 +471,12 @@ classdef matRad_TopasConfig < handle
             for t = 1:length(uniqueTallies)
                 for scenarioIx = 1:dij.numOfScenarios
                     dij.(uniqueTallies{t}){scenarioIx}(mask,:) = 0;
+                    if isfield(dij,[uniqueTallies{t} '_std'])
+                        dij.([uniqueTallies{t} '_std']){scenarioIx}(mask,:) = 0;
+                    end
+                    if isfield(dij,[uniqueTallies{t} '_batchStd'])
+                        dij.([uniqueTallies{t} '_batchStd']){scenarioIx}(mask,:) = 0;
+                    end
                 end
             end
 
@@ -546,6 +552,13 @@ classdef matRad_TopasConfig < handle
             obj.MCparam.tallies = unique(obj.MCparam.tallies);
             talliesCut = replace(obj.MCparam.tallies,'-','_');
 
+            if any(contains(talliesCut,'_std'))
+                obj.MCparam.tallies(contains(talliesCut,'_std')) = [];
+                talliesCut(contains(talliesCut,'_std')) = [];
+                obj.MCparam.numOfReportQuantities = 2;
+                obj.MCparam.scoreReportQuantity{end+1} = 'Standard_Deviation';
+            end
+
             % Load data for each tally individually
             for t = 1:length(obj.MCparam.tallies)
                 tnameFile = obj.MCparam.tallies{t};
@@ -577,6 +590,26 @@ classdef matRad_TopasConfig < handle
 
                             % Read data from scored TOPAS files
                             dataRead = obj.readBinCsvData(genFullFile);
+                               
+                            if any(isnan(dataRead{1}(:)))
+                                matRad_cfg.dispWarning(['NaN detected in run ' num2str(k)])
+                            end
+
+                            % Check if std has been calculated afterwards and placed in the folder using the suffix '_std'
+                            if any(~cellfun(@isempty, strfind(string(ls(folder)),'std')))
+                                switch obj.MCparam.outputType
+                                    case 'csv'
+                                        % Generate csv file path to load
+                                        genFullFile_std = fullfile(folder,[genFileName '_std.csv']);
+                                    case 'binary'
+                                        % Generate bin file path to load
+                                        genFullFile_std = fullfile(folder,[genFileName '_std.bin']);
+                                    otherwise
+                                        matRad_cfg.dispError('Not implemented!');
+                                end
+
+                                dataRead(end+1) = obj.readBinCsvData(genFullFile_std);
+                            end
 
                             for i = 1:numel(dataRead)
                                 data.(obj.MCparam.scoreReportQuantity{i}){k} = dataRead{i};
