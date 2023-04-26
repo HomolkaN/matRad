@@ -256,8 +256,11 @@ if ~pln.propMC.externalCalculation
     % Order fields for easier comparison between different dijs
     dij = orderfields(dij);
 else
-    dij = struct([]);
+    dij = struct();
 end
+
+% Write number of discarded bixels as information
+dij.numOfDiscardedSpots = pln.propMC.MCparam.numOfDiscardedSpots;
 
 % Order fields for easier comparison between different dijs
 dij = orderfields(dij);

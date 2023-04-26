@@ -1885,6 +1885,7 @@ classdef matRad_TopasConfig < handle
 
             if bixelNotMeetingParticleQuota ~= 0
                 matRad_cfg.dispWarning([num2str(bixelNotMeetingParticleQuota) ' bixels were discarded due to particle threshold.'])
+                obj.MCparam.numOfDiscardedSpots = bixelNotMeetingParticleQuota;
             end
 
             % Bookkeeping
