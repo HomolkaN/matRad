@@ -6,7 +6,7 @@ d = d(~[d.isdir]);
 startedProcessing = contains({d.name},'out','IgnoreCase',true) & ~contains({d.name},'_std','IgnoreCase',true);
 startDate = [d(startedProcessing).datenum];
 
-finishedProcessing = contains({d.name},'binheader','IgnoreCase',true) & ~contains({d.name},'_std','IgnoreCase',true);
+finishedProcessing = contains({d.name},'physicalDose.binheader','IgnoreCase',true) & ~contains({d.name},'_std','IgnoreCase',true);
 finishDate = [d(finishedProcessing).datenum];
 
 % Calculate difference and convert to hours
