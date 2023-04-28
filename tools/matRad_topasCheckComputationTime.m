@@ -1,4 +1,4 @@
-function simulationTimeInHours = howlongdidittake(folder)
+function computationTimeInHours = matRad_topasCheckComputationTime(folder)
 
 d = dir(folder);
 d = d(~[d.isdir]);
@@ -10,10 +10,10 @@ finishedProcessing = contains({d.name},'physicalDose.binheader','IgnoreCase',tru
 finishDate = [d(finishedProcessing).datenum];
 
 % Calculate difference and convert to hours
-simulationTimeInHours = 24 * sum(finishDate - startDate);
+computationTimeInHours = 24 * sum(finishDate - startDate);
 
-hours = floor(simulationTimeInHours);
-minutes = round((simulationTimeInHours - hours)*60);
+hours = floor(computationTimeInHours);
+minutes = round((computationTimeInHours - hours)*60);
 
 disp(['Simulation time was ' num2str(hours), 'h:' num2str(minutes) 'm with ' num2str(sum(finishedProcessing)) ' batches.'])
 

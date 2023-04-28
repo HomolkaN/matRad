@@ -266,7 +266,7 @@ classdef matRad_TopasConfig < handle
                 w = ones(numBixels,1);
             end
 
-            % Initialize MCparam struct (it is also used for the writeStfFields function
+            % Initialize MCparam struct (it is also used for the writeStfFields function)
             obj.MCparamInit(ct,cst,stf,w);
 
             % Generate baseData using the MCemittanceBaseData constructor
@@ -858,6 +858,7 @@ classdef matRad_TopasConfig < handle
                         end
                     end
                 end
+                
                 % Remove processed physDoseFields from total tallies
                 topasCubesTallies = topasCubesTallies(~physDoseFields);
 
@@ -875,6 +876,7 @@ classdef matRad_TopasConfig < handle
                                         dij.([topasCubesTallies{j} processedQuantities{p}]){ctScen,1}(:,d) = sum(w)*reshape(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) processedQuantities{p} '_beam' num2str(dij.beamNum(d))]){ctScen},[],1);
                                     end
                                 end
+                                % Handle RBE-related quantities (not multiplied by sum(w)!)
                             elseif ~isempty(strfind(lower(topasCubesTallies{j}),'alpha'))
                                 modelName = strsplit(topasCubesTallies{j},'_');
                                 modelName = modelName{end};
@@ -883,6 +885,7 @@ classdef matRad_TopasConfig < handle
                                     dij.(['mAlphaDose_' modelName]){ctScen,1}(:,d) = reshape(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) '_beam' num2str(dij.beamNum(d))]){ctScen},[],1) .* dij.physicalDose{ctScen,1}(:,d);
                                 end
                             elseif ~isempty(strfind(lower(topasCubesTallies{j}),'beta'))
+                                modelName = strsplit(topasCubesTallies{j},'_');
                                 modelName = modelName{end};
                                 if isfield(topasCubes,[topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) '_beam' num2str(dij.beamNum(d))]) ...
                                         && iscell(topasCubes.([topasCubesTallies{j} '_ray' num2str(dij.rayNum(d)) '_bixel' num2str(dij.bixelNum(d)) '_beam' num2str(dij.beamNum(d))]))
@@ -1044,9 +1047,7 @@ classdef matRad_TopasConfig < handle
                         matRad_cfg.dispDebug('Reading phase space scorer from %s\n',fname);
                         scorerName = fileread(fname);
                         fprintf(fID,'\n%s\n\n',scorerName);
-
-                        % Update MCparam.tallies with processed scorer
-                        %                        obj.MCparam.tallies = [obj.MCparam.tallies,{'PhaseSpace'}];
+                        
                     else
                         % write dose to medium scorer
                         if obj.scorer.doseToMedium
@@ -2350,53 +2351,6 @@ classdef matRad_TopasConfig < handle
                 fprintf(fileID,'%s\n',TOPAS_beamSetup);
 
                 fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../" + Sim/ScoreLabel + "_phaseSpace"\n');
-
-                % Load topas modules depending on the particle type
-                %Write modality specific info
-                %                 switch stf(beamIx).radiationMode
-                %                     case 'protons'
-                %                         fprintf(fileID,'s:Sim/ParticleName = "proton"\n');
-                %                         fprintf(fileID,'u:Sim/ParticleMass = 1.0\n');
-                %
-                %                         particleA = 1;
-                %                         % particleZ = 1;
-                %
-                %                         modules = obj.modules_protons;
-                %
-                %                     case 'carbon'
-                %                         fprintf(fileID,'s:Sim/ParticleName = "GenericIon(6,12)"\n');
-                %                         fprintf(fileID,'u:Sim/ParticleMass = 12.0\n');
-                %
-                %                         particleA = 12;
-                %                         % particleZ = 6;
-                %
-                %                         modules = obj.modules_GenericIon;
-                %
-                %                     case 'helium'
-                %                         fprintf(fileID,'s:Sim/ParticleName = "GenericIon(2,4)"\n');
-                %                         fprintf(fileID,'u:Sim/ParticleMass = 4.0\n');
-                %
-                %                         particleA = 4;
-                %                         % particleZ = 2;
-                %
-                %                         modules = obj.modules_GenericIon;
-                %
-                %                     case 'photons'
-                %                         fprintf(fileID,'s:Sim/ParticleName = "gamma"\n');
-                %                         fprintf(fileID,'u:Sim/ParticleMass = 0\n');
-                %
-                %                         particleA = 0;
-                %                         % particleZ = 0;
-                %
-                %                         modules = obj.modules_photons;
-                %
-                %                     otherwise
-                %                         matRad_cfg.dispError('Invalid radiation mode %s!',stf.radiationMode)
-                %                 end
-                %                 fprintf(fileID,'\n# MODULES\n');
-                %                 moduleString = cellfun(@(s) sprintf('"%s"',s),modules,'UniformOutput',false);
-                %                 fprintf(fileID,'sv:Ph/Default/Modules = %d %s\n',length(modules),strjoin(moduleString,' '));
-
                 fclose(fileID);
             end
 
