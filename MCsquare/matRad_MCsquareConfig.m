@@ -510,11 +510,11 @@ classdef matRad_MCsquareConfig
                 matRad_cfg.dispError('Needs MCparam file for read-in of the MCsquare dose!')
             end
             calcLET = false;
-            
+
             mask = false(dij.doseGrid.numOfVoxels,1);
             mask(MCparam.VdoseGrid) = true;
 
-            
+
             % read output
             if ~MCparam.calcDoseDirect
                 %Read Sparse Matrix

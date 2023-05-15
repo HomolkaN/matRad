@@ -233,7 +233,7 @@ classdef matRad_OmpConfig < handle
                 end
                 
                 cubeRho{s} = interp1(hlut(:,1),hlut(:,2),HUcube{s});
-                 
+                
             end
         end
                 
