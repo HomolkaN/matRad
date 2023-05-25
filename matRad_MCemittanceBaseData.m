@@ -255,14 +255,14 @@ classdef matRad_MCemittanceBaseData
                     %%% Approximate mean energy
                     % This rangeEnergy relationship was created from a series of Monte Carlo simulations where the nominal
                     % energy was equal to the mean energy (P. Meder, 2021)
-                    rangeEnergyFit = @(x) 5.762374661332111e-20 * x.^9 - 9.645413625310569e-17 * x.^8 + 7.073049219034644e-14 * x.^7 ...
-                        - 2.992344292008054e-11 * x.^6 + 8.104111934547256e-09 * x.^5 - 1.477860913846939e-06 * x.^4 ...
-                        + 1.873625800704108e-04 * x.^3 - 1.739424343114980e-02 * x.^2 + 1.743224692623838e+00 * x ...
-                        + 1.827112816899668e+01;
+%                     rangeEnergyFit = @(x) 5.762374661332111e-20 * x.^9 - 9.645413625310569e-17 * x.^8 + 7.073049219034644e-14 * x.^7 ...
+%                         - 2.992344292008054e-11 * x.^6 + 8.104111934547256e-09 * x.^5 - 1.477860913846939e-06 * x.^4 ...
+%                         + 1.873625800704108e-04 * x.^3 - 1.739424343114980e-02 * x.^2 + 1.743224692623838e+00 * x ...
+%                         + 1.827112816899668e+01;
                     
                     % This rangeEnergy relationship was created analogously to the helium and carbon relationship below
                     % Fitted to data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
-                    % rangeEnergyFit = @(x) 7.62* x.^0.5842 + 3.063;
+                    rangeEnergyFit = @(x) 7.62* x.^0.5842 + 3.063;
 
                     %%% Calculate energy spread from FWHM
                     % Calculate FWHM of bragg peak
