@@ -2356,7 +2356,14 @@ classdef matRad_TopasConfig < handle
                 matRad_cfg.dispInfo('Reading ''%s'' Beam Characteristics from ''%s''\n',obj.beamProfile,fname);
                 fprintf(fileID,'%s\n',TOPAS_beamSetup);
 
-                fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../" + Sim/ScoreLabel + "_phaseSpace"\n');
+                % We have to write Sim/ScoreLabel in plain text here because the called parameter file does not know the
+                % overall parameters
+                if exist('ctScen','var')
+                    fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../score_%s_field%d_ct%d_run%d_phaseSpace"\n',obj.label,fieldIx,ctScen,runIx);
+                else
+                    fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../score_%s_field%d_run%d_phaseSpace"\n',obj.label,fieldIx,ctScen,runIx);
+                end
+
                 fclose(fileID);
             end
 
