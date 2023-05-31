@@ -78,8 +78,9 @@ pln.propStf.useRangeShifter = true;
 % pln.propMC.externalCalculation = true;
 
 %% generate steering file
-stf = matRad_generateStf(ct,cst,pln);
-%stf = matRad_generateSingleBixelStf(ct,cst,pln); %Example to create a single beamlet stf
+% stf = matRad_generateStf(ct,cst,pln);
+energyIx = 32;
+stf = matRad_generateStfPencilBeam(pln,ct,energyIx); %Example to create a single beamlet stf
 
 %% analytical dose calculation
 dij = matRad_calcParticleDose(ct, stf, pln, cst); %Calculate particle dose influence matrix (dij) with analytical algorithm
