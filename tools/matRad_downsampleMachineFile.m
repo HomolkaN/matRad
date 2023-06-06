@@ -26,6 +26,8 @@ function machine = matRad_downsampleMachineFile(machine)
 downsampleFactor = 0.2; % Specifies percentage of grid spacing, the smaller the broader the grid
 lowerPeakArea = 0.05; % Specifies percentage of peak area
 upperPeakArea = 0.04; % Specifies percentage of peak area
+depthCutOff = 1.08;
+% cutOff = 0.005; %cutOff data at 0.001*max(Z)
 
 for energyIx = 1:numel(machine.data)
 
@@ -33,6 +35,12 @@ for energyIx = 1:numel(machine.data)
     numOfSamplePoints = downsampleFactor*numel(machine.data(energyIx).depths);
     depths = machine.data(energyIx).depths;
     newGrid = round(max(depths)/numOfSamplePoints,2);
+
+    % CutOff data
+%     cutOffPoint = find(machine.data(energyIx).Z<cutOff*max(machine.data(energyIx).Z));
+%     if ~isempty(cutOffPoint)
+%        cutOffDepth = depths(cutOffPoint(1));
+%     end
 
     % Isolate peak area to use original grid
     [~,leftPos] = min(abs(machine.data(energyIx).depths-machine.data(energyIx).peakPos*(1-lowerPeakArea)));
@@ -48,11 +56,17 @@ for energyIx = 1:numel(machine.data)
     newDepths = sort(newDepths);
     newDepths = smooth(newDepths,20);
     newDepths = round(newDepths,5);
+
+    % CutOff with depths
+    newDepths(newDepths>machine.data(energyIx).peakPos*depthCutOff) = [];
+    % CutOff new depths
+%     if ~isempty(cutOffPoint)
+%         newDepths = newDepths(newDepths<cutOffDepth);
+%     end
 %     newDepths = 0:0.1:1.3*machine.data(energyIx).peakPos;
 %     newDepths = newDepths + 0.05;
 
-
-    % Plot
+% Plot
     if energyIx == 30
         edges = 0:2:max(newDepths);
         figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths,edges)
