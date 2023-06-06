@@ -107,7 +107,7 @@ classdef matRad_TopasConfig < handle
         modules_photons       = {'g4em-standard_opt4','g4h-phy_QGSP_BIC_HP','g4decay'};
 
         %Geometry / World
-        worldMaterial = 'G4_AIR';
+        worldMaterial = 'G4_AIR';  % 'G4_AIR', 'Vacuum'
 
         %filenames
         converterFolder = 'materialConverter';
@@ -975,17 +975,16 @@ classdef matRad_TopasConfig < handle
             fprintf(fID,'i:Ts/ShowHistoryCountAtInterval = %d\n',10^(floor(log10(1/obj.numOfRuns * obj.numHistories))-1));
             fprintf(fID,'\n');
 
-            if strcmp(obj.scorer.scorePhaseSpace,'none')
-                fprintf(fID,'s:Sim/DoseScorerOutputType = "%s"\n',obj.scorer.outputType);
-                if iscell(obj.scorer.reportQuantity)
-                    fprintf(fID,'sv:Sim/DoseScorerReport = %i ',length(obj.scorer.reportQuantity));
-                    fprintf(fID,'"%s" ',obj.scorer.reportQuantity{:});
-                    fprintf(fID,'\n');
-                else
-                    fprintf(fID,'sv:Sim/DoseScorerReport = 1 "%s"\n',obj.scorer.reportQuantity);
-                end
+            fprintf(fID,'s:Sim/DoseScorerOutputType = "%s"\n',obj.scorer.outputType);
+                          
+            if iscell(obj.scorer.reportQuantity)
+                fprintf(fID,'sv:Sim/DoseScorerReport = %i ',length(obj.scorer.reportQuantity));
+                fprintf(fID,'"%s" ',obj.scorer.reportQuantity{:});
                 fprintf(fID,'\n');
+            else
+                fprintf(fID,'sv:Sim/DoseScorerReport = 1 "%s"\n',obj.scorer.reportQuantity);
             end
+            fprintf(fID,'\n');
 
             % Write simulation seed
             fprintf(fID,['i:Ts/Seed = ',num2str(runIx),'\n']);
@@ -2325,10 +2324,8 @@ classdef matRad_TopasConfig < handle
 
         function writeMCparam(obj)
             %write MCparam file with basic parameters
-            if ~strcmp(obj.scorer.scorePhaseSpace,'score')
-                MCparam = obj.MCparam;
-                save(fullfile(obj.workingDir,'MCparam.mat'),'MCparam','-v7');
-            end
+            MCparam = obj.MCparam;
+            save(fullfile(obj.workingDir,'MCparam.mat'),'MCparam','-v7');
         end
 
         function writeStfPhaseSpace(obj,ct,stf)
@@ -2358,11 +2355,7 @@ classdef matRad_TopasConfig < handle
 
                 % We have to write Sim/ScoreLabel in plain text here because the called parameter file does not know the
                 % overall parameters
-                if exist('ctScen','var')
-                    fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../score_%s_field%d_ct%d_run%d_phaseSpace"\n',obj.label,fieldIx,ctScen,runIx);
-                else
-                    fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../score_%s_field%d_run%d_phaseSpace"\n',obj.label,fieldIx,ctScen,runIx);
-                end
+                fprintf(fileID,'s:So/PhaseSpaceSource/PhaseSpaceFileName              = "../score_%s_field%i_run1_phaseSpace"\n',obj.label,beamIx);
 
                 fclose(fileID);
             end
@@ -2382,6 +2375,16 @@ classdef matRad_TopasConfig < handle
 
                 fclose(fileID);
             end
+
+            workingDir = replace(obj.workingDir,'read','score');
+            MCparam2 = load([workingDir, '/MCparam.mat']);
+
+            % Bookkeeping
+            obj.MCparam.nbParticlesTotal = MCparam2.MCparam.nbParticlesTotal;
+            obj.MCparam.nbHistoriesTotal = MCparam2.MCparam.nbHistoriesTotal;
+            obj.MCparam.nbParticlesField = MCparam2.MCparam.nbParticlesField;
+            obj.MCparam.nbHistoriesField = MCparam2.MCparam.nbHistoriesField;
+            obj.MCparam.nbFields         = MCparam2.MCparam.nbFields;
         end
 
     end
