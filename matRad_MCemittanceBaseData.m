@@ -33,6 +33,9 @@ classdef matRad_MCemittanceBaseData
         defaultRelativeEnergySpread = 0;    %default energy spread
         matRad_cfg                          %matRad config
         rangeShifters                       %Stores range shifters
+        
+        % air correction in beam optics approximation
+        fitWithSpotSizeAirCorrection  = true;
 
         %To force the phase space approximation even if we have the data
         forceSpectrumApproximation  = false; 
@@ -327,47 +330,54 @@ classdef matRad_MCemittanceBaseData
         function mcDataOptics = fitBeamOpticsForEnergy(obj,energyIx, focusIndex)
             % function to calculate beam optics used by mcSquare (and TOPAS) for given energy          
             
-            % calculate geometric distances and extrapolate spot size at nozzle
-            SAD     = obj.machine.meta.SAD;
-            z       = -(obj.machine.data(energyIx).initFocus.dist(focusIndex,:) - SAD);
-            sigma   = obj.machine.data(energyIx).initFocus.sigma(focusIndex,:);
-            sigmaSq = sigma.^2;
+            %calculate geometric distances and extrapolate spot size at nozzle
+            SAD = obj.machine.meta.SAD;
+            z     = -(obj.machine.data(energyIx).initFocus.dist(focusIndex,:) - SAD);
+            sigma = obj.machine.data(energyIx).initFocus.sigma(focusIndex,:);
+            
+            %correct for in-air scattering with polynomial or interpolation
+            sigma = arrayfun(@(d,sigma) obj.spotSizeAirCorrection(obj.machine.meta.radiationMode,obj.machine.data(i).energy,d,sigma),z+obj.machine.meta.BAMStoIsoDist,sigma);
+                     
 
-            % Calculate sigma at z=0;
-            sigmaInit = interp1(z,sigma,0);
+            %square and interpolate at isocenter
+            sigmaSq = sigma.^2;     
+            sigmaSqIso = sqrt(interp1(z,sigmaSq,0));
+            
+            %fit Courant-Synder equation to data using ipopt, formulae
+            %given in mcSquare documentation            
+            
+            %fit function
+            qRes = @(rho, sigmaT) (sigmaSq -  (sigmaSqIso^2 - 2*sigmaSqIso*rho*sigmaT.*z + sigmaT^2.*z.^2));
 
-            % fit Courant-Synder equation to data using ipopt, formulae given in mcSquare documentation
-            qRes = @(rho, sigmaT) (sigmaSq -  (sigmaInit^2 - 2*sigmaInit*rho*sigmaT.*z + sigmaT^2.*z.^2));
-
-            % fitting for either matlab or octave_core_file_limit
+            % fitting for either matlab or octave
             % Define optimization parameters
+
             start = [0.9; 0.1];
             options.lb = [-0.99, -Inf];
             options.ub = [ 0.99,  Inf];
 
             funcs.objective = @(x) sum(qRes(x(1), x(2)).^2);
-            funcs.gradient  = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaInit * x(2) * z));
-                2 * sum(qRes(x(1), x(2)) .* (2 * sigmaInit * x(1) * z  - 2 * x(2) * z.^2))];
+            funcs.gradient  = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaSqIso * x(2) * z));
+                2 * sum(qRes(x(1), x(2)) .* (2 * sigmaSqIso * x(1) * z  - 2 * x(2) * z.^2))];
 
-            % Perform optimization in MATLAB or octave
-            if ~obj.matRad_cfg.isOctave
+            if ~obj.matRad_cfg.isOctave                
                 options.ipopt.hessian_approximation = 'limited-memory';
                 options.ipopt.limited_memory_update_type = 'bfgs';
                 options.ipopt.print_level = 1;
 
                 [result, ~] = ipopt (start, funcs, options);
             else
-                [result, ~] = sqp (start, {funcs.objective,funcs.gradient}, [], [], options.lb, options.ub);
+                [result, ~] = sqp (start, phi, [], [], lb, ub);
+                
             end
 
-            % Write optimized parameters
             rho    = result(1);
             sigmaT = result(2);
             
-            % Calculate divergence, spotsize and correlation at nozzle
+            %calculate divergence, spotsize and correlation at nozzle
             DivergenceAtNozzle  = sigmaT;
-            SpotsizeAtNozzle    = sqrt(sigmaInit^2 - 2 * rho * sigmaInit * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
-            CorrelationAtNozzle = (rho * sigmaInit - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
+            SpotsizeAtNozzle    = sqrt(sigmaSqIso^2 - 2 * rho * sigmaSqIso * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
+            CorrelationAtNozzle = (rho * sigmaSqIso - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
             
             
             % Save calcuated beam optics data in mcData
@@ -397,7 +407,7 @@ classdef matRad_MCemittanceBaseData
                 hold on; plot(zNew,y);
             end
             
-            mcDataOptics.FWHMatIso = 2.355 * sigmaInit;
+            mcDataOptics.FWHMatIso = 2.355 * sigmaSqIso;
         end
         
         
@@ -451,6 +461,55 @@ classdef matRad_MCemittanceBaseData
             ix = [raShis.ID] == 0;
             
             obj.rangeShifters = raShis(~ix);
+        end
+    end
+
+    methods (Static)
+        function sigmaAirCorrected = spotSizeAirCorrection(radiationMode,E,d,sigma,method)
+            %performs a rudimentary correction for additional scattering in
+            %air not considered by the courant snyder equation
+
+            if nargin < 5
+                method = 'fit';
+            end
+
+            switch radiationMode
+                case 'protons'
+                    sigmaLUT = [0    0.4581    2.7777    7.0684   12.6747; ...
+                                0    0.1105    0.7232    2.1119    4.2218; ...
+                                0    0.0754    0.5049    1.4151    2.8604; ...
+                                0    0.0638    0.3926    1.1196    2.2981; ...
+                                0    0.0466    0.3279    0.9440    1.9305; ...
+                                0    0.0414    0.2825    0.8294    1.7142; ...
+                                0    0.0381    0.2474    0.7336    1.5192; ...
+                                0    0.0335    0.2214    0.6696    1.3795; ...
+                                0    0.0287    0.2030    0.6018    1.2594; ...
+                                0    0.0280    0.1925    0.5674    1.1865; ...
+                                0    0.0257    0.1801    0.5314    1.0970; ...
+                                0    0.0244    0.1670    0.4966    1.0342];
+                    energies = [31.7290   69.4389   95.2605  116.5270  135.1460  151.9670  167.4620  181.9230  195.5480  208.4780  220.8170  232.6480]';
+                    depths = [0 500 1000 1500 2000];
+                    polyFit = @(E,d) 0.001681*d - 0.0001178*E*d + 6.094e-6*d^2 + 1.764e-6*E^2*d - 1.016e-7*E*d^2 - 9.803e-09*E^3*d + 6.096e-10*E^2*d^2 + 1.835e-11*E^4*d - 1.209e-12*E^3*d^2;
+                otherwise 
+                    sigmaLUT = [0 0; 0 0];
+                    energies = [0; Inf];
+                    depths = [0; Inf];
+
+                    polyFit = @(E,d) 0;
+            end
+
+            switch method
+                case 'interp_linear'
+                    sigmaAir = interp2(energies,depths,sigmaLUT',E,d,'linear');
+                case 'fit'
+                    sigmaAir = polyFit(E,d);
+                otherwise
+                    matRad_cfg = MatRad_Config.instance();
+                    matRad_cfg.dispWarning('Air Correction Method ''%s'' not known, skipping!',method);
+                    sigmaAir = 0;
+            end
+
+            sigmaAirCorrected = sigma - sigmaAir;            
         end
     end
 end
