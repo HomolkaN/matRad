@@ -336,7 +336,7 @@ classdef matRad_MCemittanceBaseData
             sigma = obj.machine.data(energyIx).initFocus.sigma(focusIndex,:);
             
             %correct for in-air scattering with polynomial or interpolation
-            sigma = arrayfun(@(d,sigma) obj.spotSizeAirCorrection(obj.machine.meta.radiationMode,obj.machine.data(i).energy,d,sigma),z+obj.machine.meta.BAMStoIsoDist,sigma);
+            sigma = arrayfun(@(d,sigma) obj.spotSizeAirCorrection(obj.machine.meta.radiationMode,obj.machine.data(energyIx).energy,d,sigma),z+obj.machine.meta.BAMStoIsoDist,sigma);
                      
 
             %square and interpolate at isocenter
