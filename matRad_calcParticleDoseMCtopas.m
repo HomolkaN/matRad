@@ -85,12 +85,14 @@ if pln.propMC.scorer.RBE
     end
 end
 
-% Set numOfRuns to 1 if phaseSpace is being calculated
-if strcmp(pln.propMC.scorer.scorePhaseSpace,'score')
+% Set numOfRuns to 1 if phaseSpace is being calculated (but adjust
+% histories accordingly)
+if strcmp(pln.propMC.scorePhaseSpace.mode,'score')
+    pln.propMC.numHistories = pln.propMC.numHistories / pln.propMC.numOfRuns;
     pln.propMC.numOfRuns = 1;
     pln.propMC.workingDir = [pln.propMC.workingDir '_scorePhaseSpace'];
     matRad_cfg.dispInfo('numOfRuns overwritten with 1 by phase space scoring!\n');
-elseif strcmp(pln.propMC.scorer.scorePhaseSpace,'read')
+elseif strcmp(pln.propMC.scorePhaseSpace.mode,'read')
     pln.propMC.workingDir = [pln.propMC.workingDir '_readPhaseSpace'];
 end
 

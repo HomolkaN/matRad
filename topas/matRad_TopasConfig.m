@@ -75,6 +75,11 @@ classdef matRad_TopasConfig < handle
         arrayOrdering = 'F'; %'C';
         rsp_basematerial = 'Water';
 
+        % PhaseSpace scoring
+        scorePhaseSpace = struct('mode','none',... % 'none', 'read' or 'score'
+            'phaseSpaceVolumeLength',NaN,...
+            'adjustedNozzleDist',495);
+
         %Scoring
         scorer = struct('filename','constructor',...
             'tallies',{{'default'}},...
@@ -82,7 +87,6 @@ classdef matRad_TopasConfig < handle
             'doseToMedium',true,...
             'doseToWater',false,...
             'surfaceTrackCount',false,...
-            'scorePhaseSpace','none',... % 'none', 'read' or 'score'
             'calcDij',false,...
             'RBE',true,...
             'RBE_model',{{'default'}},... % default is MCN for protons and LEM1 for ions
@@ -258,6 +262,14 @@ classdef matRad_TopasConfig < handle
 
             % Write CT, patient parameters and Schneider converter
             matRad_cfg.dispInfo('Writing parameter files to %s\n',obj.workingDir);
+            
+            if strcmp(obj.scorePhaseSpace.mode,'score')
+                % Calculate length of the cylinder
+                obj.scorePhaseSpace.phaseSpaceVolumeLength = machine.meta.BAMStoIsoDist - obj.scorePhaseSpace.adjustedNozzleDist + 5;
+                % adjustedNozzleDist represents the nozzle shift for the readin of the phaseSpace, 
+                % the +5 is an adjustment because the scoring surface is shifted by 5 mm to avoid an overlap error by TOPAS
+            end
+            
             obj.writePatient(ct,pln);
 
             % Generate uniform weights in case of dij calculation (for later optimization)
@@ -277,7 +289,7 @@ classdef matRad_TopasConfig < handle
                 topasBaseData = [];
             end
 
-            if strcmp(obj.scorer.scorePhaseSpace,'read')
+            if strcmp(obj.scorePhaseSpace.mode,'read')
                 obj.writeStfPhaseSpace(ct,stf);
             else
                 obj.writeStfFields(ct,stf,pln,w,topasBaseData);
@@ -1023,9 +1035,9 @@ classdef matRad_TopasConfig < handle
             fprintf(fID,'includeFile = %s\n',paramFile);
             fprintf(fID,'\n');
 
-            if strcmp(obj.scorer.scorePhaseSpace,'score')
+            if strcmp(obj.scorePhaseSpace.mode,'score')
                 fname = fullfile(obj.thisFolder,obj.infilenames.geometry_scorePhaseSpace);
-            elseif strcmp(obj.scorer.scorePhaseSpace,'read')
+            elseif strcmp(obj.scorePhaseSpace.mode,'read')
                 fname = fullfile(obj.thisFolder,obj.infilenames.geometry_readPhaseSpace);
             else
                 fname = fullfile(obj.thisFolder,obj.infilenames.geometry);
@@ -1045,7 +1057,7 @@ classdef matRad_TopasConfig < handle
             switch obj.scorer.filename
                 case 'constructor'
 
-                    if strcmp(obj.scorer.scorePhaseSpace,'score')
+                    if strcmp(obj.scorePhaseSpace.mode,'score')
                         fname = fullfile(obj.thisFolder,filesep,obj.scorerFolder,filesep,obj.infilenames.Scorer_phaseSpaceSurface);
                         matRad_cfg.dispDebug('Reading phase space scorer from %s\n',fname);
                         scorerName = fileread(fname);
@@ -1567,7 +1579,11 @@ classdef matRad_TopasConfig < handle
                 if isPhoton
                     fprintf(fileID,'d:Ge/Nozzle/TransZ = -%f mm\n', 1000 + ct.cubeDim(3)*ct.resolution.z);%Not sure if this is correct,100 cm is SSD and probably distance from surface to isocenter needs to be added
                 else
-                    fprintf(fileID,'d:Ge/Nozzle/TransZ = -%f mm\n', nozzleToAxisDistance);
+                    if strcmp(obj.scorePhaseSpace.mode,'score')
+                        fprintf(fileID,'d:Ge/Nozzle/TransZ = -%f mm\n', obj.scorePhaseSpace.phaseSpaceVolumeLength/2);
+                    else
+                        fprintf(fileID,'d:Ge/Nozzle/TransZ = -%f mm\n', nozzleToAxisDistance);
+                    end
                 end
 
                 if obj.pencilBeamScanning
@@ -1965,13 +1981,13 @@ classdef matRad_TopasConfig < handle
             matRad_cfg.dispInfo('Writing data to %s\n',outfile)
             fID = fopen(outfile,'w+');
 
-            if strcmp(obj.scorer.scorePhaseSpace,'score')
+            if strcmp(obj.scorePhaseSpace.mode,'score')
                 fprintf(fID,'# -- Patient parameters\n');
                 fprintf(fID,'s:Ge/PhantomSurface/Type               = "TsCylinder"\n');
                 fprintf(fID,'s:Ge/PhantomSurface/Parent             = "World"\n');
                 fprintf(fID,'s:Ge/PhantomSurface/Material           = "Air"\n');
-                fprintf(fID,'dc:Ge/PhantomSurface/TransZ            = 74.9 cm\n');
-                fprintf(fID,'dc:Ge/PhantomSurface/RMax              = 50 cm\n');
+                fprintf(fID,'dc:Ge/PhantomSurface/TransZ            = %f mm\n',obj.scorePhaseSpace.phaseSpaceVolumeLength/2-5);
+                fprintf(fID,'dc:Ge/PhantomSurface/RMax              = 500 mm\n');
                 fprintf(fID,'dc:Ge/PhantomSurface/HL                = 0.1 mm\n');
             else
 
@@ -2339,13 +2355,21 @@ classdef matRad_TopasConfig < handle
 
                 obj.writeFieldHeader(fileID);
                 % NozzleAxialDistance
-                fprintf(fileID,'d:Ge/Nozzle/TransZ = -495 mm\n');%Not sure if this is correct,100 cm is SSD and probably distance from surface to isocenter needs to be added
+                fprintf(fileID,'d:Ge/Nozzle/TransZ = -%f mm\n',obj.scorePhaseSpace.adjustedNozzleDist);
 
                 if obj.pencilBeamScanning
                     % Write couch and gantry angles
                     fprintf(fileID,'d:Sim/GantryAngle = %f deg\n',stf(beamIx).gantryAngle);
                     fprintf(fileID,'d:Sim/CouchAngle = %f deg\n\n',stf(beamIx).couchAngle);
                 end
+
+                % Translate patient according to beam isocenter
+                fprintf(fileID,'d:Ge/Patient/TransX      = %f mm\n',0.5*ct.resolution.x*(ct.cubeDim(2)+1)-stf(beamIx).isoCenter(1));
+                fprintf(fileID,'d:Ge/Patient/TransY      = %f mm\n',0.5*ct.resolution.y*(ct.cubeDim(1)+1)-stf(beamIx).isoCenter(2));
+                fprintf(fileID,'d:Ge/Patient/TransZ      = %f mm\n',0.5*ct.resolution.z*(ct.cubeDim(3)+1)-stf(beamIx).isoCenter(3));
+                fprintf(fileID,'d:Ge/Patient/RotX=0. deg\n');
+                fprintf(fileID,'d:Ge/Patient/RotY=0. deg\n');
+                fprintf(fileID,'d:Ge/Patient/RotZ=0. deg\n\n');
 
                 % Write beam profile
                 fname = fullfile(obj.thisFolder,obj.infilenames.beam_customPhasespace);
