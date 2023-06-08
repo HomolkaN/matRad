@@ -3,7 +3,7 @@ s:Ge/World/Material 	= Sim/WorldMaterial
 d:Ge/World/RMax        	= 50 cm
 #d:Ge/World/HL     	    = 75 cm 
 #This variable is set to the nozzle translation
-d:Ge/World/HL = -d:Ge/Nozzle/TransZ
+d:Ge/World/HL = -1 * Ge/Nozzle/TransZ mm
 b:Ge/World/Invisible    = "TRUE"
 
 s:Ge/Nozzle/Parent      = "World"
