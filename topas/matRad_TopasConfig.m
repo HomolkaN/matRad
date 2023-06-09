@@ -2401,6 +2401,7 @@ classdef matRad_TopasConfig < handle
             end
 
             workingDir = replace(obj.workingDir,'read','score');
+            workingDir = erase(workingDir,sprintf('_sample%.2i',ct.sampleIdx));
             MCparam2 = load([workingDir, '/MCparam.mat']);
 
             % Bookkeeping
