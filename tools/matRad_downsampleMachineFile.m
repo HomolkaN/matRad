@@ -26,7 +26,8 @@ function machine = matRad_downsampleMachineFile(machine)
 downsampleFactor = 0.2; % Specifies percentage of grid spacing, the smaller the broader the grid
 lowerPeakArea = 0.05; % Specifies percentage of peak area
 upperPeakArea = 0.04; % Specifies percentage of peak area
-depthCutOff = 1.08;
+depthCutOff = 1.2;
+% depthCutOff = 0;
 % cutOff = 0.005; %cutOff data at 0.001*max(Z)
 
 for energyIx = 1:numel(machine.data)
@@ -47,7 +48,7 @@ for energyIx = 1:numel(machine.data)
     [~,rightPos] = min(abs(machine.data(energyIx).depths-machine.data(energyIx).peakPos*(1+upperPeakArea)));
 
     % Generate new depths vector
-    newDepths = matRad_interp1(depths,depths,min(depths):newGrid:1.3*machine.data(energyIx).peakPos,'extrap');
+    newDepths = matRad_interp1(depths,depths,min(depths):newGrid:max(depths));
 
     % Only use new grid for everything that's not peak
     newDepths(newDepths>depths(leftPos) & newDepths<depths(rightPos)) = [];
@@ -57,23 +58,15 @@ for energyIx = 1:numel(machine.data)
     newDepths = smooth(newDepths,20);
     newDepths = round(newDepths,5);
 
-    % CutOff with depths
-    newDepths(newDepths>machine.data(energyIx).peakPos*depthCutOff) = [];
-    % CutOff new depths
-%     if ~isempty(cutOffPoint)
-%         newDepths = newDepths(newDepths<cutOffDepth);
-%     end
-%     newDepths = 0:0.1:1.3*machine.data(energyIx).peakPos;
-%     newDepths = newDepths + 0.05;
-
-% Plot
+    % Plot
     if energyIx == 30
-        edges = 0:2:max(newDepths);
-        figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths,edges)
-        xlim([0 max(newDepths)])
+        plotPoints = newDepths<machine.data(energyIx).peakPos*depthCutOff;
+        edges = 0:2:max(newDepths(plotPoints));
+        figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths(plotPoints),edges)
+        xlim([0 max(newDepths(plotPoints))])
         xlabel('Depth (mm)')
         ylabel('counts')
-        yyaxis right, plot(depths,machine.data(energyIx).Z,'LineWidth',2), hold on, plot(newDepths,matRad_interp1(depths,machine.data(energyIx).Z,newDepths),'LineWidth',2,'LineStyle','--');
+        yyaxis right, plot(depths,machine.data(energyIx).Z,'LineWidth',2), hold on, plot(newDepths(plotPoints),matRad_interp1(depths,machine.data(energyIx).Z,newDepths(plotPoints)),'LineWidth',2,'LineStyle','--');
         ylabel('Dose Z (a.u.)')
     end
 
@@ -82,11 +75,18 @@ for energyIx = 1:numel(machine.data)
     for fieldIx = 1:length(fnames)
         if size(machine.data(energyIx).(fnames{fieldIx}),1) > 1
 
-            machine.data(energyIx).(fnames{fieldIx}) = matRad_interp1(depths,machine.data(energyIx).(fnames{fieldIx}),newDepths);
-        
+            machine.data(energyIx).(fnames{fieldIx}) = matRad_interp1(depths,machine.data(energyIx).(fnames{fieldIx}),newDepths,'extrap');
+            
+            % Cutoff with depth
+            if depthCutOff>0
+                machine.data(energyIx).(fnames{fieldIx})(newDepths>machine.data(energyIx).peakPos*depthCutOff) = [];
+            end
+
         end
     end
 
+    machine.data(energyIx).Z(machine.data(energyIx).Z < 0) = 0;
+    
     clear depths newDepths
 
 end
