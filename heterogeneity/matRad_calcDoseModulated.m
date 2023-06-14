@@ -168,5 +168,8 @@ end
 % Change loglevel back to default;
 matRad_cfg.logLevel = logLevel;
 
+% Save number of samples to resultGUI
+resultGUI.numOfSamples = samples;
+
 end
 
