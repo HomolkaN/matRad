@@ -1,21 +1,21 @@
 classdef matRad_MCsquareConfig
-    % matRad_MCsquareConfig class definition
-    %
-    %
-    % References
-    %
-    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %
-    % Copyright 2019 the matRad development team.
-    %
-    % This file is part of the matRad project. It is subject to the license
-    % terms in the LICENSE file found in the top-level directory of this
-    % distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part
-    % of the matRad project, including this file, may be copied, modified,
-    % propagated, or distributed except according to the terms contained in the
-    % LICENSE file.
-    %
-    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% matRad_MCsquareConfig class definition
+% 
+%
+% References
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Copyright 2019 the matRad development team. 
+% 
+% This file is part of the matRad project. It is subject to the license 
+% terms in the LICENSE file found in the top-level directory of this 
+% distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part 
+% of the matRad project, including this file, may be copied, modified, 
+% propagated, or distributed except according to the terms contained in the 
+% LICENSE file.
+%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
@@ -120,7 +120,7 @@ classdef matRad_MCsquareConfig
 
     methods
         function obj = matRad_MCsquareConfig()
-            %matRad_MCsquareConfig Configuration Class for MCsquare
+            %matRad_MCsquareConfig Configuration Class for MCsquare   
             matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
 
             % Set default histories from MatRad_Config

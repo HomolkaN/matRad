@@ -5,9 +5,9 @@ classdef matRad_BiologicalModel
     % a given radiation modatlity and a given bio model identifier string.
     %
     % constructor call
-    %   pln.bioParam = matRad_BioModel(sRadiationMode,sQuantityOpt, sModel)
+    %   pln.bioParam = matRad_BiologicalModel(sRadiationMode,sQuantityOpt, sModel)
     %
-    %   e.g. pln.bioParam = matRad_BioModel('protons','constRBE_RBExD')
+    %   e.g. pln.bioParam = matRad_BiologicalModel('protons','constRBE','RBExD')
     %
     % input
     %   sRadiationMode:     radiation modality 'photons' 'protons' 'carbon'
@@ -239,7 +239,6 @@ classdef matRad_BiologicalModel
                                     matRad_cfg.dispWarning(['matRad: Invalid biological Model: ' this.model  '; using "HEL" instead.']);
                                     this.model = 'HEL';
                                 end
-                                
                             otherwise
                                 matRad_cfg.dispWarning(['matRad: Invalid biological optimization quantity: ' this.quantityOpt  '; using "none" instead.']);
                                 this.quantityOpt = 'physicalDose';
