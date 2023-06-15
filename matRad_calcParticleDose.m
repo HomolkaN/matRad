@@ -106,7 +106,11 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
     end
 end
 
-if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero && pln.propHeterogeneity.useOriginalDepths
+if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
+    if pln.propHeterogeneity.useOriginalDepths
+        machine.data = matRad_HeterogeneityConfig.overrideBaseData(machine.data);
+    end
+else
     machine.data = matRad_HeterogeneityConfig.overrideBaseData(machine.data);
 end
 
