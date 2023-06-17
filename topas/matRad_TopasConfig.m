@@ -65,10 +65,10 @@ classdef matRad_TopasConfig < handle
 
         %Image
         materialConverter = struct('mode','HUToWaterSchneider',...    %'RSP','HUToWaterSchneider';
-            'densityCorrection','Schneider_TOPAS',... %'rspHLUT','Schneider_TOPAS','Schneider_matRad'
+            'densityCorrection','rspHLUT',... %'rspHLUT','Schneider_TOPAS','Schneider_matRad'
             'addSection','none',... %'none','lung','poisson','sampledDensities' (the last 2 only with modulation)
             'addTitanium',false,... %'false','true' (can only be used with advanced HUsections)
-            'HUSection','advanced',... %'default','advanced'
+            'HUSection','default',... %'default','advanced'
             'HUToMaterial','default',... %'default',','advanced','MCsquare'
             'loadConverterFromFile',false); % set true if you want to use your own SchneiderConverter written in "TOPAS_SchneiderConverter"
 
@@ -2078,6 +2078,10 @@ classdef matRad_TopasConfig < handle
 
                     case 'HUToWaterSchneider' % Schneider converter
                         rspHlut = matRad_loadHLUT(ct,pln);
+
+                        % Hardcode possible density fix for TOPAS
+                        % TODO implement propery
+                        rspHlut(1) = -1000;
 
                         try
                             % Write Schneider Converter
