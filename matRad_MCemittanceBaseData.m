@@ -144,9 +144,10 @@ classdef matRad_MCemittanceBaseData
                         matRad_cfg.dispError('Can not handle emittance of type ''%S''!',emittance.type);
                     end
 
-                    nGauss = 1;
                     if isfield(emittance,'weight') 
                         nGauss = length(emittance.weight) + 1;
+                    else
+                        nGauss = 1;
                     end
 
                     if nGauss > 2
@@ -321,6 +322,7 @@ classdef matRad_MCemittanceBaseData
 
             % Write previously approximated meanEnergy and energySpread
             mcDataEnergy.MeanEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * rangeEnergyFit(r80);
+%             mcDataEnergy.MeanEnergy = 204.5;
             mcDataEnergy.EnergySpread = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * energySpread;
         end
         
