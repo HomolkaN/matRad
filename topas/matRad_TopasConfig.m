@@ -1320,12 +1320,6 @@ classdef matRad_TopasConfig < handle
             nParticlesTotalBixel = round(obj.numParticlesPerHistory * w);
             minParticlesBixel = round(max([obj.minRelWeight*max(nParticlesTotalBixel),1]));
 
-            % Output projected bixels that will be discarded due to particle theshold
-            projectedDiscardedBixel = sum((obj.numHistories ./ sum(nParticlesTotalBixel)*nParticlesTotalBixel /obj.numOfRuns) < (minParticlesBixel-0.5));
-            if projectedDiscardedBixel > 0
-                matRad_cfg.dispWarning('%d bixels will most likely be discarded, set histories to at least %.2e to avoid this!', projectedDiscardedBixel,ceil(max(sum(w)./w*obj.numOfRuns*abs(minParticlesBixel-0.5))/10000)*10000)
-            end
-
             % Set history mode
             switch obj.modeHistories
                 case 'num'
@@ -2173,8 +2167,6 @@ classdef matRad_TopasConfig < handle
                                 fprintf(fID,['uv:Ge/Patient/SchneiderDensityFactor = %i ',strjoin(cellstr(char('%1.01f '.*TOPASisFloat' + '%1.15g '.*~TOPASisFloat'))),'\n'],numel(densityCorrection.factor),densityCorrection.factor);
                                 TOPASisFloat = mod(densityCorrection.factorOffset,1)==0;
                                 fprintf(fID,['uv:Ge/Patient/SchneiderDensityFactorOffset = %i ',strjoin(cellstr(char('%1.01f '.*TOPASisFloat' + '%1.15g '.*~TOPASisFloat'))),'\n'],numel(densityCorrection.factorOffset),densityCorrection.factorOffset);
-                                %                         fprintf(fID,'uv:Ge/Patient/SchneiderDensityFactor = 8 0.001029700665188 0.000893 0.0 0.001169 0.000592 0.0005 0.0 0.0\n');
-                                %                         fprintf(fID,'uv:Ge/Patient/SchneiderDensityFactorOffset = 8 1000. 0. 1000. 0. 0. -2000. 0. 0.0\n\n');
 
                                 % define HU to material sections
                                 matRad_cfg.dispInfo('TOPAS: Writing HU to material sections\n');
