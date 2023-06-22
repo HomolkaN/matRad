@@ -41,7 +41,7 @@ if nargin < 5
 end
 
 % Check if correct base data is loaded for heterogeneity correction
-if ~isempty(heteroCorrDepths) && ~isstruct(baseData.Z)
+if ~isempty(heteroCorrDepths) && ~isstruct(baseData.Z) && ~strcmp(propHeterogeneity.type,'numerical')
     matRad_cfg.dispWarning('calcParticleDoseBixel: heterogeneity correction enabled but no APM base data was loaded.')
 end
 
@@ -53,6 +53,7 @@ conversionFactor = 1.6021766208e-02;
 
 
 %% interpolate depth dose, sigmas and weights and calculate lateral sigmas
+% This is not heterogeneity corrected
 if isstruct(baseData.Z) && ~isfield(baseData,'sigma1')
 
     % interpolate depth dose and sigma
@@ -149,8 +150,34 @@ if isstruct(baseData.Z)
     bixel.Z = propHeterogeneity.sumGauss(radDepths,baseData.Z.mean,ellSq',baseData.Z.weight);
 else
 
-    bixel.Z = X(:,1);
+    % add sigma if heterogeneity correction wanted
+    if ~isempty(heteroCorrDepths) && strcmp(propHeterogeneity.type,'numerical')
 
+        [~,lungDepthAtBraggPeakIx] = min(abs(radialDist_sq+(radDepths-baseData.peakPos).^2));
+        lungDepthAtBraggPeak = heteroCorrDepths(lungDepthAtBraggPeakIx);
+        heteroCorr.SigmaSq = propHeterogeneity.getHeterogeneityCorrSigmaSq(lungDepthAtBraggPeak);
+
+        resolution   = min(diff(depths));
+        gaussNumOfPoints = round(6*sqrt(heteroCorr.SigmaSq)/resolution);
+        gaussWidth = linspace(-resolution*fix(gaussNumOfPoints/2), resolution*fix(gaussNumOfPoints/2), gaussNumOfPoints);
+        %save normalize Gaussian and grids
+        heteroCorr.Gauss = propHeterogeneity.Gauss(gaussWidth,0,heteroCorr.SigmaSq);
+        heteroCorr.Gauss = heteroCorr.Gauss/sum(heteroCorr.Gauss);
+
+        heteroCorr.fineGrid = min(depths)-3*sqrt(heteroCorr.SigmaSq):resolution:max(depths)+3*sqrt(heteroCorr.SigmaSq);
+        heteroCorr.coarseGrid = depths;
+
+        physDoseFine = matRad_interp1(heteroCorr.coarseGrid,baseData.Z,heteroCorr.fineGrid,'extrap');
+        convZ = conv(physDoseFine,heteroCorr.Gauss,'same'); 
+    
+        bixel.Z = matRad_interp1(heteroCorr.fineGrid,convZ,radDepths);
+
+
+    else
+
+        bixel.Z = X(:,1);
+
+    end
 end
 
 %% calculating the physical dose

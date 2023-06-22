@@ -37,7 +37,7 @@ classdef matRad_HeterogeneityConfig < handle
         
         useDoseCurves = true;
         
-        type = 'complete';  % 'complete','depthBased','voxelwise'
+        type = 'complete';  % 'complete','depthBased','voxelwise', 'numerical'
         
         % Property struct for sampling
         sampling = struct('mode','matRad', ...
@@ -49,8 +49,18 @@ classdef matRad_HeterogeneityConfig < handle
     end
     
     methods
-        function obj = matRad_HeterogeneityConfig()
-            % matRad_TopasConfig Construct configuration Class for TOPAS
+        function obj = matRad_HeterogeneityConfig(pln)
+                  
+            if exist('pln','var') && ~isempty(pln)
+
+                if isfield(pln,'propHeterogeneity')
+                    fnames = fieldnames(pln.propHeterogeneity);
+                    for i = 1:numel(fnames)
+                        obj.(fnames{i}) = pln.propHeterogeneity.(fnames{i});
+                    end
+                end
+            end
+
         end
         
         function out = Gauss(~,x,mu,SqSigma)
