@@ -23,15 +23,14 @@ load BOXPHANTOM.mat
 
 % meta information for treatment plan
 pln.radiationMode   = 'protons';     % either photons / protons / carbon
-%pln.machine         = 'generic_TOPAS_cropped';
-pln.machine         = 'generic_MCsquare';
+pln.machine         = 'generic_TOPAS_APM';
 
 
 pln.numOfFractions  = 1;
 
 % beam geometry settings
-pln.propStf.bixelWidth              = 10; % [mm] / also corresponds to lateral spot spacing for particles
-pln.propStf.longitudinalSpotSpacing = 10;
+pln.propStf.bixelWidth              = 5; % [mm] / also corresponds to lateral spot spacing for particles
+pln.propStf.longitudinalSpotSpacing = 3;
 pln.propStf.gantryAngles            = 0; % [?] 
 pln.propStf.couchAngles             = 0; % [?]
 pln.propStf.numOfBeams              = numel(pln.propStf.gantryAngles);
@@ -39,10 +38,9 @@ pln.propStf.isoCenter               = ones(pln.propStf.numOfBeams,1) * matRad_ge
 %pln.propStf.isoCenter       = [51 0 51];
                             
 % dose calculation settings
-pln.propDoseCalc.doseGrid.resolution.x = 5; % [mm]
-pln.propDoseCalc.doseGrid.resolution.y = 5; % [mm]
-pln.propDoseCalc.doseGrid.resolution.z = 5; % [mm]
-%pln.propDoseCalc.doseGrid.resolution = ct.resolution;
+pln.propDoseCalc.doseGrid.resolution.x = 3; % [mm]
+pln.propDoseCalc.doseGrid.resolution.y = 3; % [mm]
+pln.propDoseCalc.doseGrid.resolution.z = 3; % [mm]
 
 %Turn on to correct for nozzle-to-skin air WEPL in analytical calculation
 pln.propDoseCalc.airOffsetCorrection = true;
@@ -67,7 +65,7 @@ pln.propMC.engine = 'MCsquare';
 % pln.propMC.engine = 'TOPAS';
 
 % set number of histories lower than default for this example (default: 1e8)
-pln.propMC.numHistories = 1e5;
+pln.propMC.numHistories = 1e6;
 
 %Enable/Disable use of range shifter (has effect only when we need to fill 
 %up the low-range region)
@@ -85,7 +83,6 @@ stf = matRad_generateStfPencilBeam(pln,ct,energyIx); %Example to create a single
 %% analytical dose calculation
 dij = matRad_calcParticleDose(ct, stf, pln, cst); %Calculate particle dose influence matrix (dij) with analytical algorithm
 %dij = matRad_calcParticleDoseMC(ct,stf,pln,cst,1e4); %Calculate particle dose influence matrix (dij) with MC algorithm (slow!!)
-
 
 resultGUI = matRad_fluenceOptimization(dij,cst,pln); %Optimize
 %resultGUI = matRad_calcCubes(ones(dij.totalNumOfBixels,1),dij); %Use uniform weights
