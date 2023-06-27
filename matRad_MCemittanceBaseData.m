@@ -139,7 +139,9 @@ classdef matRad_MCemittanceBaseData
                 %% Skip emittance approximation if emittance was found in base data
                 if isfield(machine.data(ixE).initFocus,'emittance') && ~obj.forceEmittanceApproximation 
                     data = [];
-                    emittance = machine.data(ixE).initFocus.emittance;
+                    focusIx = obj.selectedFocus(ixE);
+                    emittance = machine.data(ixE).initFocus.emittance(focusIx);
+
                     if ~strcmpi(emittance.type,'bigaussian')
                         matRad_cfg.dispError('Can not handle emittance of type ''%S''!',emittance.type);
                     end
