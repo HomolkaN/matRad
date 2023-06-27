@@ -178,11 +178,15 @@ else
 
     % Calculate MCsquare base data
     % Argument stf is optional, if given, calculation only for energies given in stf
-    MCsquareBDL = matRad_MCsquareBaseData(machine);
+    MCsquareBDL = matRad_MCsquareBaseData(machine,stf);
 
     %matRad_createMCsquareBaseDataFile(bdFile,machine,1);
     MCsquareBDL = MCsquareBDL.writeMCsquareData([MCsquareFolder filesep 'BDL' filesep bdFile]);
-    MCsquareBDL = MCsquareBDL.saveMatradMachine('savedMatRadMachine');
+    try
+        MCsquareBDL = MCsquareBDL.saveMatradMachine('savedMatRadMachine');
+    catch ME
+        % TODO 
+    end
 
 end
 
