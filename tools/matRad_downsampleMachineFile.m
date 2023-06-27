@@ -1,4 +1,4 @@
-function machine = matRad_downsampleMachineFile(machine)
+function machine = matRad_downsampleMachineFile(machine,energies,fineSamplingFirst)
 % Downsampling for machine files with very long vectors that lead to memory errors
 %
 % call
@@ -23,6 +23,10 @@ function machine = matRad_downsampleMachineFile(machine)
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if nargin < 2
+    energies = 1:length(machine.data);
+end
+
 downsampleFactor = 0.2; % Specifies percentage of grid spacing, the smaller the broader the grid
 lowerPeakArea = 0.05; % Specifies percentage of peak area
 upperPeakArea = 0.04; % Specifies percentage of peak area
@@ -30,7 +34,16 @@ depthCutOff = 1.2;
 % depthCutOff = 0;
 % cutOff = 0.005; %cutOff data at 0.001*max(Z)
 
-for energyIx = 1:numel(machine.data)
+for energyIx = energies%numel(machine.data)
+
+    if fineSamplingFirst
+        newDepths = min(machine.data(energyIx).depths):0.1:max(machine.data(energyIx).depths);
+        machine.data(energyIx).Z = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).Z,newDepths);
+        machine.data(energyIx).weight = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).weight,newDepths);
+        machine.data(energyIx).sigma1 = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).sigma1,newDepths);
+        machine.data(energyIx).sigma2 = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).sigma2,newDepths);
+        machine.data(energyIx).depths = newDepths';
+    end
 
     % Define updated grid
     numOfSamplePoints = downsampleFactor*numel(machine.data(energyIx).depths);
@@ -59,16 +72,16 @@ for energyIx = 1:numel(machine.data)
     newDepths = round(newDepths,5);
 
     % Plot
-    if energyIx == 30
-        plotPoints = newDepths<machine.data(energyIx).peakPos*depthCutOff;
-        edges = 0:2:max(newDepths(plotPoints));
-        figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths(plotPoints),edges)
-        xlim([0 max(newDepths(plotPoints))])
-        xlabel('Depth (mm)')
-        ylabel('counts')
-        yyaxis right, plot(depths,machine.data(energyIx).Z,'LineWidth',2), hold on, plot(newDepths(plotPoints),matRad_interp1(depths,machine.data(energyIx).Z,newDepths(plotPoints)),'LineWidth',2,'LineStyle','--');
-        ylabel('Dose Z (a.u.)')
-    end
+%     if energyIx == 1
+%         plotPoints = newDepths<machine.data(energyIx).peakPos*depthCutOff;
+%         edges = 0:2:max(newDepths(plotPoints));
+%         figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths(plotPoints),edges)
+%         xlim([0 max(newDepths(plotPoints))])
+%         xlabel('Depth (mm)')
+%         ylabel('counts')
+%         yyaxis right, plot(depths,machine.data(energyIx).Z,'LineWidth',2), hold on, plot(newDepths(plotPoints),matRad_interp1(depths,machine.data(energyIx).Z,newDepths(plotPoints)),'LineWidth',2,'LineStyle','--');
+%         ylabel('Dose Z (a.u.)')
+%     end
 
     % Loop through all fields and apply downsampling
     fnames = fieldnames(machine.data(energyIx));
