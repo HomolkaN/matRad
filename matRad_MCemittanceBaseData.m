@@ -31,7 +31,6 @@ classdef matRad_MCemittanceBaseData
         monteCarloData                      %MC Phase space data struct
         selectedFocus                       %array containing selected focus indices per energy
         defaultRelativeEnergySpread = 0;    %default energy spread
-        matRad_cfg                          %matRad config
         rangeShifters                       %Stores range shifters
         
         % air correction in beam optics approximation
@@ -54,7 +53,10 @@ classdef matRad_MCemittanceBaseData
         function obj = matRad_MCemittanceBaseData(machine,stf)
             %matRad_MCsquareBaseData construct an instance of the MCsquare
             %Base data format using a focus index
-            
+
+            % Instance of MatRad Config
+            matRad_cfg = MatRad_Config.instance();
+
             %stfCompressed states whether monteCarloData are calculated for
             %all energies (false) or only for energies which exist in given
             %stf. If function is called without stf stfCompressed = false.
@@ -64,9 +66,7 @@ classdef matRad_MCemittanceBaseData
                 obj.stfCompressed = true;
                 obj = obj.getRangeShiftersFromStf(stf);
             end
-            
-            obj.matRad_cfg = MatRad_Config.instance();
-                        
+                 
             obj.machine = machine;
             obj.problemSigma = false;
             obj.selectedFocus = ones(numel(machine.data),1) * NaN;
@@ -74,7 +74,7 @@ classdef matRad_MCemittanceBaseData
             if isfield(machine.meta,'BAMStoIsoDist')
                 obj.nozzleToIso = machine.meta.BAMStoIsoDist;
             else
-                obj.matRad_cfg.dispWarning('No information on BAMS to isocenter distance. Using generic value of 500mm');
+                matRad_cfg.dispWarning('No information on BAMS to isocenter distance. Using generic value of 500mm');
                 obj.nozzleToIso = 500;
             end
             
@@ -86,7 +86,7 @@ classdef matRad_MCemittanceBaseData
                 obj.smx = SAD;
                 obj.smy = SAD;
             else
-                obj.matRad_cfg.dispError('No SAD found!');
+                matRad_cfg.dispError('No SAD found!');
             end
             
             obj.monteCarloData = [];
@@ -222,7 +222,7 @@ classdef matRad_MCemittanceBaseData
             %throw out warning if there was a problem in calculating the
             %width of the Bragg peak in obj.fitBeamOpticsForEnergy
             if obj.problemSigma
-                obj.matRad_cfg.dispWarning('Calculation of FWHM of bragg peak in base data not possible! Using simple approximation for energy spread');
+                matRad_cfg.dispWarning('Calculation of FWHM of bragg peak in base data not possible! Using simple approximation for energy spread');
             end
         end
         
@@ -230,6 +230,7 @@ classdef matRad_MCemittanceBaseData
         function mcDataEnergy = fitPhaseSpaceForEnergy(obj,energyIx)
             % function to calculate mean energy and energy spread used by Monte Carlo for given energy
             
+            % Instance of MatRad Config
             matRad_cfg = MatRad_Config.instance();
 
             % Considers air distance from nozzle to phantom surface used in the machine data.
@@ -246,14 +247,10 @@ classdef matRad_MCemittanceBaseData
             % Save given energy as nominal energy
             mcDataEnergy.NominalEnergy = obj.machine.data(energyIx).energy;
             
-            % Interpolate depth dose to fine grid
-            depths_interp = linspace(0,obj.machine.data(energyIx).depths(end),numel(obj.machine.data(energyIx).depths) * 100);
-            dose_interp   = interp1(obj.machine.data(energyIx).depths, obj.machine.data(energyIx).Z, depths_interp, 'spline');
-            
             % Find range of 80% does fall off after the peak
-            [maxDose, maxDoseIdx] = max(dose_interp);
+            [maxDose, maxDoseIdx] = max(obj.machine.data(energyIx).Z);
             % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
-            r80 = interp1(dose_interp(maxDoseIdx:end), depths_interp(maxDoseIdx:end), 0.8 * maxDose);
+            r80 = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.8 * maxDose);
             % Correct r80 with air offset and potential offset from basedata
             r80 = r80 + airOffsetCorrection + obj.machine.data(energyIx).offset;
             
@@ -262,16 +259,18 @@ classdef matRad_MCemittanceBaseData
                 case 'protons'
                     %%% Approximate mean energy                   
                     % This rangeEnergy relationship was created analogously to the helium and carbon relationship below
-                    % Fitted to data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
-                    rangeEnergyFit = @(x) 7.62* x.^0.5842 + 3.063;
+                    % Bragg-Kleeman rule R(E_0)=\alpha E_0^p (Bragg 1905) inversely fitted to data. 
+                    % Only used ranges [10 300] mm for fit. Units: [E]=MeV/u, [R]=mm.
+                    % data from Berger2023 https://dx.doi.org/10.18434/T4NC7P
+                    rangeEnergyFit = @(x) 8.531* x.^0.5663;
 
                     %%% Calculate energy spread from FWHM
                     % Calculate FWHM of bragg peak if the plateau is lower than 50% of the max Dose
                     if (dose_interp(1) < 0.5 * maxDose)
                         % Calculate left and right flank, where dose falls to 50%
-                        d50_r = interp1(dose_interp(maxDoseIdx:end), depths_interp(maxDoseIdx:end), 0.5 * maxDose);
-                        d50_l = interp1(dose_interp(1:maxDoseIdx), depths_interp(1:maxDoseIdx), 0.5 * maxDose);
-                        
+                        d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
+                        d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+
                         % Combine for FWHM
                         FWHM = d50_r - d50_l;
                     else
@@ -284,26 +283,34 @@ classdef matRad_MCemittanceBaseData
                     % Calculate energy straggling using formulae deducted from paper
                     % "An analytical approximation of the Bragg curve for therapeutic proton beams" by T. Bortfeld et al.
                     totalSigmaSq = (FWHM / 6.14)^2;
+                    % Bortfeld 1997, Eq.18
+%                     totalSigmaSq = 0.012*r80^0.935;
 
-                    % Inverse fit to rangeEnergy relationship?
-                    totalSpreadSq = @(x) 2.713311945114106e-20 * x^9 - 4.267890251195303e-17 * x^8 + 2.879118523083018e-14 * x^7 ...
+                    pathSigmaSq = @(x) 2.713311945114106e-20 * x^9 - 4.267890251195303e-17 * x^8 + 2.879118523083018e-14 * x^7 ...
                         - 1.084418008735459e-11 * x^6 + 2.491796224784373e-09 * x^5 - 3.591462823163767e-07 * x^4 ...
                         + 3.232810400304542e-05 * x^3 - 1.584729282376364e-03 * x^2 + 5.228413840446568e-02 * x ...
                         - 6.547482267336220e-01;
-                    
+                   
+                    % Parameters for R(E) = alpha * E^p fitted analogously to rangeEnergy (other parameters from Bortfeld 1997)
+                    alpha   = 0.02383;  % alpha = 0.022; [alpha] = mm MeV^-p
+                    p       = 1.756;    % p = 1.77; [p] = 1
+
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
                     % and the range straggling (Bortfeld 1997, Eq.19)
-                    energySpread = (totalSigmaSq - totalSpreadSq(r80)) / (0.022^2 * 1.77^2 * rangeEnergyFit(r80)^(2*1.77-2));
-                    energySpread(energySpread < 0) = 0;
-                    energySpread = sqrt(energySpread);
+                    energySigmaSq = (totalSigmaSq - pathSigmaSq(r80)) / (alpha^2 * p^2 * rangeEnergyFit(r80)^(2*p-2));
+                    energySigmaSq(energySigmaSq < 0) = 0;
+                    energySpread = sqrt(energySigmaSq);
                 case 'carbon'
                     %%% Approximate mean energy
                     % Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
-                    % Normalized energy before fit (MeV/u)! Only used ranges [10 350] mm for fit
+                    % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    rangeEnergyFit = @(x) 11.39 * x^0.628 + 11.24;
+                    rangeEnergyFit = @(x) 14.35 * x^0.5915;
                     
+%                     alpha = 0.0127;
+%                     p = 1.667;
+
                     %%% Energy spread
                     % Reading in a potential given energyspread could go here directly. How would you parse the energyspread
                     % into the function? Through a field in the machine?
@@ -313,10 +320,13 @@ classdef matRad_MCemittanceBaseData
                 case 'helium'
                     %%% Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
-                    % Normalized energy before fit (MeV/u)! Only used ranges [10 350] mm for fit
+                    % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    rangeEnergyFit = @(x) 7.57* x.^0.5848 + 3.063;
+                    rangeEnergyFit = @(x) 8.465* x.^0.5672;
                     
+%                     alpha = 0.02461;
+%                     p = 1.751;
+
                     %%% Energy spread
                     energySpread = obj.defaultRelativeEnergySpread;
                 otherwise
@@ -324,9 +334,9 @@ classdef matRad_MCemittanceBaseData
             end
 
             % Write previously approximated meanEnergy and energySpread
-            mcDataEnergy.MeanEnergy = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * rangeEnergyFit(r80);
+            mcDataEnergy.MeanEnergy = rangeEnergyFit(r80);
 %             mcDataEnergy.MeanEnergy = 204.5;
-            mcDataEnergy.EnergySpread = ones(1, size(obj.machine.data(1).initFocus.dist,1)) * energySpread;
+            mcDataEnergy.EnergySpread = energySpread;
         end
         
         
@@ -364,7 +374,7 @@ classdef matRad_MCemittanceBaseData
                 2 * sum(qRes(x(1), x(2)) .* (2 * sigmaSqIso * x(1) * z  - 2 * x(2) * z.^2))];
 
             % fitting for either matlab or octave
-            if ~obj.matRad_cfg.isOctave                
+            if ~matRad_cfg.isOctave                
                 options.ipopt.hessian_approximation = 'limited-memory';
                 options.ipopt.limited_memory_update_type = 'bfgs';
                 options.ipopt.print_level = 1;
@@ -420,6 +430,9 @@ classdef matRad_MCemittanceBaseData
             %save previously calculated monteCarloData in new baseData file
             %with given name
             
+            % Instance of MatRad Config
+            matRad_cfg = MatRad_Config.instance();
+
             %             [~ ,energyIndex, ~] = intersect([obj.machine.data(:).energy], [obj.monteCarloData(:).NominalEnergy]);
             
             machineName = [obj.machine.meta.radiationMode, '_', name];
@@ -446,10 +459,10 @@ classdef matRad_MCemittanceBaseData
                 count = count + 1;
             end
             machine = obj.machine;
-            machineFilePath = fullfile(obj.matRad_cfg.matRadRoot,'basedata',[machineName '.mat']);
+            machineFilePath = fullfile(matRad_cfg.matRadRoot,'basedata',[machineName '.mat']);
 
             save('-v7',machineFilePath,'machine');
-            obj.matRad_cfg.dispInfo('Saved Emittance to matRad base data in %s\n',machineFilePath);
+            matRad_cfg.dispInfo('Saved Emittance to matRad base data in %s\n',machineFilePath);
         end
     end
     
@@ -472,7 +485,10 @@ classdef matRad_MCemittanceBaseData
         function sigmaAirCorrected = spotSizeAirCorrection(radiationMode,E,d,sigma,method)
             %performs a rudimentary correction for additional scattering in
             %air not considered by the courant snyder equation
+            
+            % Instance of MatRad Config
             matRad_cfg = MatRad_Config.instance();
+
             if nargin < 5
                 method = 'interp_linear';
             end
