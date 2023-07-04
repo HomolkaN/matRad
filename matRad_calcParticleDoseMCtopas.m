@@ -69,7 +69,7 @@ end
 pln = matRad_cfg.getDefaultProperties(pln,{'propDoseCalc'});
 
 % override default parameters from external parameters if available
-if isfield(pln,'propHeterogeneity') && isprop(pln.propHeterogeneity,'sampling') && isfield(pln.propHeterogeneity.sampling,'numHistories') && isfield(ct,'modulated')
+if isfield(pln,'propHeterogeneity') && ~isempty(pln.propHeterogeneity) && isprop(pln.propHeterogeneity,'sampling') && isfield(pln.propHeterogeneity.sampling,'numHistories') && isfield(ct,'modulated')
     pln.propMC.numHistories = pln.propHeterogeneity.sampling.numHistories;
     matRad_cfg.dispWarning('Histories have been overwritten by heterogeneity correction! New histories: %.2e',pln.propMC.numHistories)
 end
