@@ -1,4 +1,4 @@
-function IDD = matRad_calcIDD_pencil(doseCube,calcProfile,direction)
+function IDD = matRad_calcIDD_pencil(doseCube,calcProfile,direction,peakPos)
 % function to calculate integrated depth dose (IDD) of a simple boxphantom
 % for beams in x-, y- or z-direction
 %
@@ -34,8 +34,10 @@ if nargin < 2
     calcProfile = false;
 end
 
-[~, linearIndex] = max(doseCube(:));
-[peakPos(1), peakPos(2), peakPos(3)] = ind2sub(size(doseCube), linearIndex);
+if nargin < 4
+    [~, linearIndex] = max(doseCube(:));
+    [peakPos(1), peakPos(2), peakPos(3)] = ind2sub(size(doseCube), linearIndex);
+end
 
 doseCube(isnan(doseCube))=0;
 
