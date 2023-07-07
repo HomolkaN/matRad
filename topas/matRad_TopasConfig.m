@@ -2073,9 +2073,15 @@ classdef matRad_TopasConfig < handle
                     case 'HUToWaterSchneider' % Schneider converter
                         rspHlut = matRad_loadHLUT(ct,pln);
 
-                        % Hardcode possible density fix for TOPAS
-                        % TODO implement propery
+                        % Set minimum HU to -1000 for TOPAS
                         rspHlut(1) = -1000;
+
+                        % add air boundary at -950 HU, if an air boundary isn't available
+                        if ~any(ismember(rspHlut(:,1),-999))
+                            rspHlut(end+1,:) = [-950,0];
+                            rspHlut = sortrows(rspHlut,1);
+                            rspHlut(ismember(rspHlut(:,1),-950),2) = rspHlut(find(ismember(rspHlut(:,1),-950))-1,2);
+                        end
 
                         try
                             % Write Schneider Converter
@@ -2172,6 +2178,7 @@ classdef matRad_TopasConfig < handle
                                 matRad_cfg.dispInfo('TOPAS: Writing HU to material sections\n');
                                 switch obj.materialConverter.HUToMaterial
                                     case 'default'
+                                        % This selects the air HU only, since the defalt converter only differentiates between water and air
                                         HUToMaterial.sections = rspHlut(2,1);
                                     case 'MCsquare'
                                         HUToMaterial.sections = [-1000 -950 -120 -82 -52 -22 8 19 80 120 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500];
