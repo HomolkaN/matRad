@@ -26,6 +26,9 @@ function machine = matRad_downsampleMachineFile(machine,energies,fineSamplingFir
 if nargin < 2
     energies = 1:length(machine.data);
 end
+if nargin < 3
+    fineSamplingFirst = true;
+end
 
 downsampleFactor = 0.2; % Specifies percentage of grid spacing, the smaller the broader the grid
 lowerPeakArea = 0.05; % Specifies percentage of peak area
