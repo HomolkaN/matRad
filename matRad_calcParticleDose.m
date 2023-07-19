@@ -89,9 +89,11 @@ if isfield(pln,'propHeterogeneity') && pln.propHeterogeneity.calcHetero
     end
 
     % get all lung voxel indices
+    % TODO this needs a fix for 4D calculation
     lungVoxel = [cstOriginal{cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lung')), cst(:,2)),4}];
+    lungVoxel = {vertcat(lungVoxel{:})};
     lungVoxel = cellfun(@unique, lungVoxel, 'UniformOutput', false);
-    
+
     % Setup empty "heteroCorrStruct", basically a CT struct with just lung
     calcHeteroCorrStruct.cubeDim = ct.cubeDim;
     calcHeteroCorrStruct.numOfCtScen = pln.multScen.numOfCtScen;
