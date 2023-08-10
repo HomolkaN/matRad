@@ -311,6 +311,10 @@ classdef matRad_HeterogeneityConfig < handle
                     pLung = pLung(largeEnough);
                     n = n(largeEnough);
                     
+                    if isempty(lungIdx)
+                        obj.matRad_cfg.dispError('Lung modulation did not result in any modulated lung indices!')
+                    end
+
                     % get samples from the binomial distribution (discrete or continuous approximation)
                     samples = obj.sampleBino(n,pLung,length(lungIdx),pln.propHeterogeneity.sampling.continuous);
                     
@@ -367,7 +371,7 @@ classdef matRad_HeterogeneityConfig < handle
                 [numOfOccurences,sampledDensities] = groupcounts(lung);
                 
                 %
-                if isfield(pln.propMC,'materialConverter') && isfield(pln.propMC.materialConverter,'addSection') && ~strcmp(pln.propMC.materialConverter.addSection,'sampledDensities')
+                if (isprop(pln.propMC,'materialConverter') || isfield(pln.propMC,'materialConverter')) && isfield(pln.propMC.materialConverter,'addSection') && ~strcmp(pln.propMC.materialConverter.addSection,'sampledDensities')
                     switch pln.propMC.materialConverter.addSection
                         % Modes used to include samples in material converter in case of discrete sampling (either 0 or 1.05)
                         case 'lung'
