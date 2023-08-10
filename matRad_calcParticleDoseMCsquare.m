@@ -379,7 +379,9 @@ for scenarioIx = 1:pln.multScen.totNumScen
             % write material conversion
             fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'],'a');
             % fprintf(fID,'\n6000    40      # Schneider_Lung');
-            fprintf(fID,'\n6000    17      # Water');
+%             fprintf(fID,'\n6000    17      # Water');
+            fprintf(fID,'\n6000    14      # Lung (use 40 for Schneider_Lung)');
+            
             fclose(fID);
 
             % set custom HU conversion files to be used by MCsquare
