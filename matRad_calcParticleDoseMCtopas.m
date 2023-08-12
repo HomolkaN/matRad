@@ -76,7 +76,7 @@ end
 
 % set nested folder structure (this will put new simulations in subfolders)
 pln.propMC.workingDir = [pln.propMC.thisFolder filesep 'MCrun' filesep];
-pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',datestr(now, 'dd-mm-yy')];
+pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',date];
 if pln.propMC.scorer.RBE
     if strcmp(pln.propMC.scorer.RBE_model,'default')
         pln.propMC.workingDir = [pln.propMC.workingDir '_' pln.bioParam.model];
