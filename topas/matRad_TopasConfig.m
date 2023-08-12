@@ -70,6 +70,7 @@ classdef matRad_TopasConfig < handle
             'addTitanium',false,... %'false','true' (can only be used with advanced HUsections)
             'HUSection','default',... %'default','advanced'
             'HUToMaterial','default',... %'default',','advanced','MCsquare'
+            'sampledLungMaterial','lungEquivalent',... %'lungEquivalent', 'waterEquivalent' (material of the sampled densities)
             'loadConverterFromFile',false); % set true if you want to use your own SchneiderConverter written in "TOPAS_SchneiderConverter"
 
         arrayOrdering = 'F'; %'C';
@@ -2198,9 +2199,18 @@ classdef matRad_TopasConfig < handle
                                         fprintf(fID,'%s',materials{1:end-1});
                                         ExcitationEnergies = str2double(strsplit(materials{end}(strfind(materials{end},'=')+4:end-3)));
                                         if any(cellfun(@(teststr) ~isempty(strfind(lower(obj.materialConverter.addSection),lower(teststr))), {'lung','sampled'}))
-                                            % Write Lung material composition
-                                            fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 5 0.10404040 0.75656566 0.03131313 0.10606061 0.00202020\n',length(materials)-2);
-                                            ExcitationEnergies = [ExcitationEnergies 75.3];
+                                            switch obj.materialConverter.sampledLungMaterial
+                                                case 'lungEquivalent'
+                                                    % Write Lung material composition
+                                                    fprintf(fID,'# This section controls the material composition of the sampled lung (use lung-equivalent)\n');
+                                                    fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 5 0.10404040 0.75656566 0.03131313 0.10606061 0.00202020\n',length(materials)-2);
+                                                    ExcitationEnergies = [ExcitationEnergies 75.3];
+                                                case 'waterEquivalent'
+                                                    % Use water equivalent Lung material composition
+                                                    fprintf(fID,'# This section controls the material composition of the sampled lung (use water-equivalent)\n');
+                                                    fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 5 0.111894    0.888106    0.0         0.0         0.0\n',length(materials)-2);
+                                                    ExcitationEnergies = [ExcitationEnergies 78];
+                                            end
                                         end
                                         fprintf(fID,['dv:Ge/Patient/SchneiderMaterialMeanExcitationEnergy = %i',repmat(' %.6g',1,numel(ExcitationEnergies)),' eV\n'],numel(ExcitationEnergies),ExcitationEnergies);
                                     case 'advanced'
