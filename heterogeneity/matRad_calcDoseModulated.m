@@ -22,7 +22,7 @@ matRad_cfg.dispInfo(['Calculating modulated dose in mode: ' pln.propHeterogeneit
 switch pln.propHeterogeneity.sampling.mode
     case 'TOPAS'
         %         pln.propMC.materialConverter.densityCorrection = 'Schneider_TOPAS'; %'rspHLUT','Schneider_TOPAS','Schneider_matRad'
-        pln.propMC.materialConverter.HUSection = 'advanced'; %'default','advanced'
+        pln.propMC.materialConverter.HUSection = 'default'; %'default','advanced'
         pln.propMC.materialConverter.HUToMaterial = 'default'; %'default','simpleLung','advanced'
         if strcmp(pln.propHeterogeneity.sampling.method,'poisson')
             pln.propMC.materialConverter.addSection = 'poisson';
