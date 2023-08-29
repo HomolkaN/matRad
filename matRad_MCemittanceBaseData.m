@@ -262,7 +262,7 @@ classdef matRad_MCemittanceBaseData
                     % Bragg-Kleeman rule R(E_0)=\alpha E_0^p (Bragg 1905) inversely fitted to data.
                     % Only used ranges [10 300] mm for fit. Units: [E]=MeV/u, [R]=mm.
                     % data from Berger2023 https://dx.doi.org/10.18434/T4NC7P
-                    rangeEnergyFit = @(x) 8.531* x.^0.5663;
+                    meanEnergyFromRange = @(R) 8.531* R.^0.5663;
 
                     %%% Calculate energy spread from FWHM
                     % Calculate FWHM of bragg peak if the plateau is lower than 50% of the max Dose
@@ -282,28 +282,40 @@ classdef matRad_MCemittanceBaseData
 
                     % Calculate energy straggling using formulae deducted from paper
                     % "An analytical approximation of the Bragg curve for therapeutic proton beams" by T. Bortfeld et al.
-                    totalSigmaSq = (FWHM / (2*sqrt(2*log(2))))^2;
+                    % After inversion of the formula to obtain the two values z_50 where d(z_50) = 0.5*dMax, 
+                    % we obtain that the width is 6.14 * the total (energy + range) straggling sigma
+                    totalSigmaSq = (FWHM / 6.14)^2;
 
                     % Bortfeld 1997, Eq.17
                     % Changed alpha and p based on new energy-range fit made analogously to range-energy fit above
+                    % (original values are commented behind)
                     alpha   = 0.02383;  % alpha = 0.022; [alpha] = mm MeV^-p
                     p       = 1.756;    % p = 1.77; [p] = 1
                     alphaPrime = 0.0087; % (MeV^2/mm)
 
-                    pathSigmaSq = @(x) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * x ^(3-2/p);
+                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
 
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
-                    % and the range straggling (Bortfeld 1997, Eq.19)
-                    energySigmaSq = (totalSigmaSq - pathSigmaSq(r80)) / (alpha^2 * p^2 * rangeEnergyFit(r80)^(2*p-2));
-                    energySigmaSq(energySigmaSq < 0) = 0;
-                    energySpread = sqrt(energySigmaSq) / obj.machine.data(energyIx).energy; % Energyspread in percent
+                    % and the range straggling (Bortfeld 1997, Eq.19, in mm)
+                    energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
+
+                    %Squared difference to obtain residual width from energy spectrum
+                    if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
+                        sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
+                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,mcDataEnergy.MeanEnergy);                
+                    else
+                        energySpreadInMeV = 1e-8; %monoenergetic, but let's not write 0 to avoid division by zero in some codes
+                    end
+
+                    energySpreadRelative = energySpreadInMeV ./ mcDataEnergy.MeanEnergy * 100;
+
                 case 'carbon'
                     %%% Approximate mean energy
                     % Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    rangeEnergyFit = @(x) 14.35 * x^0.5915;
+                    meanEnergyFromRange = @(R) 14.35 * R^0.5915;
 
                     %                     alpha = 0.0127;
                     %                     p = 1.667;
@@ -313,26 +325,28 @@ classdef matRad_MCemittanceBaseData
                     % into the function? Through a field in the machine?
                     % TODO this could be done analogously to protons, adjusting the alpha and p parameter from a E0(R0)
                     % graph (inverse of the fit above)
-                    energySpread = obj.defaultRelativeEnergySpread;
+                    energySpreadRelative = obj.defaultRelativeEnergySpread;
+
                 case 'helium'
                     %%% Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    rangeEnergyFit = @(x) 8.465* x.^0.5672;
+                    meanEnergyFromRange = @(R) 8.465* R.^0.5672;
 
                     %                     alpha = 0.02461;
                     %                     p = 1.751;
 
                     %%% Energy spread
-                    energySpread = obj.defaultRelativeEnergySpread;
+                    energySpreadRelative = obj.defaultRelativeEnergySpread;
+
                 otherwise
                     error('not implemented')
             end
 
             % Write previously approximated meanEnergy and energySpread
-            mcDataEnergy.MeanEnergy = rangeEnergyFit(r80);
-            mcDataEnergy.EnergySpread = energySpread;
+            mcDataEnergy.MeanEnergy = meanEnergyFromRange(r80);
+            mcDataEnergy.EnergySpread = energySpreadRelative;
         end
 
 
