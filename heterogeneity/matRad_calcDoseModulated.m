@@ -33,7 +33,7 @@ switch pln.propHeterogeneity.sampling.mode
         numHistories = pln.propMC.numHistories;
         calcExternal = pln.propMC.externalCalculation;
     case 'MCsquare'
-        calcExternal = false;
+        calcExternal = pln.propMC.externalCalculation;
         numHistories = pln.propMC.numHistories;
 %         pln.propMC.materialConverter.addSection = 'sampledDensities';
     case 'matRad'
