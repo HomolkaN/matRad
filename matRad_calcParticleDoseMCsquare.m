@@ -60,6 +60,12 @@ end
 % load default parameters in case they haven't been set yet
 pln = matRad_cfg.getDefaultProperties(pln,'propDoseCalc');
 
+% override default parameters from external parameters if available
+if isfield(pln,'propHeterogeneity') && ~isempty(pln.propHeterogeneity) && isprop(pln.propHeterogeneity,'sampling') && isfield(pln.propHeterogeneity.sampling,'numHistories') && isfield(ct,'modulated')
+    pln.propMC.numHistories = pln.propHeterogeneity.sampling.numHistories;
+    matRad_cfg.dispWarning('Histories have been overwritten by heterogeneity correction! New histories: %.2e',pln.propMC.numHistories)
+end
+
 env = matRad_getEnvironment();
 
 %% check if binaries are available
@@ -232,8 +238,10 @@ for scenarioIx = 1:pln.multScen.totNumScen
         MCsquareConfigFile = [pln.propMC.MCrun_Directory 'MCsquareConfig.txt'];
 
         pln.propMC.BDL_Machine_Parameter_File = ['BDL/' bdFile];
+
         pln.propMC.BDL_Plan_File = [pln.propMC.MCrun_Directory 'currBixels.txt'];
         pln.propMC.CT_File       = [pln.propMC.MCrun_Directory 'MC2patientCT.mhd'];
+
         pln.propMC.Num_Threads   = nbThreads;
         pln.propMC.RNG_Seed      = 1234;
 

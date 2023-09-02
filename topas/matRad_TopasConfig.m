@@ -414,19 +414,19 @@ classdef matRad_TopasConfig < handle
             if ~isempty(strfind(folder,'*'))
                 folder = dir(folder);
                 for i = 1:length(folder)
-                    folders{i} = [folder(i).folder filesep folder(i).name];
+                    folderNames{i} = [folder(i).folder filesep folder(i).name];
                 end
             else
-                folders{1} = folder;
+                folderNames{1} = folder;
             end
-            folders = folders(~cellfun('isempty',folders));
+            folderNames = folderNames(~cellfun('isempty',folderNames));
 
             % Check if .bin or .csv files are available and sort out unnecessary folders
-            folderIsValid = cellfun(@(x) ~isempty(dir([x filesep '*.bin'])), folders) | cellfun(@(x) ~isempty(dir([x filesep '*.csv'])), folders);
-            folders = folders(folderIsValid);
+            folderIsValid = cellfun(@(x) ~isempty(dir([x filesep '*.bin'])), folderNames) | cellfun(@(x) ~isempty(dir([x filesep '*.csv'])), folderNames);
+            folderNames = folderNames(folderIsValid);
 
             % Get numOfSamples from number of folders
-            numOfSamples = length(folders);
+            numOfSamples = length(folderNames);
 
             % Allocate empty resultGUI and space for individual physical doses to calculate their standard deviation
             resultGUI = struct;
@@ -438,13 +438,13 @@ classdef matRad_TopasConfig < handle
             end
 
             % Set dij calculation if multiple bixels detected
-            if ~isempty(strfind([dir(folders{1}).name],'_bixel'))
+            if ~isempty(strfind([dir(folderNames{1}).name],'_bixel'))
                 obj.scorer.calcDij = true;
             end
 
             for f = 1:numOfSamples
                 % read in TOPAS files in dij
-                dij = obj.readFiles(folders{f});
+                dij = obj.readFiles(folderNames{f});
 
                 % Postprocessing
                 resultGUI_mod = obj.getResultGUI(dij);

@@ -484,7 +484,65 @@ classdef matRad_MCsquareConfig
             % LICENSE file.
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            dij = obj.readFiles(folder);
+            % Process input folder(s)
+            if ~isempty(strfind(folder,'*'))
+                folder = dir(folder);
+                for i = 1:length(folder)
+                    folderNames{i} = [folder(i).folder filesep folder(i).name];
+                end
+            else
+                folderNames{1} = folder;
+            end
+            folderNames = folderNames(~cellfun('isempty',folderNames));
+
+            % Check if .bin or .csv files are available and sort out unnecessary folders
+            folderIsValid = cellfun(@(x) ~isempty(dir([x filesep 'MCsquareOutput' filesep '*.mhd'])), folderNames);
+            folderNames = folderNames(folderIsValid);
+
+            % Get numOfSamples from number of folders
+            numOfSamples = length(folderNames);
+
+            % Allocate empty resultGUI and space for individual physical doses to calculate their standard deviation
+            resultGUI = struct;
+            data = cell(numOfSamples,1);
+
+            % Instance of heterogeneity correction class in case of sampling
+            if numOfSamples > 1
+                heterogeneityConfig = matRad_HeterogeneityConfig();
+            end
+
+            for f = 1:numOfSamples
+                % read in MCsquare files in dij
+                dij = obj.readFiles([folderNames{f} filesep 'MCsquareOutput' filesep]);
+
+                % Postprocessing
+                resultGUI_mod = obj.getResultGUI(dij);
+
+                if numOfSamples > 1
+                    % Accumulate averaged results
+                    resultGUI = heterogeneityConfig.accumulateOverSamples(resultGUI,resultGUI_mod,numOfSamples);
+
+                    % Save individual physical doses to calculate standard deviation
+                    data{f} = resultGUI_mod.physicalDose;
+
+                    % Save individual standard deviation
+                    if isfield(resultGUI_mod,'physicalDose_std')
+                        resultGUI.physicalDose_std_individual{f} = resultGUI_mod.physicalDose_std;
+                    end
+                else
+                    resultGUI = resultGUI_mod;
+                end
+            end
+
+            if numOfSamples > 1
+                % Calculate standard deviation between samples
+                resultGUI.physicalDose_std = heterogeneityConfig.calcSampleStd(data,resultGUI.physicalDose);
+            end
+
+
+        end
+
+        function resultGUI = getResultGUI(obj,dij)
 
             if size(dij.physicalDose{1},2)>1
                 resultGUI = matRad_calcCubes(ones(dij.totalNumOfBixels,1),dij,1);
