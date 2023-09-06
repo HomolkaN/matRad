@@ -1,4 +1,4 @@
-function [voiContourHandles] = matRad_plotVoiContourSlice(axesHandle,cst,ctCube,ctIndex,selection,plane,slice,cMap,varargin)
+function [voiContourHandles, visibleOnSlice] = matRad_plotVoiContourSlice(axesHandle,cst,ct,ctIndex,selection,plane,slice,cMap,varargin)
 % matRad function that plots the contours of the segmentations given in cst
 %
 % call
@@ -62,7 +62,7 @@ if isempty(selection) || numel(selection) ~= size(cst,1)
     selection = true(size(cst,1),1);
 %     selection = [cell2mat(cst(:,5)).Visible]';
 end
-
+visibleOnSlice = false(size(cst,1),1);
 voiContourHandles = cell(0);
 switch env
     case 'MATLAB'
@@ -81,7 +81,7 @@ for s = 1:size(cst,1)
             C = cst{s,7}{1}{slice,plane};
         else
             %If we do not have precomputed contours available, then compute them
-            mask = zeros(size(ctCube{ctIndex}));
+            mask = zeros(ct.cubeDim);
             mask(cst{s,4}{ctIndex}) = 1;
             
             if plane == 1 && any(any(mask(slice,:,:) > 0))
@@ -105,7 +105,7 @@ for s = 1:size(cst,1)
          if any(C(:))
             lower = 1; % lower marks the beginning of a section
             while lower-1 ~= size(C,2)
-                hold on
+                hold(axesHandle,'on') %hold on
                 steps = C(2,lower); % number of elements of current line section
                 tmpLineHandle(end+1) = line(C(1,lower+1:lower+steps),...
                     C(2,lower+1:lower+steps),...
@@ -114,6 +114,7 @@ for s = 1:size(cst,1)
                 lower = lower+steps+1;
             end
             voiContourHandles{end+1} = tmpLineHandle;
+            visibleOnSlice(s) = true;
          else
             % create empty line object
             voiContourHandles{end+1} = {};
