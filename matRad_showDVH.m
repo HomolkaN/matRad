@@ -1,4 +1,4 @@
-function p = matRad_showDVH(dvh,cst,pln,lineStyleIndicator)
+function p = matRad_showDVH(axesHandle,dvh,cst,pln,lineStyleIndicator)
 % matRad dvh visualizaion
 % 
 % call
@@ -41,7 +41,7 @@ end
 
 % create new figure and set default line style indicator if not explictly
 % specified
-hold on;
+hold(axesHandle,'on');
 
 if lineStyleIndicator > 1
     visible = 'off';
@@ -79,7 +79,7 @@ for i = 1:numOfVois
     ix      = max([1 find(dvh(i).volumePoints>0,1,'last')]);
     currDvh = [dvh(i).doseGrid(1:ix);dvh(i).volumePoints(1:ix)];
     
-    p(i) = plot(currDvh(1,:),currDvh(2,:),'LineWidth',lineWidth,'Color',colorMx(i,:), ...
+    p(i) = plot(axesHandle,currDvh(1,:),currDvh(2,:),'LineWidth',lineWidth,'Color',colorMx(i,:), ...
         'LineStyle',lineStyles{lineStyleIndicator},'DisplayName',cstNames{i},'HandleVisibility',visible);
     
     maxDVHvol  = max(maxDVHvol,max(currDvh(2,:)));
@@ -87,28 +87,27 @@ for i = 1:numOfVois
 end
 
 fontSizeValue = 12;
-myLegend = legend('show','location','NorthEast');
+myLegend = legend(axesHandle,'show','location','NorthEast');
 set(myLegend,'FontSize',10,'Interpreter','none');
-legend boxoff
+legend(axesHandle,'boxoff')
 
-ylim([0 1.1*maxDVHvol]);
-xlim([0 1.2*maxDVHdose]);
+ylim(axesHandle,[0 1.1*maxDVHvol]);
+xlim(axesHandle,[0 1.2*maxDVHdose]);
 
-grid on
-ax = gca;
-ax.XMinorGrid = 'on';
-ax.YMinorGrid = 'on';
-
-box(ax,'on');
-% set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
-ylabel('Volume [%]','FontSize',fontSizeValue)
+grid(axesHandle,'on'),grid(axesHandle,'minor')
+box(axesHandle,'on'); %box(gca,'on');
+set(axesHandle,'LineWidth',1.5,'FontSize',fontSizeValue); %set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
+ylabel(axesHandle,'Volume [%]','FontSize',fontSizeValue)
 
 if exist('pln','var') && ~isempty(pln)
+
     if strcmp(pln.bioParam.model,'none')
         xlabel('Dose [Gy]','FontSize',fontSizeValue);
     else
-        xlabel('RBE x Dose [Gy(RBE)]','FontSize',fontSizeValue);
+        xlabel(axesHandle,'RBE x Dose [Gy(RBE)]','FontSize',fontSizeValue);
     end
 else
     xlabel('Dose [Gy]','FontSize',fontSizeValue);
+
 end
+hold(axesHandle,'off');
