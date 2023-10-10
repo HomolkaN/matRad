@@ -284,7 +284,9 @@ classdef matRad_MCemittanceBaseData
                     % "An analytical approximation of the Bragg curve for therapeutic proton beams" by T. Bortfeld et al.
                     % After inversion of the formula to obtain the two values z_50 where d(z_50) = 0.5*dMax, 
                     % we obtain that the width is 6.14 * the total (energy + range) straggling sigma
-                    totalSigmaSq = (FWHM / 6.14)^2;
+                    stragglingFactor = 6.289; % Using new fitted p and 5 digits for the maximum
+                    % parabolicCylinderWidth = 6.14; % using p=1.77 and 2 digits for the maximum (original)
+                    totalSigmaSq = (FWHM / stragglingFactor)^2;
 
                     % Bortfeld 1997, Eq.17
                     % Changed alpha and p based on new energy-range fit made analogously to range-energy fit above
@@ -319,6 +321,7 @@ classdef matRad_MCemittanceBaseData
 
                     %                     alpha = 0.0127;
                     %                     p = 1.667;
+                    % alphaPrime = 0.0087; % (MeV^2/mm) This would need to be adjusted using Bortfeld Eq.B2
 
                     %%% Energy spread
                     % Reading in a potential given energyspread could go here directly. How would you parse the energyspread
