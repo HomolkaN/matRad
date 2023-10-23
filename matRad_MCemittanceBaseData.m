@@ -371,13 +371,13 @@ classdef matRad_MCemittanceBaseData
 
             %square and interpolate at isocenter
             sigmaSq = sigma.^2;
-            sigmaSqIso = sqrt(interp1(z,sigmaSq,0));
+            sigmaIso = sqrt(interp1(z,sigmaSq,0));
 
             %fit Courant-Synder equation to data using ipopt, formulae
             %given in mcSquare documentation
 
             %fit function
-            qRes = @(rho, sigmaT) (sigmaSq -  (sigmaSqIso^2 - 2*sigmaSqIso*rho*sigmaT.*z + sigmaT^2.*z.^2));
+            qRes = @(rho, sigmaT) (sigmaSq -  (sigmaIso^2 - 2*sigmaIso*rho*sigmaT.*z + sigmaT^2.*z.^2));
 
             % Define optimization parameters
 
@@ -386,8 +386,8 @@ classdef matRad_MCemittanceBaseData
             options.ub = [ 0.99,  Inf];
 
             funcs.objective = @(x) sum(qRes(x(1), x(2)).^2);
-            funcs.gradient  = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaSqIso * x(2) * z));
-                2 * sum(qRes(x(1), x(2)) .* (2 * sigmaSqIso * x(1) * z  - 2 * x(2) * z.^2))];
+            funcs.gradient  = @(x) [  2 * sum(qRes(x(1), x(2)) .* (2 * sigmaIso * x(2) * z));
+                2 * sum(qRes(x(1), x(2)) .* (2 * sigmaIso * x(1) * z  - 2 * x(2) * z.^2))];
 
             % fitting for either matlab or octave
             if ~matRad_cfg.isOctave
@@ -406,8 +406,8 @@ classdef matRad_MCemittanceBaseData
 
             %calculate divergence, spotsize and correlation at nozzle
             DivergenceAtNozzle  = sigmaT;
-            SpotsizeAtNozzle    = sqrt(sigmaSqIso^2 - 2 * rho * sigmaSqIso * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
-            CorrelationAtNozzle = (rho * sigmaSqIso - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
+            SpotsizeAtNozzle    = sqrt(sigmaIso^2 - 2 * rho * sigmaIso * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
+            CorrelationAtNozzle = (rho * sigmaIso - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
 
 
             % Save calcuated beam optics data in mcData
@@ -437,7 +437,7 @@ classdef matRad_MCemittanceBaseData
                 hold on; plot(zNew,y);
             end
 
-            mcDataOptics.FWHMatIso = 2.355 * sigmaSqIso;
+            mcDataOptics.FWHMatIso = 2.355 * sigmaIso;
         end
 
 
