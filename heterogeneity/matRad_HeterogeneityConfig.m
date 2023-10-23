@@ -37,7 +37,7 @@ classdef matRad_HeterogeneityConfig < handle
         
         useDoseCurves = true;
         
-        type = 'complete';  % 'complete','depthBased','voxelwise', 'numerical'
+        type = 'voxelwise';  % 'complete','depthBased','voxelwise', 'numerical'
         
         % Property struct for sampling
         sampling = struct('mode','matRad', ...
