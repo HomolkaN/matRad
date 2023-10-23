@@ -127,6 +127,11 @@ if pln.propDoseCalc.doseGrid.resolution.x ~= pln.propDoseCalc.doseGrid.resolutio
     matRad_cfg.dispWarning('Anisotropic resolution in axial plane for dose calculation with MCsquare not possible\nUsing average x = y = %g mm\n',pln.propDoseCalc.doseGrid.resolution.x);
 end
 
+% Write patientID to foldername
+if isfield(ct,'patientID')
+    pln.propMC.MCrun_Directory = [pln.propMC.MCrun_Directory ct.patientID '_'];
+end
+
 % Set nested folder structure also for MCsquare
 pln.propMC.MCrun_Directory = [pln.propMC.MCrun_Directory pln.radiationMode,'_',pln.machine,'_',date];
 

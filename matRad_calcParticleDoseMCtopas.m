@@ -76,6 +76,12 @@ end
 
 % set nested folder structure (this will put new simulations in subfolders)
 pln.propMC.workingDir = [pln.propMC.thisFolder filesep 'MCrun' filesep];
+
+% Write patientID to foldername
+if isfield(ct,'patientID')
+    pln.propMC.workingDir = [pln.propMC.workingDir ct.patientID '_'];
+end
+
 pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',date];
 if pln.propMC.scorer.RBE
     if strcmp(pln.propMC.scorer.RBE_model,'default')
