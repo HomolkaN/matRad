@@ -226,30 +226,34 @@ classdef matRad_TopasConfig < handle
             % Set correct RBE scorer parameters
             if obj.scorer.RBE
                 obj.scorer.doseToMedium = true;
-                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'default')), obj.scorer.RBE_model))
-                    if isfield(pln,'bioParam') && isprop(pln.bioParam,'model')
-                        obj.scorer.RBE_model = {pln.bioParam.model};
-                    else
-                        switch obj.radiationMode
-                            case 'protons'
-                                obj.scorer.RBE_model = obj.scorer.defaultModelProtons;
-                            case {'carbon','helium'}
-                                obj.scorer.RBE_model = obj.scorer.defaultModelCarbon;
-                            otherwise
-                                matRad_cfg.dispError(['No RBE model implemented for ',obj.radiationMode]);
+                if strcmp(pln.bioParam.model,'none')
+                    obj.scorer.RBE = false;
+                else
+                    if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'default')), obj.scorer.RBE_model))
+                        if isfield(pln,'bioParam') && isprop(pln.bioParam,'model')
+                            obj.scorer.RBE_model = {pln.bioParam.model};
+                        else
+                            switch obj.radiationMode
+                                case 'protons'
+                                    obj.scorer.RBE_model = obj.scorer.defaultModelProtons;
+                                case {'carbon','helium'}
+                                    obj.scorer.RBE_model = obj.scorer.defaultModelCarbon;
+                                otherwise
+                                    matRad_cfg.dispError(['No RBE model implemented for ',obj.radiationMode]);
+                            end
                         end
                     end
-                end
 
-                % Get alpha beta parameters from bioParam struct
-                for i = 1:length(pln.bioParam.AvailableAlphaXBetaX)
-                    if ~isempty(strfind(lower(pln.bioParam.AvailableAlphaXBetaX{i,2}),'default'))
-                        break
+                    % Get alpha beta parameters from bioParam struct
+                    for i = 1:length(pln.bioParam.AvailableAlphaXBetaX)
+                        if ~isempty(strfind(lower(pln.bioParam.AvailableAlphaXBetaX{i,2}),'default'))
+                            break
+                        end
                     end
-                end
-                obj.bioParam.AlphaX = pln.bioParam.AvailableAlphaXBetaX{5,1}(1);
-                obj.bioParam.BetaX = pln.bioParam.AvailableAlphaXBetaX{5,1}(2);
+                    obj.bioParam.AlphaX = pln.bioParam.AvailableAlphaXBetaX{5,1}(1);
+                    obj.bioParam.BetaX = pln.bioParam.AvailableAlphaXBetaX{5,1}(2);
 
+                end
             end
             if obj.scorer.LET
                 obj.scorer.doseToMedium = true;
