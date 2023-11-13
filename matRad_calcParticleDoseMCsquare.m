@@ -121,6 +121,9 @@ end
 % Since MCsquare 1.1 only allows similar resolution in x&y, we do some
 % extra checks on that before calling calcDoseInit. First, we make sure a
 % dose grid resolution is set in the pln struct
+if ~isfield(pln.propDoseCalc,'doseGrid')
+   pln.propDoseCalc.doseGrid.resolution = ct.resolution;
+end
 if pln.propDoseCalc.doseGrid.resolution.x ~= pln.propDoseCalc.doseGrid.resolution.y
     pln.propDoseCalc.doseGrid.resolution.x = mean([pln.propDoseCalc.doseGrid.resolution.x pln.propDoseCalc.doseGrid.resolution.y]);
     pln.propDoseCalc.doseGrid.resolution.y = pln.propDoseCalc.doseGrid.resolution.x;
