@@ -4,9 +4,6 @@ function [resultGUI,pln] = matRad_calcDoseModulated(ct,stf,pln,cst,weights)
 matRad_cfg =  MatRad_Config.instance();
 
 % load appropriate configs from pln or from class
-if isfield(pln,'propMC')
-    pln = matRad_cfg.getDefaultClass(pln,'propMC');
-end
 pln = matRad_cfg.getDefaultClass(pln,'propHeterogeneity');
 pln.propHeterogeneity.calcHetero = false;
 
@@ -18,6 +15,21 @@ samples = pln.propHeterogeneity.sampling.numOfSamples;
 
 % Output current mode
 matRad_cfg.dispInfo(['Calculating modulated dose in mode: ' pln.propHeterogeneity.sampling.mode]);
+
+% Perform resampling to dose grid if necessary (modulation is performed on the resampled grid)
+switch pln.propHeterogeneity.sampling.mode
+    case 'TOPAS'
+        pln = matRad_cfg.getDefaultClass(pln,'propMC','matRad_TopasConfig');
+        [ctR,cstR,stfR] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
+    case 'MCsquare'
+        pln = matRad_cfg.getDefaultClass(pln,'propMC','matRad_MCsquareConfig');
+        ctR = ct;
+        cstR = cst;
+        stfR = stf;
+    case 'matRad'
+        ctR = ct;
+        cstR = cst;
+end
 
 switch pln.propHeterogeneity.sampling.mode
     case 'TOPAS'
@@ -77,21 +89,6 @@ end
 logLevel = matRad_cfg.logLevel;
 matRad_cfg.logLevel = 2;
 
-% Perform resampling to dose grid if necessary (modulation is performed on the resampled grid)
-switch pln.propHeterogeneity.sampling.mode
-    case 'TOPAS'
-        pln.propMC.engine = 'TOPAS';
-        [ctR,cstR,stfR] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
-    case 'MCsquare'
-        pln.propMC.engine = 'MCsquare';
-        ctR = ct;
-        cstR = cst;
-        stfR = stf;
-    case 'matRad'
-        ctR = ct;
-        cstR = cst;
-end
-
 % Initialize waitbar if calculation locally
 if ~calcExternal
     figureWait = waitbar(0,['calculate modulated dose for ' pln.propHeterogeneity.sampling.mode ': Sample ' num2str(1) '/' num2str(samples)]);
@@ -117,6 +114,7 @@ for i = 1:samples
     % WARNING: Implementation of MCsquare is currently not finished
     switch pln.propHeterogeneity.sampling.mode
         case {'TOPAS','MCsquare'}
+
             % Set TOPAS parameters
             if isa(pln.propMC,'matRad_TopasConfig')
                 pln.propMC.numOfRuns = 1;
