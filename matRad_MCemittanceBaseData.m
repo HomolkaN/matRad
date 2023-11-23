@@ -528,8 +528,8 @@ classdef matRad_MCemittanceBaseData
                     polyFit = @(E,d) 0.001681*d - 0.0001178*E*d + 6.094e-6*d^2 + 1.764e-6*E^2*d - 1.016e-7*E*d^2 - 9.803e-09*E^3*d + 6.096e-10*E^2*d^2 + 1.835e-11*E^4*d - 1.209e-12*E^3*d^2;
                 otherwise
                     sigmaLUT = [0 0; 0 0];
-                    energies = [0; Inf];
-                    depths = [0; Inf];
+                    energies = [-1e8; 1e8];
+                    depths = [-1e8; 1e8];
 
                     polyFit = @(E,d) 0;
             end
