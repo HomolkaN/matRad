@@ -68,8 +68,8 @@ classdef matRad_TopasConfig < handle
             'densityCorrection','rspHLUT',... %'rspHLUT','Schneider_TOPAS','Schneider_matRad'
             'addSection','none',... %'none','lung','poisson','sampledDensities' (the last 2 only with modulation)
             'addTitanium',false,... %'false','true' (can only be used with advanced HUsections)
-            'HUSection','default',... %'default','advanced'
-            'HUToMaterial','default',... %'default',','advanced','MCsquare'
+            'HUSection','default',... %'default','Schneider'
+            'HUToMaterial','default',... %'default',','Schneider','MCsquare'
             'sampledLungMaterial','lungEquivalent',... %'lungEquivalent', 'waterEquivalent' (material of the sampled densities)
             'loadConverterFromFile',false); % set true if you want to use your own SchneiderConverter written in "TOPAS_SchneiderConverter"
 
@@ -135,7 +135,7 @@ classdef matRad_TopasConfig < handle
             ... % Defined Materials
             'matConv_Schneider_definedMaterials',struct('default','definedMaterials/default.txt.in',...
             'MCsquare','definedMaterials/MCsquare.txt.in',...
-            'advanced','definedMaterials/advanced.txt.in'),...
+            'Schneider','definedMaterials/Schneider.txt.in'),...
             ... % Density Correction
             'matConv_Schneider_densityCorr_Schneider_matRad','densityCorrection/Schneider_matRad.dat',...
             'matConv_Schneider_densityCorr_Schneider_TOPAS','densityCorrection/Schneider_TOPAS.dat',...
@@ -2146,7 +2146,7 @@ classdef matRad_TopasConfig < handle
                                         densityCorrection.factor = 0;
                                         densityCorrection.factorOffset = -rspHlut(1,1);
 
-                                    case 'advanced'
+                                    case 'Schneider'
                                         densityCorrection.offset = [0.00121 1.018 1.03 1.003 1.017 2.201];
                                         densityCorrection.factor = [0.001029700665188 0.000893 0 0.001169 0.000592 0.0005];
                                         densityCorrection.factorOffset = [1000 0 1000 0 0 -2000];
@@ -2187,7 +2187,7 @@ classdef matRad_TopasConfig < handle
                                         HUToMaterial.sections = rspHlut(2,1);
                                     case 'MCsquare'
                                         HUToMaterial.sections = [-1000 -950 -120 -82 -52 -22 8 19 80 120 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500];
-                                    case 'advanced'
+                                    case 'Schneider'
                                         HUToMaterial.sections = [-950 -120 -83 -53 -23 7 18 80 120 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500];
                                 end
                                 HUToMaterial.sections = [densityCorrection.boundaries(1) HUToMaterial.sections densityCorrection.boundaries(2:end)];
@@ -2217,14 +2217,15 @@ classdef matRad_TopasConfig < handle
                                             end
                                         end
                                         fprintf(fID,['dv:Ge/Patient/SchneiderMaterialMeanExcitationEnergy = %i',repmat(' %.6g',1,numel(ExcitationEnergies)),' eV\n'],numel(ExcitationEnergies),ExcitationEnergies);
-                                    case 'advanced'
+                                    case 'Schneider'
                                         fprintf(fID,'\n%s',materials{:});
                                     case 'MCsquare'
                                         fprintf(fID,'\n%s',materials{:});
                                 end
 
+                                % Add Titanium
                                 switch obj.materialConverter.HUToMaterial
-                                    case 'advanced'
+                                    case {'Schneider','MCsquare'}
                                         counter = 25;
                                         if isfield(obj.materialConverter,'addTitanium') && obj.materialConverter.addTitanium
                                             fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0',counter);
