@@ -393,7 +393,9 @@ classdef MatRad_Config < handle
                 obj.logFileHandle = fopen(logFile,'a');
                 obj.writeLog = true;
             else
-                fclose(obj.logFileHandle);
+                if ~isempty(obj.logFileHandle)
+                    fclose(obj.logFileHandle);
+                end
                 obj.writeLog = false;
             end
         end
