@@ -66,7 +66,7 @@ if ~exist('localglobal','var')
     localglobal = 'global';
 end
 if ~exist('n','var')
-    n = 3;
+    n = 1;
 end
 if ~exist('criteria','var')
     criteria = [3 3];
