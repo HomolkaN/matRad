@@ -2078,9 +2078,6 @@ classdef matRad_TopasConfig < handle
                     case 'HUToWaterSchneider' % Schneider converter
                         rspHlut = matRad_loadHLUT(ct,pln);
 
-                        % Set minimum HU to -1000 for TOPAS
-                        rspHlut(1) = -1000;
-
                         % add air boundary at -950 HU, if an air boundary isn't available
                         if ~any(ismember(rspHlut(:,1),-999))
                             rspHlut(end+1,:) = [-950,0];
@@ -2110,10 +2107,16 @@ classdef matRad_TopasConfig < handle
                                         densityFile = fopen(fname);
                                         densityCorrection.density = fscanf(densityFile,'%f');
                                         fclose(densityFile);
-                                        %                                     minHU = floor(min(ct.cubeHU{1}(:)));
-                                        minHU = rspHlut(1,1);
+
+                                        if strcmp(obj.materialConverter.densityCorrection,'Schneider_TOPAS')
+                                            minHU = -1000;
+                                        else
+                                            minHU = min(rspHlut(:,1));
+                                        end
                                         densityCorrection.boundaries = [minHU numel(densityCorrection.density)+minHU];
 
+                                    otherwise
+                                        matRad_cfg.dispError('No valid densityCorrection selected.')
                                 end
 
                                 % define additional density sections
@@ -2192,9 +2195,11 @@ classdef matRad_TopasConfig < handle
                                 end
                                 HUToMaterial.sections = [densityCorrection.boundaries(1) HUToMaterial.sections densityCorrection.boundaries(2:end)];
                                 % write HU to material sections
-                                %                         fprintf(fID,'i:Ge/Patient/MinImagingValue = %d\n',densityCorrection.boundaries(1));
-                                fprintf(fID,['iv:Ge/Patient/SchneiderHUToMaterialSections = %i ',repmat('%d ',1,numel(HUToMaterial.sections)),'\n\n'],numel(HUToMaterial.sections),HUToMaterial.sections);
+                                fprintf(fID,['iv:Ge/Patient/SchneiderHUToMaterialSections = %i ',repmat('%d ',1,numel(HUToMaterial.sections)),'\n'],numel(HUToMaterial.sections),HUToMaterial.sections);
                                 % load defined material based on materialConverter.HUToMaterial
+
+                                % Print TOPAS minImagingValue
+                                fprintf(fID,'i:Ge/Patient/MinImagingValue = %i\n\n',min(densityCorrection.boundaries));
 
                                 fname = fullfile(obj.thisFolder,filesep,obj.converterFolder,filesep,obj.infilenames.matConv_Schneider_definedMaterials.(obj.materialConverter.HUToMaterial));
                                 materials = strsplit(fileread(fname),'\n')';
@@ -2231,8 +2236,8 @@ classdef matRad_TopasConfig < handle
                                             fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0',counter);
                                             counter = counter + 1;
                                         end
-                                        %                                 fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.10404040 0.10606061 0.75656566 0.03131313 0.0 0.00202020 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0',counter);
-                                        fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.101278 0.102310 0.028650 0.757072 0.000730 0.000800 0.002250 0.002660 0.0 0.000090 0.001840 0.001940 0.0 0.000370 0.000010',counter);
+                                        % fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.10404040 0.10606061 0.75656566 0.03131313 0.0 0.00202020 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0',counter);
+%                                         fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.101278 0.102310 0.028650 0.757072 0.000730 0.000800 0.002250 0.002660 0.0 0.000090 0.001840 0.001940 0.0 0.000370 0.000010',counter);
                                 end
                             else
                                 fname = fullfile(obj.thisFolder,filesep,obj.converterFolder,filesep,obj.infilenames.matConv_Schneider_loadFromFile);

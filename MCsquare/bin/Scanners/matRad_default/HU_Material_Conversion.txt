@@ -2,5 +2,5 @@
 # HU	Material label
 # ===================
 
--1050	17		# Water
-1500	17		# Water
+-1050	13		# Air
+-999	17		# Water
