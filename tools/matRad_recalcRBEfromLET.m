@@ -172,5 +172,11 @@ else
     resultGUI = rmfield(resultGUI,{'alpha_recalc','beta_recalc'});
 end
 
+if isfield(resultGUI,'RBE_model')
+    resultGUI.RBE_model{end+1} = ['recalc_' modelName];
+else
+    resultGUI.RBE_model{1} = ['recalc_' modelName];
+end
+
 resultGUI = orderfields(resultGUI);
 end
