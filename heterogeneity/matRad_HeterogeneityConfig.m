@@ -434,9 +434,9 @@ classdef matRad_HeterogeneityConfig < handle
             % Handle RBE models if available
             if accumulateRBE
                 if isfield(resultGUI_mod,'RBE_model')
-                    RBE_model = cell(1,length(resultGUI_mod.RBE_model)+1);
+                    RBE_model = cell(1,length(resultGUI_mod.RBE_model));
                     for i = 1:length(resultGUI_mod.RBE_model)
-                        RBE_model{i+1} = ['_' resultGUI_mod.RBE_model{i}];
+                        RBE_model{i} = ['_' resultGUI_mod.RBE_model{i}];
                     end
                 else
                     RBE_model = {''};
