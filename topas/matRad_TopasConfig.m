@@ -69,7 +69,7 @@ classdef matRad_TopasConfig < handle
             'addSection','none',... %'none','lung','poisson','sampledDensities' (the last 2 only with modulation)
             'addTitanium',false,... %'false','true' (can only be used with advanced HUsections)
             'HUSection','default',... %'default','Schneider'
-            'HUToMaterial','default',... %'default',','Schneider','MCsquare'
+            'HUToMaterial','lung',... %'default',','Schneider','MCsquare','lung'
             'sampledLungMaterial','lungEquivalent',... %'lungEquivalent', 'waterEquivalent' (material of the sampled densities)
             'loadConverterFromFile',false); % set true if you want to use your own SchneiderConverter written in "TOPAS_SchneiderConverter"
 
@@ -134,6 +134,7 @@ classdef matRad_TopasConfig < handle
             ... % Schneier Converter
             ... % Defined Materials
             'matConv_Schneider_definedMaterials',struct('default','definedMaterials/default.txt.in',...
+            'lung','definedMaterials/lung.txt.in',...
             'MCsquare','definedMaterials/MCsquare.txt.in',...
             'Schneider','definedMaterials/Schneider.txt.in'),...
             ... % Density Correction
@@ -2188,6 +2189,8 @@ classdef matRad_TopasConfig < handle
                                     case 'default'
                                         % This selects the air HU only, since the defalt converter only differentiates between water and air
                                         HUToMaterial.sections = rspHlut(2,1);
+                                    case 'lung'
+                                        HUToMaterial.sections = sort([rspHlut(2,1) -800 -750]);
                                     case 'MCsquare'
                                         HUToMaterial.sections = [-1000 -950 -120 -82 -52 -22 8 19 80 120 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500];
                                     case 'Schneider'
@@ -2204,7 +2207,7 @@ classdef matRad_TopasConfig < handle
                                 fname = fullfile(obj.thisFolder,filesep,obj.converterFolder,filesep,obj.infilenames.matConv_Schneider_definedMaterials.(obj.materialConverter.HUToMaterial));
                                 materials = strsplit(fileread(fname),'\n')';
                                 switch obj.materialConverter.HUToMaterial
-                                    case 'default'
+                                    case {'default','lung'}
                                         fprintf(fID,'%s',materials{1:end-1});
                                         ExcitationEnergies = str2double(strsplit(materials{end}(strfind(materials{end},'=')+4:end-3)));
                                         if any(cellfun(@(teststr) ~isempty(strfind(lower(obj.materialConverter.addSection),lower(teststr))), {'lung','sampled'}))
