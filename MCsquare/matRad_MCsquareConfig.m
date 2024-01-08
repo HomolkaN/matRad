@@ -519,11 +519,6 @@ classdef matRad_MCsquareConfig
                 % Postprocessing
                 resultGUI_mod = obj.getResultGUI(dij);
 
-                % Calc RBE from LET
-                if obj.calcRBE
-                    resultGUI_mod = matRad_recalcRBEfromLET(resultGUI_mod,'MCN',0.1,0.05);
-                end
-
                 if numOfSamples > 1
                     % Accumulate averaged results
                     resultGUI = heterogeneityConfig.accumulateOverSamples(resultGUI,resultGUI_mod,numOfSamples);
@@ -549,6 +544,11 @@ classdef matRad_MCsquareConfig
         end
 
         function resultGUI = getResultGUI(obj,dij)
+            
+            % Calc RBE from LET
+            if obj.calcRBE
+                dij = matRad_recalcRBEfromLET(dij,'MCN');
+            end
 
             if size(dij.physicalDose{1},2)>1
                 resultGUI = matRad_calcCubes(ones(dij.totalNumOfBixels,1),dij,1);
@@ -636,6 +636,10 @@ classdef matRad_MCsquareConfig
                 dij.numOfRaysPerBeam = 1;
             end
 
+            if isfield(MCparam.dij,'ax')
+                dij.ax = MCparam.dij.ax;
+                dij.bx = MCparam.dij.bx;
+            end
             % Save numHistories for further reference
             dij.nbHistoriesTotal = MCparam.nbHistoriesTotal;
 

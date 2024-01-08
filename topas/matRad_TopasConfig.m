@@ -773,7 +773,12 @@ classdef matRad_TopasConfig < handle
 
             % Save RBE models in dij for postprocessing in calcCubes
             if obj.scorer.RBE
-                dij.RBE_models = obj.MCparam.RBE_models;
+                if isfield(obj.MCparam,'RBE_model')
+                    dij.RBE_model = obj.MCparam.RBE_model;
+                elseif isfield(obj.MCparam,'RBE_models')
+                    dij.RBE_model = obj.MCparam.RBE_models;
+                    obj.MCparam.RBE_model = obj.MCparam.RBE_models;
+                end
                 dij.ax = obj.MCparam.ax;
                 dij.bx = obj.MCparam.bx;
                 dij.abx = obj.MCparam.abx;
@@ -802,9 +807,9 @@ classdef matRad_TopasConfig < handle
 
             % Get unique tallies for RBE models
             if obj.scorer.RBE
-                for r = 1:length(obj.MCparam.RBE_models)
-                    dijTallies{end+1} = ['mAlphaDose_' obj.MCparam.RBE_models{r}];
-                    dijTallies{end+1} = ['mSqrtBetaDose_' obj.MCparam.RBE_models{r}];
+                for r = 1:length(obj.MCparam.RBE_model)
+                    dijTallies{end+1} = ['mAlphaDose_' obj.MCparam.RBE_model{r}];
+                    dijTallies{end+1} = ['mSqrtBetaDose_' obj.MCparam.RBE_model{r}];
                     %                     dijTallies{end+1} = 'alpha';
                     %                     dijTallies{end+1} = 'beta';
                 end
@@ -1233,19 +1238,19 @@ classdef matRad_TopasConfig < handle
                         if obj.scorer.calcDij
                             tallyName = cell(1,0);
                             if obj.scorer.RBE
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'McNamaraAlpha';
                                     tallyName{end+1} = 'McNamaraBeta';
                                 end
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'WedenbergAlpha';
                                     tallyName{end+1} = 'WedenbergBeta';
                                 end
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'tabulatedAlpha';
                                     tallyName{end+1} = 'tabulatedBeta';
                                 end
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'tabulatedAlpha';
                                     tallyName{end+1} = 'tabulatedBeta';
                                 end
@@ -2337,7 +2342,7 @@ classdef matRad_TopasConfig < handle
             obj.MCparam.patientVoxelIndices(unique(vertcat(segmentationIndices{:}))) = true;
             % Save used RBE models
             if obj.scorer.RBE
-                obj.MCparam.RBE_models = obj.scorer.RBE_model;
+                obj.MCparam.RBE_model = obj.scorer.RBE_model;
                 [obj.MCparam.ax,obj.MCparam.bx] = matRad_getPhotonLQMParameters(cst,prod(ct.cubeDim),obj.MCparam.numOfCtScen);
                 obj.MCparam.abx(obj.MCparam.bx>0) = obj.MCparam.ax(obj.MCparam.bx>0)./obj.MCparam.bx(obj.MCparam.bx>0);
             end

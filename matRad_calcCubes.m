@@ -88,16 +88,16 @@ end
 
 %% RBE weighted dose
 % consider RBE for protons and skip varRBE calculation
-if isfield(dij,'RBE') && isscalar(dij.RBE)
+if isfield(dij,'RBE') && isscalar(dij.RBE) && ~isnan(dij.RBE)
     for i = 1:length(beamInfo)
         resultGUI.(['RBExD', beamInfo(i).suffix]) = resultGUI.(['physicalDose', beamInfo(i).suffix]) * dij.RBE;
     end
 elseif any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'alpha')), fieldnames(dij)))
     % Load RBE models if MonteCarlo was calculated for multiple models
-    if isfield(dij,'RBE_models')
-        RBE_model = cell(1,length(dij.RBE_models));
-        for i = 1:length(dij.RBE_models)
-            RBE_model{i} = ['_' dij.RBE_models{i}];
+    if isfield(dij,'RBE_model')
+        RBE_model = cell(1,length(dij.RBE_model));
+        for i = 1:length(dij.RBE_model)
+            RBE_model{i} = ['_' dij.RBE_model{i}];
         end
     else
         RBE_model = {''};
@@ -152,14 +152,14 @@ if isfield(dij,'heterogeneityCorrection') && dij.heterogeneityCorrection
 end
 
 % Remove suffix for RBExD if there's only one available
-if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'alpha')), fieldnames(dij))) && isfield(dij,'RBE_models') && length(dij.RBE_models) == 1
+if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'alpha')), fieldnames(dij))) && isfield(dij,'RBE_model') && length(dij.RBE_model) == 1
     % Get fieldnames that include the specified RBE model
     fnames = fieldnames(resultGUI);
-    fnames = fnames(cellfun(@(teststr) ~isempty(strfind(lower(teststr),lower(dij.RBE_models{1}))), fnames));
+    fnames = fnames(cellfun(@(teststr) ~isempty(strfind(lower(teststr),lower(dij.RBE_model{1}))), fnames));
 
     % Rename fields and remove model specifier if there's only one
     for f = 1:length(fnames)
-        resultGUI.(erase(fnames{f},['_',dij.RBE_models{1}])) = resultGUI.(fnames{f});
+        resultGUI.(erase(fnames{f},['_',dij.RBE_model{1}])) = resultGUI.(fnames{f});
     end
 
     % Remove old fields

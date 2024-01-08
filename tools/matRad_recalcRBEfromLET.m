@@ -133,8 +133,8 @@ else
     LET(isnan(LET)) = 0;
     LET = full(LET);
 
-    resultGUI.alpha_recalc{1} = sparse(zeros(size(resultGUI.physicalDose{1})));
-    resultGUI.beta_recalc{1} = sparse(zeros(size(resultGUI.physicalDose{1})));
+    resultGUI.(['alpha_recalc_' modelName]){1} = sparse(zeros(size(resultGUI.physicalDose{1})));
+    resultGUI.(['beta_recalc_' modelName]){1} = sparse(zeros(size(resultGUI.physicalDose{1})));
 
     for beamlet = 1:numOfBeamlets
         
@@ -152,28 +152,32 @@ else
                 RBEmax     = modelParam.p0_MCN + ((modelParam.p1_MCN * LET(:,beamlet) )./ ABratio);
                 RBEmin     = modelParam.p2_MCN + (modelParam.p3_MCN  * sqrt(ABratio) .* LET(:,beamlet));
 
-                resultGUI.alpha_recalc{1}(ix,beamlet) = RBEmax(ix)    .* alphaX;
-                resultGUI.beta_recalc{1}(ix,beamlet)  = RBEmin(ix).^2 .* betaX;
+                resultGUI.(['alpha_recalc_' modelName]){1}(ix,beamlet) = RBEmax(ix)    .* alphaX;
+                resultGUI.(['beta_recalc_' modelName]){1}(ix,beamlet)  = RBEmin(ix).^2 .* betaX;
 
             case 'WED'
 
                 RBEmax     = modelParam.p0_WED + ((modelParam.p1_WED * LET(:,beamlet) )./ ABratio);
                 RBEmin     = modelParam.p2_WED;
 
-                resultGUI.alpha_recalc{1}(ix,beamlet) = RBEmax(ix)    .* alphaX;
-                resultGUI.beta_recalc{1}(ix,beamlet)  = RBEmin(ix).^2 .* betaX;
+                resultGUI.(['alpha_recalc_' modelName]){1}(ix,beamlet) = RBEmax(ix)    .* alphaX;
+                resultGUI.(['beta_recalc_' modelName]){1}(ix,beamlet)  = RBEmin(ix).^2 .* betaX;
 
         end
     end
 
-    resultGUI.mAlphaDose_recalc{1}      = resultGUI.alpha_recalc{1} .* resultGUI.physicalDose{1};
-    resultGUI.mSqrtBetaDose_recalc{1}   = sqrt(resultGUI.beta_recalc{1}) .* resultGUI.physicalDose{1};
+    resultGUI.(['mAlphaDose_recalc_' modelName]){1}      = resultGUI.(['alpha_recalc_' modelName]){1} .* resultGUI.physicalDose{1};
+    resultGUI.(['mSqrtBetaDose_recalc_' modelName]){1}   = sqrt(resultGUI.(['alpha_recalc_' modelName]){1}) .* resultGUI.physicalDose{1};
 
-    resultGUI = rmfield(resultGUI,{'alpha_recalc','beta_recalc'});
+    resultGUI = rmfield(resultGUI,{['alpha_recalc_' modelName],['beta_recalc_' modelName]});
 end
 
 if isfield(resultGUI,'RBE_model')
-    resultGUI.RBE_model{end+1} = ['recalc_' modelName];
+    if iscell(resultGUI.RBE_model)
+        resultGUI.RBE_model{end+1} = ['recalc_' modelName];
+    else
+        resultGUI.RBE_model = cellstr(['recalc_' modelName]);
+    end
 else
     resultGUI.RBE_model{1} = ['recalc_' modelName];
 end
