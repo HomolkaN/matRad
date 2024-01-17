@@ -1,5 +1,5 @@
-function IDD = matRad_calcIDD(doseCube,calcProfile,direction)
-% function to calculate integrated depth dose (IDD) of a simple boxphantom
+function outputDD = matRad_calcIDD(doseCube,calcProfile,direction,slice,averageProfiles)
+% function to calculate depth dose (DD) of a simple boxphantom
 % for beams in x-, y- or z-direction
 %
 % call
@@ -25,7 +25,7 @@ function IDD = matRad_calcIDD(doseCube,calcProfile,direction)
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if isstruct(doseCube)
-   error('Cube was entered as struct.')
+    error('Cube was entered as struct.')
 end
 if nargin < 3
     direction = 'y';
@@ -34,33 +34,57 @@ if nargin < 2
     calcProfile = false;
 end
 
+if nargin < 4
+    slice = floor(size(doseCube)/2); %voxels
+end
+
+if nargin < 5
+    averageProfiles = true;
+end
 doseCube(isnan(doseCube))=0;
+intWidth = 2; %voxels
 
-switch direction
-    case 'y'
-        if ~calcProfile
-            IDD = sum(sum(doseCube,2),3);
-        else
-            IDD = doseCube(:,round(size(doseCube,2)/2),round(size(doseCube,3)/2));
+if calcProfile
+    if averageProfiles
+        % Calculate average profiles
+        switch direction
+            case 'y'
+                outputDD = squeeze(sum(doseCube(:,slice(2)-intWidth:slice(2)+intWidth,slice(3)-intWidth:slice(3)+intWidth), [2,3]));
+            case 'x'
+                outputDD = squeeze(sum(doseCube(slice(1)-intWidth:slice(1)+intWidth,:,slice(3)-intWidth:slice(3)+intWidth), [1,3]));
+            case 'z'
+                outputDD = squeeze(sum(doseCube(slice(1)-intWidth:slice(1)+intWidth,slice(2)-intWidth:slice(2)+intWidth,:), [1,2]));
+            otherwise
+                matRad_cfg.dispError('Please choose valid direction');
         end
-    case 'x'
-        if ~calcProfile
-            IDD = sum(sum(doseCube,1),3);
-        else
-            IDD = doseCube(round(size(doseCube,1)/2),:,round(size(doseCube,3)/2));    
+
+    else
+        % Calculate single profiles
+        switch direction
+            case 'y'
+                outputDD = squeeze(doseCube(:,slice(2),slice(3)));
+            case 'x'
+                outputDD = squeeze(doseCube(slice(1),:,slice(3)));
+            case 'z'
+                outputDD = squeeze(doseCube(slice(1),slice(2),:));
+            otherwise
+                matRad_cfg.dispError('Please choose valid direction');
         end
-        IDD = permute(IDD,[2,3,1]);
-    case 'z'
-        if ~calcProfile
-            IDD = sum(sum(doseCube,2),1);
-        else
-            IDD = doseCube(round(size(doseCube,1)/2),round(size(doseCube,2)/2),:);    
-        end
-        IDD = permute(IDD,[3,1,2]);
-    otherwise
-        matRad_cfg.dispError('Please choose valid direction');
+    end
+else
+    % Calculate IDD
+    switch direction
+        case 'y'
+            outputDD = squeeze(sum(doseCube,[2,3]));
+        case 'x'
+            outputDD = squeeze(sum(doseCube,[1,3]));
+        case 'z'
+            outputDD = squeeze(sum(doseCube,[1,2]));
+        otherwise
+            matRad_cfg.dispError('Please choose valid direction');
+    end
 end
 
-end
 
+end
 
