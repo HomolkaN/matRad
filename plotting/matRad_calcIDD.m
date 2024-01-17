@@ -42,7 +42,7 @@ if nargin < 5
     averageProfiles = true;
 end
 doseCube(isnan(doseCube))=0;
-intWidth = 2; %voxels
+intWidth = 1; %voxels (equals (2n+1)² central rays)
 
 if calcProfile
     if averageProfiles
