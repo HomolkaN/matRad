@@ -24,7 +24,7 @@ classdef matRad_MCsquareConfig
         engine = 'MCsquare';
         externalCalculation = false;
         MCrun_Directory = 'MCrun/';
-        calcRBE = 'true';
+        calcRBE = true;
 
         %%% Simulation parameters:
         Num_Threads   =	0;		% Number of parallel calculation threads. Default: 0 = max available threads
@@ -546,7 +546,9 @@ classdef matRad_MCsquareConfig
         function resultGUI = getResultGUI(obj,dij)
             
             % Calc RBE from LET
-            if obj.calcRBE
+            if obj.calcRBE && isfield(dij,'RBE_model')
+%                 dij.ax = 0.1 * ones(prod(dij.doseGrid.dimensions),1);
+%                 dij.bx = 0.05 * ones(prod(dij.doseGrid.dimensions),1);
                 dij = matRad_recalcRBEfromLET(dij,'MCN');
             end
 

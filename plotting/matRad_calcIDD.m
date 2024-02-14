@@ -3,7 +3,7 @@ function outputDD = matRad_calcIDD(doseCube,calcProfile,direction,slice,averageP
 % for beams in x-, y- or z-direction
 %
 % call
-%   IDD = matRad_calcIDD(doseCube,direction)
+%   IDD = matRad_calcIDD(doseCube,calcProfile,direction)
 %
 % input
 %   doseCube:       calculated dose cube
@@ -31,7 +31,7 @@ if nargin < 3
     direction = 'y';
 end
 if nargin < 2
-    calcProfile = false;
+    calcProfile = true;
 end
 
 if nargin < 4
