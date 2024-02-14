@@ -105,8 +105,12 @@ data = cell(samples,1);
 
 for i = 1:samples
     % Modulate density of ct cube
-    ct_mod = pln.propHeterogeneity.modulateDensity(ctR,cstR,pln);
-
+    if pln.propHeterogeneity.sampling.obliqueAngleCorrection
+        ct_mod = ct;
+    else
+        ct_mod = pln.propHeterogeneity.modulateDensity(ctR,cstR,pln);
+    end
+    
     % Save number of samples in modulated CT (e.g. used for TOPAS folder generation)
     ct_mod.sampleIdx = i;
 

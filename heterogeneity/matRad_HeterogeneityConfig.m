@@ -44,7 +44,8 @@ classdef matRad_HeterogeneityConfig < handle
             'method','binomial',...  % 'binomial','poisson'
             ...%         'numOfHistories',1e6,...
             'numOfSamples',20,...
-            'continuous',true);
+            'continuous',true, ...
+            'obliqueAngleCorrection',false);
         
     end
     
@@ -230,7 +231,7 @@ classdef matRad_HeterogeneityConfig < handle
             
         end
         
-        function ct = modulateDensity(obj,ct,cst,pln)
+        function ct = modulateDensity(obj,ct,cst,pln,currGantryAngle)
             % matRad density modulation function to calculate sampled ct struct
             %
             % call
@@ -264,6 +265,11 @@ classdef matRad_HeterogeneityConfig < handle
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
+            if nargin < 5
+%                 currCouchAngle = 0;
+                currGantryAngle = 0;
+            end
+
             % get all unique lung indices from lung segmentations
             idx = cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lung')), cst(:,2));
             if sum(idx)==0
@@ -295,7 +301,8 @@ classdef matRad_HeterogeneityConfig < handle
                     d = pln.propHeterogeneity.modPower/1000 ./ (1-pLung) / rhoLung; % [1] eq.8: Pmod = d*(1-pLung) * rhoLung
                     
                     % length of a voxel (uniform voxels are assumed)
-                    D = ct.resolution.y;
+                    meanPathLength = @(x) (1-sqrt(2)/2)*abs(cosd(2*x))+(sqrt(2)/2);
+                    D = ct.resolution.y * meanPathLength(currGantryAngle);
                     
                     % calculate number of substructures inside of a single voxel (round in case of discrete distribution)
                     if pln.propHeterogeneity.sampling.continuous
@@ -321,9 +328,13 @@ classdef matRad_HeterogeneityConfig < handle
                     % revert normalization to get values between [0,rhoLung]
                     samples = samples * rhoLung;
                     
-                    % write samples to CT and convert to Hounsfield Units
+                    % write samples to CT 
                     ct.cube{1}(lungIdx) = samples;
-                    ct.cubeHU{1}(lungIdx) = 1024*(ct.cube{1}(lungIdx)-1);
+                    
+                    % convert to Hounsfield Units via HLUT
+                    hlut = matRad_loadHLUT();
+                    hlut(1,2) = 0;
+                    ct.cubeHU{1}(lungIdx) = matRad_interp1(hlut(:,2),hlut(:,1),ct.cube{1}(lungIdx));
                     
                 case 'poisson'
                     % read density modulation look-up table for supported modulation powers (Pmod = 250, 450, 800 mu)

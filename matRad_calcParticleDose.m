@@ -280,6 +280,9 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
     stf = matRad_computeSSD(stf,ct);
 
     for i = 1:numel(stf) % loop over all beams
+        if isprop(pln.propHeterogeneity,'sampling') && pln.propHeterogeneity.sampling.obliqueAngleCorrection
+            ct = pln.propHeterogeneity.modulateDensity(ct,cst,pln,stf(i).gantryAngle);
+        end
 
         % init beam
         matRad_calcDoseInitBeam;
