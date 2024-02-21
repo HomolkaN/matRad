@@ -41,10 +41,18 @@ for energyIx = energies%numel(machine.data)
 
     if fineSamplingFirst
         newDepths = min(machine.data(energyIx).depths):0.1:max(machine.data(energyIx).depths);
-        machine.data(energyIx).Z = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).Z,newDepths);
+        if isstruct(machine.data(energyIx).Z)
+            machine.data(energyIx).Z.profileORG = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).Z.profileORG,newDepths);
+            machine.data(energyIx).Z.profileAPM = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).Z.profileAPM,newDepths);
+        else
+            machine.data(energyIx).Z = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).Z,newDepths);
+        end
         machine.data(energyIx).weight = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).weight,newDepths);
         machine.data(energyIx).sigma1 = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).sigma1,newDepths);
         machine.data(energyIx).sigma2 = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).sigma2,newDepths);
+        if isfield(machine.data(energyIx),'LET')
+            machine.data(energyIx).LET = matRad_interp1(machine.data(energyIx).depths,machine.data(energyIx).LET,newDepths);
+        end
         machine.data(energyIx).depths = newDepths';
     end
 
@@ -86,11 +94,25 @@ for energyIx = energies%numel(machine.data)
 %         ylabel('Dose Z (a.u.)')
 %     end
 
+
     % Loop through all fields and apply downsampling
+    depthSize = numel(depths);
     fnames = fieldnames(machine.data(energyIx));
     for fieldIx = 1:length(fnames)
-        if size(machine.data(energyIx).(fnames{fieldIx}),1) > 1
+        if isstruct(machine.data(energyIx).(fnames{fieldIx}))
+            subFnames = fieldnames(machine.data(energyIx).(fnames{fieldIx}));
+            for subFieldIx = 1:length(subFnames)
+                if ~isstruct(machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx})) && ~all(size(machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx}))<depthSize)
+                        machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx}) = matRad_interp1(depths,machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx}),newDepths,'extrap');
 
+                        % Cutoff with depth
+                        if depthCutOff>0
+                            machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx})(newDepths>machine.data(energyIx).peakPos*depthCutOff) = [];
+                        end
+                end
+            end
+
+        elseif ~all(size(machine.data(energyIx).(fnames{fieldIx}))<depthSize)
             machine.data(energyIx).(fnames{fieldIx}) = matRad_interp1(depths,machine.data(energyIx).(fnames{fieldIx}),newDepths,'extrap');
             
             % Cutoff with depth
@@ -100,8 +122,6 @@ for energyIx = energies%numel(machine.data)
 
         end
     end
-
-    machine.data(energyIx).Z(machine.data(energyIx).Z < 0) = 0;
     
     clear depths newDepths
 
