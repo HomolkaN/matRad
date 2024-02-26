@@ -167,7 +167,7 @@ else
     end
 
     resultGUI.(['mAlphaDose_recalc_' modelName]){1}      = resultGUI.(['alpha_recalc_' modelName]){1} .* resultGUI.physicalDose{1};
-    resultGUI.(['mSqrtBetaDose_recalc_' modelName]){1}   = sqrt(resultGUI.(['alpha_recalc_' modelName]){1}) .* resultGUI.physicalDose{1};
+    resultGUI.(['mSqrtBetaDose_recalc_' modelName]){1}   = sqrt(resultGUI.(['beta_recalc_' modelName]){1}) .* resultGUI.physicalDose{1};
 
     resultGUI = rmfield(resultGUI,{['alpha_recalc_' modelName],['beta_recalc_' modelName]});
 end
