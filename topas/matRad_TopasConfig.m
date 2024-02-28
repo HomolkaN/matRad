@@ -2200,7 +2200,7 @@ classdef matRad_TopasConfig < handle
                                 materials = strsplit(fileread(fname),'\n')';
                                 switch obj.materialConverter.HUToMaterial
                                     case 'default'
-                                        fprintf(fID,'%s',materials{1:end-1});
+                                        fprintf(fID,'%s\n',materials{1:end-1});
                                         ExcitationEnergies = str2double(strsplit(materials{end}(strfind(materials{end},'=')+4:end-3)));
                                         if any(cellfun(@(teststr) ~isempty(strfind(lower(obj.materialConverter.addSection),lower(teststr))), {'lung','sampled'}))
                                             switch obj.materialConverter.sampledLungMaterial
