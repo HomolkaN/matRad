@@ -138,6 +138,7 @@ classdef matRad_MCemittanceBaseData
 
                 %% Skip emittance approximation if emittance was found in base data
                 if isfield(machine.data(ixE).initFocus,'emittance') && ~obj.forceEmittanceApproximation
+                    % Write emittance data from base data
                     data = [];
                     focusIx = obj.selectedFocus(ixE);
                     emittance = machine.data(ixE).initFocus.emittance(focusIx);
@@ -194,6 +195,7 @@ classdef matRad_MCemittanceBaseData
 
                     data = [data; tmp];
                 else
+                    % Fit emittance data
                     data = [];
                     tmp = energyData;
                     for j = 1:size(machine.data(ixE).initFocus.sigma,1)
@@ -304,12 +306,12 @@ classdef matRad_MCemittanceBaseData
                     %Squared difference to obtain residual width from energy spectrum
                     if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
                         sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
-                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,mcDataEnergy.MeanEnergy);                
+                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));                
                     else
                         energySpreadInMeV = 1e-8; %monoenergetic, but let's not write 0 to avoid division by zero in some codes
                     end
 
-                    energySpreadRelative = energySpreadInMeV ./ mcDataEnergy.MeanEnergy * 100;
+                    energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
 
                 case 'carbon'
                     %%% Approximate mean energy
@@ -470,7 +472,6 @@ classdef matRad_MCemittanceBaseData
                 obj.machine.data(ixE).energySpectrum.type  = 'gaussian';
                 obj.machine.data(ixE).energySpectrum.mean   = [obj.monteCarloData(:,count).MeanEnergy];
                 obj.machine.data(ixE).energySpectrum.sigma = [obj.monteCarloData(:,count).EnergySpread];
-
 
                 count = count + 1;
             end

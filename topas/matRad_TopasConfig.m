@@ -68,8 +68,8 @@ classdef matRad_TopasConfig < handle
             'densityCorrection','rspHLUT',... %'rspHLUT','Schneider_TOPAS','Schneider_matRad'
             'addSection','none',... %'none','lung','poisson','sampledDensities' (the last 2 only with modulation)
             'addTitanium',false,... %'false','true' (can only be used with advanced HUsections)
-            'HUSection','default',... %'default','advanced'
-            'HUToMaterial','default',... %'default',','advanced','MCsquare'
+            'HUSection','default',... %'default','Schneider'
+            'HUToMaterial','lung',... %'default',','Schneider','MCsquare','lung'
             'sampledLungMaterial','lungEquivalent',... %'lungEquivalent', 'waterEquivalent' (material of the sampled densities)
             'loadConverterFromFile',false); % set true if you want to use your own SchneiderConverter written in "TOPAS_SchneiderConverter"
 
@@ -134,8 +134,9 @@ classdef matRad_TopasConfig < handle
             ... % Schneier Converter
             ... % Defined Materials
             'matConv_Schneider_definedMaterials',struct('default','definedMaterials/default.txt.in',...
+            'lung','definedMaterials/lung.txt.in',...
             'MCsquare','definedMaterials/MCsquare.txt.in',...
-            'advanced','definedMaterials/advanced.txt.in'),...
+            'Schneider','definedMaterials/Schneider.txt.in'),...
             ... % Density Correction
             'matConv_Schneider_densityCorr_Schneider_matRad','densityCorrection/Schneider_matRad.dat',...
             'matConv_Schneider_densityCorr_Schneider_TOPAS','densityCorrection/Schneider_TOPAS.dat',...
@@ -772,7 +773,12 @@ classdef matRad_TopasConfig < handle
 
             % Save RBE models in dij for postprocessing in calcCubes
             if obj.scorer.RBE
-                dij.RBE_models = obj.MCparam.RBE_models;
+                if isfield(obj.MCparam,'RBE_model')
+                    dij.RBE_model = obj.MCparam.RBE_model;
+                elseif isfield(obj.MCparam,'RBE_models')
+                    dij.RBE_model = obj.MCparam.RBE_models;
+                    obj.MCparam.RBE_model = obj.MCparam.RBE_models;
+                end
                 dij.ax = obj.MCparam.ax;
                 dij.bx = obj.MCparam.bx;
                 dij.abx = obj.MCparam.abx;
@@ -801,9 +807,9 @@ classdef matRad_TopasConfig < handle
 
             % Get unique tallies for RBE models
             if obj.scorer.RBE
-                for r = 1:length(obj.MCparam.RBE_models)
-                    dijTallies{end+1} = ['mAlphaDose_' obj.MCparam.RBE_models{r}];
-                    dijTallies{end+1} = ['mSqrtBetaDose_' obj.MCparam.RBE_models{r}];
+                for r = 1:length(obj.MCparam.RBE_model)
+                    dijTallies{end+1} = ['mAlphaDose_' obj.MCparam.RBE_model{r}];
+                    dijTallies{end+1} = ['mSqrtBetaDose_' obj.MCparam.RBE_model{r}];
                     %                     dijTallies{end+1} = 'alpha';
                     %                     dijTallies{end+1} = 'beta';
                 end
@@ -1232,19 +1238,19 @@ classdef matRad_TopasConfig < handle
                         if obj.scorer.calcDij
                             tallyName = cell(1,0);
                             if obj.scorer.RBE
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'mcn')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'McNamaraAlpha';
                                     tallyName{end+1} = 'McNamaraBeta';
                                 end
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'wed')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'WedenbergAlpha';
                                     tallyName{end+1} = 'WedenbergBeta';
                                 end
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'libamtrack')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'tabulatedAlpha';
                                     tallyName{end+1} = 'tabulatedBeta';
                                 end
-                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.MCparam.RBE_models))
+                                if any(cellfun(@(teststr) ~isempty(strfind(lower(teststr),'lem')), obj.MCparam.RBE_model))
                                     tallyName{end+1} = 'tabulatedAlpha';
                                     tallyName{end+1} = 'tabulatedBeta';
                                 end
@@ -2078,9 +2084,6 @@ classdef matRad_TopasConfig < handle
                     case 'HUToWaterSchneider' % Schneider converter
                         rspHlut = matRad_loadHLUT(ct,pln);
 
-                        % Set minimum HU to -1000 for TOPAS
-                        rspHlut(1) = -1000;
-
                         % add air boundary at -950 HU, if an air boundary isn't available
                         if ~any(ismember(rspHlut(:,1),-999))
                             rspHlut(end+1,:) = [-950,0];
@@ -2110,10 +2113,16 @@ classdef matRad_TopasConfig < handle
                                         densityFile = fopen(fname);
                                         densityCorrection.density = fscanf(densityFile,'%f');
                                         fclose(densityFile);
-                                        %                                     minHU = floor(min(ct.cubeHU{1}(:)));
-                                        minHU = rspHlut(1,1);
+
+                                        if strcmp(obj.materialConverter.densityCorrection,'Schneider_TOPAS')
+                                            minHU = -1000;
+                                        else
+                                            minHU = min(rspHlut(:,1));
+                                        end
                                         densityCorrection.boundaries = [minHU numel(densityCorrection.density)+minHU];
 
+                                    otherwise
+                                        matRad_cfg.dispError('No valid densityCorrection selected.')
                                 end
 
                                 % define additional density sections
@@ -2146,7 +2155,7 @@ classdef matRad_TopasConfig < handle
                                         densityCorrection.factor = 0;
                                         densityCorrection.factorOffset = -rspHlut(1,1);
 
-                                    case 'advanced'
+                                    case 'Schneider'
                                         densityCorrection.offset = [0.00121 1.018 1.03 1.003 1.017 2.201];
                                         densityCorrection.factor = [0.001029700665188 0.000893 0 0.001169 0.000592 0.0005];
                                         densityCorrection.factorOffset = [1000 0 1000 0 0 -2000];
@@ -2185,21 +2194,25 @@ classdef matRad_TopasConfig < handle
                                     case 'default'
                                         % This selects the air HU only, since the defalt converter only differentiates between water and air
                                         HUToMaterial.sections = rspHlut(2,1);
+                                    case 'lung'
+                                        HUToMaterial.sections = sort([rspHlut(2,1) -800 -750]);
                                     case 'MCsquare'
                                         HUToMaterial.sections = [-1000 -950 -120 -82 -52 -22 8 19 80 120 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500];
-                                    case 'advanced'
+                                    case 'Schneider'
                                         HUToMaterial.sections = [-950 -120 -83 -53 -23 7 18 80 120 200 300 400 500 600 700 800 900 1000 1100 1200 1300 1400 1500];
                                 end
                                 HUToMaterial.sections = [densityCorrection.boundaries(1) HUToMaterial.sections densityCorrection.boundaries(2:end)];
                                 % write HU to material sections
-                                %                         fprintf(fID,'i:Ge/Patient/MinImagingValue = %d\n',densityCorrection.boundaries(1));
-                                fprintf(fID,['iv:Ge/Patient/SchneiderHUToMaterialSections = %i ',repmat('%d ',1,numel(HUToMaterial.sections)),'\n\n'],numel(HUToMaterial.sections),HUToMaterial.sections);
+                                fprintf(fID,['iv:Ge/Patient/SchneiderHUToMaterialSections = %i ',repmat('%d ',1,numel(HUToMaterial.sections)),'\n'],numel(HUToMaterial.sections),HUToMaterial.sections);
                                 % load defined material based on materialConverter.HUToMaterial
+
+                                % Print TOPAS minImagingValue
+                                fprintf(fID,'i:Ge/Patient/MinImagingValue = %i\n\n',min(densityCorrection.boundaries));
 
                                 fname = fullfile(obj.thisFolder,filesep,obj.converterFolder,filesep,obj.infilenames.matConv_Schneider_definedMaterials.(obj.materialConverter.HUToMaterial));
                                 materials = strsplit(fileread(fname),'\n')';
                                 switch obj.materialConverter.HUToMaterial
-                                    case 'default'
+                                    case {'default','lung'}
                                         fprintf(fID,'%s\n',materials{1:end-1});
                                         ExcitationEnergies = str2double(strsplit(materials{end}(strfind(materials{end},'=')+4:end-3)));
                                         if any(cellfun(@(teststr) ~isempty(strfind(lower(obj.materialConverter.addSection),lower(teststr))), {'lung','sampled'}))
@@ -2217,21 +2230,22 @@ classdef matRad_TopasConfig < handle
                                             end
                                         end
                                         fprintf(fID,['dv:Ge/Patient/SchneiderMaterialMeanExcitationEnergy = %i',repmat(' %.6g',1,numel(ExcitationEnergies)),' eV\n'],numel(ExcitationEnergies),ExcitationEnergies);
-                                    case 'advanced'
+                                    case 'Schneider'
                                         fprintf(fID,'\n%s',materials{:});
                                     case 'MCsquare'
                                         fprintf(fID,'\n%s',materials{:});
                                 end
 
+                                % Add Titanium
                                 switch obj.materialConverter.HUToMaterial
-                                    case 'advanced'
+                                    case {'Schneider','MCsquare'}
                                         counter = 25;
                                         if isfield(obj.materialConverter,'addTitanium') && obj.materialConverter.addTitanium
                                             fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0',counter);
                                             counter = counter + 1;
                                         end
-                                        %                                 fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.10404040 0.10606061 0.75656566 0.03131313 0.0 0.00202020 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0',counter);
-                                        fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.101278 0.102310 0.028650 0.757072 0.000730 0.000800 0.002250 0.002660 0.0 0.000090 0.001840 0.001940 0.0 0.000370 0.000010',counter);
+                                        % fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.10404040 0.10606061 0.75656566 0.03131313 0.0 0.00202020 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0',counter);
+%                                         fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 15 0.101278 0.102310 0.028650 0.757072 0.000730 0.000800 0.002250 0.002660 0.0 0.000090 0.001840 0.001940 0.0 0.000370 0.000010',counter);
                                 end
                             else
                                 fname = fullfile(obj.thisFolder,filesep,obj.converterFolder,filesep,obj.infilenames.matConv_Schneider_loadFromFile);
@@ -2328,7 +2342,7 @@ classdef matRad_TopasConfig < handle
             obj.MCparam.patientVoxelIndices(unique(vertcat(segmentationIndices{:}))) = true;
             % Save used RBE models
             if obj.scorer.RBE
-                obj.MCparam.RBE_models = obj.scorer.RBE_model;
+                obj.MCparam.RBE_model = obj.scorer.RBE_model;
                 [obj.MCparam.ax,obj.MCparam.bx] = matRad_getPhotonLQMParameters(cst,prod(ct.cubeDim),obj.MCparam.numOfCtScen);
                 obj.MCparam.abx(obj.MCparam.bx>0) = obj.MCparam.ax(obj.MCparam.bx>0)./obj.MCparam.bx(obj.MCparam.bx>0);
             end

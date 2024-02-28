@@ -41,7 +41,9 @@ if nargin < 4
 end
 
 SAD = machine.meta.SAD;
-% pln.propStf.bixelWidth = 5;
+if ~isfield(pln.propStf,'bixelWidth')
+    pln.propStf.bixelWidth = 3;
+end
 currentMinimumFWHM = matRad_interp1(machine.meta.LUT_bxWidthminFWHM(1,:)', machine.meta.LUT_bxWidthminFWHM(2,:)',pln.propStf.bixelWidth);
 
 for i = 1:length(pln.propStf.gantryAngles)

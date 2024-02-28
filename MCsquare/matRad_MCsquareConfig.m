@@ -24,6 +24,7 @@ classdef matRad_MCsquareConfig
         engine = 'MCsquare';
         externalCalculation = false;
         MCrun_Directory = 'MCrun/';
+        calcRBE = true;
 
         %%% Simulation parameters:
         Num_Threads   =	0;		% Number of parallel calculation threads. Default: 0 = max available threads
@@ -40,8 +41,8 @@ classdef matRad_MCsquareConfig
 
         %%% Input files
         CT_File                     = 'Patient.mhd';				% Name of the CT file. Default: CT.mhd
-        HU_Density_Conversion_File	= 'Scanners/matRad_default/HU_Density_Conversion.txt';	% Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
-        HU_Material_Conversion_File	= 'Scanners/matRad_default/HU_Material_Conversion.txt';	% Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
+        HU_Density_Conversion_File	= 'Scanners/matRad_default_lung/HU_Density_Conversion.txt';	% Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
+        HU_Material_Conversion_File	= 'Scanners/matRad_default_lung/HU_Material_Conversion.txt';	% Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
         BDL_Machine_Parameter_File  = 'BDL/BDL_matrad.txt';			% Name of the machine parameter file for the beam data library. Default: BDL.txt
         BDL_Plan_File               = 'PlanPencil.txt';			% Name of the plan file for the beam data library. Default: Plan.txt
 
@@ -543,6 +544,13 @@ classdef matRad_MCsquareConfig
         end
 
         function resultGUI = getResultGUI(obj,dij)
+            
+            % Calc RBE from LET
+            if obj.calcRBE && isfield(dij,'RBE_model')
+%                 dij.ax = 0.1 * ones(prod(dij.doseGrid.dimensions),1);
+%                 dij.bx = 0.05 * ones(prod(dij.doseGrid.dimensions),1);
+                dij = matRad_recalcRBEfromLET(dij,'MCN');
+            end
 
             if size(dij.physicalDose{1},2)>1
                 resultGUI = matRad_calcCubes(ones(dij.totalNumOfBixels,1),dij,1);
@@ -630,6 +638,10 @@ classdef matRad_MCsquareConfig
                 dij.numOfRaysPerBeam = 1;
             end
 
+            if isfield(MCparam.dij,'ax')
+                dij.ax = MCparam.dij.ax;
+                dij.bx = MCparam.dij.bx;
+            end
             % Save numHistories for further reference
             dij.nbHistoriesTotal = MCparam.nbHistoriesTotal;
 

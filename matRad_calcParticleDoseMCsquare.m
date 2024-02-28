@@ -178,8 +178,9 @@ relDoseCutOff = 1 - matRad_cfg.propDoseCalc.defaultLateralCutOff;
 
 % book keeping - this is necessary since pln is not used in optimization or
 % matRad_calcCubes
-if strcmp(pln.bioParam.model,'constRBE')
+if any(strcmp(pln.bioParam.model,{'constRBE','MCN','WED'}))
     dij.RBE = pln.bioParam.RBE;
+    dij.RBE_model = pln.bioParam.model;
 end
 
 scenCount = 0;
@@ -435,6 +436,10 @@ for scenarioIx = 1:pln.multScen.totNumScen
 
         % write config file
         pln.propMC.writeMCsquareinputAllFiles(MCsquareConfigFile,stfMCsquare);
+
+        if isfield(dij,'RBE_model')
+            [dij.ax,dij.bx] = matRad_getPhotonLQMParameters(cst,dij.doseGrid.numOfVoxels,ct.numOfCtScen);
+        end
 
         % write parameters to a MCparam file that can be used to later read the dose back in
         MCparam.dij = dij; % this can be done here since the dij is not filled at this point
