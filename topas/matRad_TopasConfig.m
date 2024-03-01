@@ -574,19 +574,24 @@ classdef matRad_TopasConfig < handle
             end
 
             obj.MCparam.tallies = unique(obj.MCparam.tallies);
-            talliesCut = replace(obj.MCparam.tallies,'-','_');
 
-            if any(contains(talliesCut,'_std'))
-                obj.MCparam.tallies(contains(talliesCut,'_std')) = [];
-                talliesCut(contains(talliesCut,'_std')) = [];
+            % Add flag for available standard deviations
+            if any(contains(obj.MCparam.tallies,'_std'))
+                % Create flag for existing standard deviations
+                talliesCut = obj.MCparam.tallies(~contains(obj.MCparam.tallies,'_std'));
+                talliesExistStd = erase(obj.MCparam.tallies(contains(obj.MCparam.tallies,'_std')),'_std');
+                obj.MCparam.existStd = cell2mat(cellfun(@(x) contains(talliesCut, x), talliesExistStd, 'UniformOutput', false)');
+                obj.MCparam.existStd = sum(obj.MCparam.existStd,1);
+                % Add std to scoreReportQuantity
                 obj.MCparam.numOfReportQuantities = 2;
                 obj.MCparam.scoreReportQuantity{end+1} = 'Standard_Deviation';
+                % Remove std fields from tallies
+                obj.MCparam.tallies = talliesCut;
             end
 
             % Load data for each tally individually
             for t = 1:length(obj.MCparam.tallies)
-                tnameFile = obj.MCparam.tallies{t};
-                tname = talliesCut{t};
+                tallyName = obj.MCparam.tallies{t};
                 % Loop over all beams/fields and ctScenarios
                 for f = 1:obj.MCparam.nbFields
                     for ctScen = 1:obj.MCparam.numOfCtScen
@@ -595,11 +600,10 @@ classdef matRad_TopasConfig < handle
                         for k = 1:obj.MCparam.nbRuns
                             % Get file name of current field, run and tally (and ct, if applicable)
                             if obj.MCparam.numOfCtScen > 1
-                                genFileName = sprintf('score_%s_field%d_ct%d_run%d_%s',obj.MCparam.simLabel,f,ctScen,k,tnameFile);
+                                genFileName = sprintf('score_%s_field%d_ct%d_run%d_%s',obj.MCparam.simLabel,f,ctScen,k,tallyName);
                             else
-                                genFileName = sprintf('score_%s_field%d_run%d_%s',obj.MCparam.simLabel,f,k,tnameFile);
+                                genFileName = sprintf('score_%s_field%d_run%d_%s',obj.MCparam.simLabel,f,k,tallyName);
                             end
-
 
                             switch obj.MCparam.outputType
                                 case 'csv'
@@ -619,7 +623,7 @@ classdef matRad_TopasConfig < handle
                             end
 
                             % Check if std has been calculated afterwards and placed in the folder using the suffix '_std'
-                            if any(~cellfun(@isempty, strfind(string(ls(folder)),'std')))
+                            if isfield(obj.MCparam,'existStd') && obj.MCparam.existStd(t)
                                 switch obj.MCparam.outputType
                                     case 'csv'
                                         % Generate csv file path to load
@@ -655,7 +659,8 @@ classdef matRad_TopasConfig < handle
                             end
                         end
 
-                        if ~isempty(strfind(lower(tnameFile),'dose'))
+                        % Calculate standard deviation from batches for any dose tally
+                        if ~isempty(strfind(lower(tallyName),'dose'))
                             if obj.MCparam.nbRuns > 1
                                 % Calculate Standard Deviation from batches
                                 topasMeanDiff = zeros(cubeDim(1),cubeDim(2),cubeDim(3));
@@ -670,14 +675,14 @@ classdef matRad_TopasConfig < handle
                                 topasStdSum = topasStdMean * correctionFactor * obj.MCparam.nbRuns;
 
                                 % Save std to topasCube
-                                topasCube.([tname '_batchStd_beam' num2str(f)]){ctScen} = topasStdSum;
+                                topasCube.([tallyName '_batchStd_beam' num2str(f)]){ctScen} = topasStdSum;
                             end
 
                             for i = 1:currNumOfQuantities
                                 topasSum.(obj.MCparam.scoreReportQuantity{i}) = correctionFactor .* topasSum.(obj.MCparam.scoreReportQuantity{i});
                             end
 
-                        elseif any(cellfun(@(teststr) ~isempty(strfind(tname,teststr)), {'alpha','beta','RBE','LET'}))
+                        elseif any(cellfun(@(teststr) ~isempty(strfind(tallyName,teststr)), {'alpha','beta','RBE','LET'}))
                             for i = 1:currNumOfQuantities
                                 topasSum.(obj.MCparam.scoreReportQuantity{i}) = topasSum.(obj.MCparam.scoreReportQuantity{i}) ./ obj.MCparam.nbRuns;
                             end
@@ -685,10 +690,10 @@ classdef matRad_TopasConfig < handle
 
                         % Tally per field
                         if isfield(topasSum,'Sum')
-                            topasCube.([tname '_beam' num2str(f)]){ctScen} = topasSum.Sum;
+                            topasCube.([tallyName '_beam' num2str(f)]){ctScen} = topasSum.Sum;
                         end
                         if isfield(topasSum,'Standard_Deviation')
-                            topasCube.([tname '_std_beam' num2str(f)]){ctScen} = topasSum.Standard_Deviation;
+                            topasCube.([tallyName '_std_beam' num2str(f)]){ctScen} = topasSum.Standard_Deviation;
                         end
                     end
                 end
