@@ -355,7 +355,7 @@ classdef matRad_TopasConfig < handle
             dij = obj.fillDij(topasCubes,dij);
 
             % Remove dose voxels that are not inside of the patient body
-            dij = obj.maskDij(dij);
+            % dij = obj.maskDij(dij);
 
         end
 
@@ -485,15 +485,11 @@ classdef matRad_TopasConfig < handle
             mask = true(obj.MCparam.ctGrid.dimensions);
             mask(obj.MCparam.patientVoxelIndices) = 0;
 
-            uniqueTallies = unique(obj.MCparam.tallies);
-            for t = 1:length(uniqueTallies)
-                for scenarioIx = 1:dij.numOfScenarios
-                    dij.(uniqueTallies{t}){scenarioIx}(mask,:) = 0;
-                    if isfield(dij,[uniqueTallies{t} '_std'])
-                        dij.([uniqueTallies{t} '_std']){scenarioIx}(mask,:) = 0;
-                    end
-                    if isfield(dij,[uniqueTallies{t} '_batchStd'])
-                        dij.([uniqueTallies{t} '_batchStd']){scenarioIx}(mask,:) = 0;
+            fNames = fieldnames(dij);
+            for i = 1:length(fNames)
+                if iscell(dij.(fNames{i})) && ~isvector(dij.(fNames{i}){1})
+                    for scenarioIx = 1:dij.numOfScenarios
+                        dij.(fNames{i}){scenarioIx}(mask,:) = 0;
                     end
                 end
             end
