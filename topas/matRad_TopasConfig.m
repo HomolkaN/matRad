@@ -354,6 +354,9 @@ classdef matRad_TopasConfig < handle
             % Fill empty Dij with fields from topasCubes
             dij = obj.fillDij(topasCubes,dij);
 
+            % Handle and correct LET
+            dij = obj.correctLET(dij,folder);
+
             % Remove dose voxels that are not inside of the patient body
             % dij = obj.maskDij(dij);
 
@@ -494,6 +497,50 @@ classdef matRad_TopasConfig < handle
                 end
             end
 
+        end
+
+        function dij = correctLET(obj,dij,folder)
+            
+                % Import HU cube from saved .dat file
+                fID_hu = fopen(fullfile(folder, obj.outfilenames.patientCube),'r');
+                huCube = fread(fID_hu,'short');
+                fclose(fID_hu);
+                huCube = reshape(huCube,[obj.MCparam.cubeDim(2) obj.MCparam.cubeDim(1) obj.MCparam.cubeDim(3)]);
+                huCube = permute(huCube,[2 1 3]);
+
+                % Convert to density cube
+                cubeTxt = readlines(fullfile(folder, obj.outfilenames.patientParam));
+                % Load densitycorrection
+                densityCorrection.density = split(cubeTxt(2,:),' ');
+                densityCorrection.density = str2double(densityCorrection.density(4:end-1));
+                densityCorrection.densityOffset = split(cubeTxt(4,:),' ');
+                densityCorrection.densityOffset = str2double(densityCorrection.densityOffset(4:end));
+                densityCorrection.densityFactor = split(cubeTxt(5,:),' ');
+                densityCorrection.densityFactor = str2double(densityCorrection.densityFactor(4:end));
+                densityCorrection.densityFactorOffset = split(cubeTxt(6,:),' ');
+                densityCorrection.densityFactorOffset = str2double(densityCorrection.densityFactorOffset(4:end));
+                densityCorrection.HUsection = split(cubeTxt(3,:),' ');
+                densityCorrection.HUsection = str2double(densityCorrection.HUsection(4:end));
+
+                % Convert cube
+                densCube = nan(obj.MCparam.cubeDim);
+                density = @(offset,factor,factorOffset,HU,densityCorrection) (offset+(factor.*(factorOffset+HU))).*densityCorrection;
+                for huCounter = min(huCube(:)):max(huCube(:))
+                    currSection = find(densityCorrection.HUsection<=huCounter,1,'last');
+                    densCube(huCube==huCounter) = density( ...
+                        densityCorrection.densityOffset(currSection), ...
+                        densityCorrection.densityFactor(currSection), ...
+                        densityCorrection.densityFactorOffset(currSection), ...
+                        huCube(huCube==huCounter), ...
+                        densityCorrection.density((densityCorrection.HUsection(currSection):densityCorrection.HUsection(currSection+1)-1)==huCounter) ...
+                        );
+                end
+
+                % Actually convert LET
+                for i = 1:size(dij.mLETDose{1},2)
+                    dij.mLETDose{1}(:,i) = densCube(:) .* dij.mLETDose{1}(:,i);
+                end
+               
         end
 
         function topasCubes = markFieldsAsEmpty(obj,topasCubes)
