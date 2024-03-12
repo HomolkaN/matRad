@@ -358,7 +358,7 @@ classdef matRad_TopasConfig < handle
             dij = obj.correctLET(dij,folder);
 
             % Remove dose voxels that are not inside of the patient body
-            % dij = obj.maskDij(dij);
+            dij = obj.maskDij(dij);
 
         end
 
@@ -490,7 +490,7 @@ classdef matRad_TopasConfig < handle
 
             fNames = fieldnames(dij);
             for i = 1:length(fNames)
-                if iscell(dij.(fNames{i})) && ~isvector(dij.(fNames{i}){1})
+                if iscell(dij.(fNames{i})) && issparse(dij.(fNames{i}){1})
                     for scenarioIx = 1:dij.numOfScenarios
                         dij.(fNames{i}){scenarioIx}(mask,:) = 0;
                     end
@@ -500,7 +500,10 @@ classdef matRad_TopasConfig < handle
         end
 
         function dij = correctLET(obj,dij,folder)
-            
+                % Send message
+                matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
+                matRad_cfg.dispInfo('Correcting LET\n');
+
                 % Import HU cube from saved .dat file
                 fID_hu = fopen(fullfile(folder, obj.outfilenames.patientCube),'r');
                 huCube = fread(fID_hu,'short');
@@ -525,14 +528,17 @@ classdef matRad_TopasConfig < handle
                 % Convert cube
                 densCube = nan(obj.MCparam.cubeDim);
                 density = @(offset,factor,factorOffset,HU,densityCorrection) (offset+(factor.*(factorOffset+HU))).*densityCorrection;
-                for huCounter = min(huCube(:)):max(huCube(:))
-                    currSection = find(densityCorrection.HUsection<=huCounter,1,'last');
-                    densCube(huCube==huCounter) = density( ...
-                        densityCorrection.densityOffset(currSection), ...
-                        densityCorrection.densityFactor(currSection), ...
-                        densityCorrection.densityFactorOffset(currSection), ...
-                        huCube(huCube==huCounter), ...
-                        densityCorrection.density((densityCorrection.HUsection(currSection):densityCorrection.HUsection(currSection+1)-1)==huCounter) ...
+                for huCounter = 1:length(densityCorrection.HUsection)-1
+                    currSection = (densityCorrection.HUsection(huCounter)<huCube & huCube<densityCorrection.HUsection(huCounter+1));
+                    densSelection = zeros(size(currSection));
+                    densSelection(currSection) = huCube(currSection)-densityCorrection.HUsection(1)+1;
+
+                    densCube(currSection) = density( ...
+                        densityCorrection.densityOffset(huCounter), ...
+                        densityCorrection.densityFactor(huCounter), ...
+                        densityCorrection.densityFactorOffset(huCounter), ...
+                        huCube(currSection), ...
+                        densityCorrection.density(densSelection(densSelection~=0)) ...
                         );
                 end
 
