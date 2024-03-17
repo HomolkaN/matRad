@@ -28,19 +28,7 @@ classdef matRad_MCsquareBaseData < matRad_MCemittanceBaseData
         function obj = writeMCsquareData(obj,filepath)
             %function that writes a data file containing Monte Carlo base
             %data for a simulation with MCsquare
-            
-            %look up focus indices
-            focusIndex = obj.selectedFocus(obj.energyIndex);
-            
-            %save mcData acording to used focus index in selectedData
-            selectedData = [];
-            for i = 1:numel(focusIndex)
-                selectedData = [selectedData, obj.monteCarloData(focusIndex(i), i)];
-            end
-            
-            %remove field not needed for MCsquare base data
-%             selectedData = rmfield(selectedData, 'FWHMatIso');
-            
+                       
             %write MCsqaure data base file
             try
                 
@@ -71,23 +59,23 @@ classdef matRad_MCsquareBaseData < matRad_MCemittanceBaseData
                     fprintf(fileID,'RS_WET = %f\n\n',raShi.eqThickness);
                 end
                     
+                % Get unique energies with focusIndices
+                uniqueEnergyFocus = unique(obj.focusTable,'rows');
+
+                % Write number of unique energies
+                fprintf(fileID,'Beam parameters\n%d energies\n\n',size(uniqueEnergyFocus,1));
                 
-                fprintf(fileID,'Beam parameters\n%d energies\n\n',size(selectedData,2));
-                
-                fn = fieldnames(selectedData);
-                for names = 1:size(fn,1)
-                    fprintf(fileID, fn{names});
-                    fprintf(fileID, '\t');
-                end
+                % Write header fields
+                fn = fieldnames(obj.monteCarloData)';
+                fprintf(fileID, '%s\t', fn{:});
                 fprintf(fileID, '\n');
-                
-                indices = obj.selectedFocus(obj.energyIndex);
-                for k = 1:size(selectedData,2)
-                    for m = 1:numel(fn)
-                        tmp = selectedData(k).(fn{m});
-                        fprintf(fileID, '%g ', tmp(indices(k)));
-                        fprintf(fileID, '\t');
-                    end
+
+                % Write energies
+                for k = 1:size(uniqueEnergyFocus,1)
+                    currentEnergyFocus = table2array(uniqueEnergyFocus(k,:));
+                    [~,energyIx] = intersect(unique([obj.monteCarloData.NominalEnergy]),currentEnergyFocus(1));
+
+                    fprintf(fileID, '%g\t', structfun(@(fld) fld(currentEnergyFocus(2)), obj.monteCarloData(energyIx))');
                     fprintf(fileID, '\n');
                 end
                 

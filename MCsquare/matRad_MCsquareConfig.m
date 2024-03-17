@@ -130,7 +130,7 @@ classdef matRad_MCsquareConfig
             end
         end
 
-        function writeMCsquareinputAllFiles(obj,filename,stf)
+        function writeMCsquareinputAllFiles(obj,filename,stf,focusTable)
             % generate input files for MCsquare dose calcualtion from matRad
             %
             % call
@@ -215,8 +215,8 @@ classdef matRad_MCsquareConfig
                 fprintf(fileHandle,'###IsocenterPosition\n');
                 fprintf(fileHandle,[num2str(stf(i).isoCenter) '\n']);
                 fprintf(fileHandle,'###NumberOfControlPoints\n');
-                numOfEnergies = numel(stf(i).energies);
-                fprintf(fileHandle,[num2str(numOfEnergies) '\n']);
+                numOfEnergiesFocus = size(stf(i).energyLayer,2);
+                fprintf(fileHandle,[num2str(numOfEnergiesFocus) '\n']);
 
                 %Range shfiter
                 if stf(i).rangeShifterID ~= 0
@@ -226,25 +226,25 @@ classdef matRad_MCsquareConfig
 
                 metersetOffset = 0;
                 fprintf(fileHandle,'\n#SPOTS-DESCRIPTION\n');
-                for j = 1:numOfEnergies
+                for energyIx = 1:numOfEnergiesFocus
                     fprintf(fileHandle,'####ControlPointIndex\n');
-                    fprintf(fileHandle,[num2str(j) '\n']);
+                    fprintf(fileHandle,[num2str(energyIx) '\n']);
                     fprintf(fileHandle,'####SpotTunnedID\n');
                     fprintf(fileHandle,['1\n']);
                     fprintf(fileHandle,'####CumulativeMetersetWeight\n');
                     if obj.Beamlet_Mode
-                        cumulativeMetersetWeight = j/numOfEnergies * 1/numOfFields;
+                        cumulativeMetersetWeight = energyIx/numOfEnergiesFocus * 1/numOfFields;
                     else
-                        cumulativeMetersetWeight = metersetOffset + sum([stf(i).energyLayer(j).numOfPrimaries]);
+                        cumulativeMetersetWeight = metersetOffset + sum([stf(i).energyLayer(energyIx).numOfPrimaries]);
                         metersetOffset = cumulativeMetersetWeight;
                     end
                     fprintf(fileHandle,[num2str(cumulativeMetersetWeight) '\n']);
                     fprintf(fileHandle,'####Energy (MeV)\n');
-                    fprintf(fileHandle,[num2str(stf(i).energies(j)) '\n']);
+                    fprintf(fileHandle,[num2str(focusTable.Energy(energyIx)) '\n']);
 
                     %Range shfiter
                     if stf(i).rangeShifterID ~= 0
-                        rangeShifter = stf(i).energyLayer(j).rangeShifter;
+                        rangeShifter = stf(i).energyLayer(energyIx).rangeShifter;
                         if rangeShifter.ID ~= 0
                             fprintf(fileHandle,'####RangeShifterSetting\n%s\n','IN');
                             pmma_rsp = 1.165; %TODO: hardcoded for now
@@ -258,16 +258,16 @@ classdef matRad_MCsquareConfig
                     end
 
                     fprintf(fileHandle,'####NbOfScannedSpots\n');
-                    numOfSpots = size(stf(i).energyLayer(j).targetPoints,1);
+                    numOfSpots = size(stf(i).energyLayer(energyIx).targetPoints,1);
                     fprintf(fileHandle,[num2str(numOfSpots) '\n']);
                     fprintf(fileHandle,'####X Y Weight\n');
                     for k = 1:numOfSpots
                         if obj.Beamlet_Mode
-                            n = stf(i).energyLayer(j).numOfPrimaries(k);
+                            n = stf(i).energyLayer(energyIx).numOfPrimaries(k);
                         else
-                            n = stf(i).energyLayer(j).numOfPrimaries(k); % / obj.mcSquare_magicFudge(stf(i).energies(j));
+                            n = stf(i).energyLayer(energyIx).numOfPrimaries(k); % / obj.mcSquare_magicFudge(stf(i).energies(j));
                         end
-                        fprintf(fileHandle,[num2str(stf(i).energyLayer(j).targetPoints(k,:)) ' ' num2str(n) '\n']);
+                        fprintf(fileHandle,[num2str(stf(i).energyLayer(energyIx).targetPoints(k,:)) ' ' num2str(n) '\n']);
                     end
                 end
             end

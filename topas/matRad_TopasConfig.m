@@ -149,7 +149,7 @@ classdef matRad_TopasConfig < handle
             'Scorer_LET','TOPAS_subscorer_LET.txt.in',...
             'Scorer_doseToWater','TOPAS_scorer_doseToWater.txt.in',...
             'Scorer_RBE_libamtrack','TOPAS_scorer_doseRBE_libamtrack.txt.in',...
-            'Scorer_RBE_LEM1','TOPAS_scorer_doseRBE_LEM1.txt.in',...
+            'Scorer_RBE_LEM1','TOPAS_scorer_doseRBE_LEM1_survival.txt.in',...
             'Scorer_RBE_WED','TOPAS_scorer_doseRBE_Wedenberg.txt.in',...
             'Scorer_RBE_MCN','TOPAS_scorer_doseRBE_McNamara.txt.in');
 
@@ -500,6 +500,8 @@ classdef matRad_TopasConfig < handle
         end
 
         function dij = correctLET(obj,dij,folder)
+
+            if isfield(dij,'mLETDose')
                 % Send message
                 matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
                 matRad_cfg.dispInfo('Correcting LET\n');
@@ -546,7 +548,8 @@ classdef matRad_TopasConfig < handle
                 for i = 1:size(dij.mLETDose{1},2)
                     dij.mLETDose{1}(:,i) = densCube(:) .* dij.mLETDose{1}(:,i);
                 end
-               
+            end
+
         end
 
         function topasCubes = markFieldsAsEmpty(obj,topasCubes)
@@ -699,7 +702,7 @@ classdef matRad_TopasConfig < handle
                         % Set dimensions of output cube
                         cubeDim = size(dataRead{1});
 
-                        % add STD quadratically
+                        % add STD quadratically and sum up the other quantities over batches
                         for i = 1:currNumOfQuantities
                             if ~isempty(strfind(lower(obj.MCparam.scoreReportQuantity{i}),'standard_deviation'))
                                 topasSum.(obj.MCparam.scoreReportQuantity{i}) = sqrt(double(obj.MCparam.nbHistoriesTotal)) * sqrt(sum(cat(4,data.(obj.MCparam.scoreReportQuantity{i}){:}).^2,4));
@@ -727,11 +730,13 @@ classdef matRad_TopasConfig < handle
                                 topasCube.([tallyName '_batchStd_beam' num2str(f)]){ctScen} = topasStdSum;
                             end
 
+                            % Apply correction factor to fields with "dose"
                             for i = 1:currNumOfQuantities
                                 topasSum.(obj.MCparam.scoreReportQuantity{i}) = correctionFactor .* topasSum.(obj.MCparam.scoreReportQuantity{i});
                             end
 
                         elseif any(cellfun(@(teststr) ~isempty(strfind(tallyName,teststr)), {'alpha','beta','RBE','LET'}))
+                            % Calculate average over numOfRuns here
                             for i = 1:currNumOfQuantities
                                 topasSum.(obj.MCparam.scoreReportQuantity{i}) = topasSum.(obj.MCparam.scoreReportQuantity{i}) ./ obj.MCparam.nbRuns;
                             end
@@ -1448,17 +1453,11 @@ classdef matRad_TopasConfig < handle
                     %Selection of base data given the energies and focusIndex
                     if obj.useOrigBaseData
                         [~,ixTmp,~] = intersect([ baseData.machine.data.energy], [stf.ray.energy]);
+                        selectedData = [];
                         for i = 1:length(ixTmp)
-                            selectedData(i) =  baseData.machine.data(ixTmp(i));
+                            selectedData = [selectedData, baseData.machine.data(ixTmp(i))];
                         end
                         energies = [selectedData.energy];
-                    else
-                        selectedData = [];
-                        focusIndex = baseData.selectedFocus(baseData.energyIndex);
-                        for i = 1:numel(focusIndex)
-                            selectedData = [selectedData, structfun(@(x) x(focusIndex(i)),baseData.monteCarloData(i),'UniformOutput',false)];
-                        end
-                        energies = [selectedData.NominalEnergy];
                     end
 
                     %Get Range Shifters in field if present
@@ -1518,22 +1517,25 @@ classdef matRad_TopasConfig < handle
 
                             switch obj.radiationMode
                                 case {'protons','carbon','helium'}
-                                    [~,ixTmp,~] = intersect(energies, bixelEnergy);
+                                    % Find current energy in monteCarloData
+                                    [~,ixTmp,~] = intersect(unique([baseData.monteCarloData.NominalEnergy]), bixelEnergy);
+                                    currFocusIx = stf(beamIx).ray(rayIx).focusIx(bixelIx);
+
                                     if obj.useOrigBaseData
                                         dataTOPAS(cutNumOfBixel).energy = selectedData(ixTmp).energy;
                                         dataTOPAS(cutNumOfBixel).focusFWHM = selectedData(ixTmp).initFocus.SisFWHMAtIso(stf(beamIx).ray(rayIx).focusIx(bixelIx));
 
                                     else
-                                        dataTOPAS(cutNumOfBixel).energy = selectedData(ixTmp).MeanEnergy;
-                                        dataTOPAS(cutNumOfBixel).nominalEnergy = selectedData(ixTmp).NominalEnergy;
-                                        dataTOPAS(cutNumOfBixel).energySpread = selectedData(ixTmp).EnergySpread;
-                                        dataTOPAS(cutNumOfBixel).spotSizeX = selectedData(ixTmp).SpotSize1x;
-                                        dataTOPAS(cutNumOfBixel).divergenceX = selectedData(ixTmp).Divergence1x;
-                                        dataTOPAS(cutNumOfBixel).correlationX = selectedData(ixTmp).Correlation1x;
-                                        dataTOPAS(cutNumOfBixel).spotSizeY = selectedData(ixTmp).SpotSize1y;
-                                        dataTOPAS(cutNumOfBixel).divergenceY = selectedData(ixTmp).Divergence1y;
-                                        dataTOPAS(cutNumOfBixel).correlationY = selectedData(ixTmp).Correlation1y;
-                                        dataTOPAS(cutNumOfBixel).focusFWHM = selectedData(ixTmp).FWHMatIso;
+                                        dataTOPAS(cutNumOfBixel).energy = baseData.monteCarloData(ixTmp).MeanEnergy(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).nominalEnergy = baseData.monteCarloData(ixTmp).NominalEnergy(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).energySpread = baseData.monteCarloData(ixTmp).EnergySpread(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).spotSizeX = baseData.monteCarloData(ixTmp).SpotSize1x(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).divergenceX = baseData.monteCarloData(ixTmp).Divergence1x(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).correlationX = baseData.monteCarloData(ixTmp).Correlation1x(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).spotSizeY = baseData.monteCarloData(ixTmp).SpotSize1y(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).divergenceY = baseData.monteCarloData(ixTmp).Divergence1y(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).correlationY = baseData.monteCarloData(ixTmp).Correlation1y(currFocusIx);
+                                        dataTOPAS(cutNumOfBixel).focusFWHM = baseData.monteCarloData(ixTmp).FWHMatIso(currFocusIx);
                                     end
                                 case 'photons'
                                     dataTOPAS(cutNumOfBixel).energy = bixelEnergy;

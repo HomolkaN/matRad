@@ -122,7 +122,7 @@ end
 % extra checks on that before calling calcDoseInit. First, we make sure a
 % dose grid resolution is set in the pln struct
 if ~isfield(pln.propDoseCalc,'doseGrid')
-   pln.propDoseCalc.doseGrid.resolution = ct.resolution;
+    pln.propDoseCalc.doseGrid.resolution = ct.resolution;
 end
 if pln.propDoseCalc.doseGrid.resolution.x ~= pln.propDoseCalc.doseGrid.resolution.y
     pln.propDoseCalc.doseGrid.resolution.x = mean([pln.propDoseCalc.doseGrid.resolution.x pln.propDoseCalc.doseGrid.resolution.y]);
@@ -214,7 +214,7 @@ else
     try
         MCsquareBDL = MCsquareBDL.saveMatradMachine('savedMatRadMachine');
     catch ME
-        % TODO 
+        % TODO
     end
 
 end
@@ -269,7 +269,10 @@ for scenarioIx = 1:pln.multScen.totNumScen
             pln.propMC.LET_Sparse_Output	 = ~calcDoseDirect;
         end
 
-        counter = 0;
+        dij.beamNum = [];
+        dij.rayNum = [];
+        dij.bixelNum = [];
+
         for i = 1:length(stf)
             %Let's check if we have a unique or no range shifter, because MCsquare
             %only allows one range shifter type per field which can be IN or OUT
@@ -304,7 +307,7 @@ for scenarioIx = 1:pln.multScen.totNumScen
             stfMCsquare(i).SAD         = stf(i).SAD;
 
             % allocate empty target point container
-            for j = 1:numel(stfMCsquare(i).energies)
+            for j = 1:size(MCsquareBDL.focusTable,1)
                 stfMCsquare(i).energyLayer(j).targetPoints   = [];
                 stfMCsquare(i).energyLayer(j).numOfPrimaries = [];
                 stfMCsquare(i).energyLayer(j).MU             = [];
@@ -312,58 +315,44 @@ for scenarioIx = 1:pln.multScen.totNumScen
                 stfMCsquare(i).energyLayer(j).bixelNum       = [];
             end
 
-            for j = 1:stf(i).numOfRays
-                for k = 1:stf(i).numOfBixelsPerRay(j)
-                    counter = counter + 1;
-                    dij.beamNum(counter)  = i;
-                    dij.rayNum(counter)   = j;
-                    dij.bixelNum(counter) = k;
+            currBeam.bixelIx = cell2mat(cellfun(@(x) 1:x, num2cell(stf(i).numOfBixelsPerRay), 'UniformOutput', false));
+            currBeam.rayIndices = repelem(1:numel(stf(i).numOfBixelsPerRay),stf(i).numOfBixelsPerRay);
+            currBeam.weights = vertcat(stf(i).ray.weight);
+
+            % Collect totalWeights
+            if calcDoseDirect
+                totalWeights = sum(currBeam.weights);
+            end
+
+            % Get dij counter for current bea,
+            dij.beamNum = [dij.beamNum, i * ones(1,stf(i).totalNumOfBixels)];
+            dij.rayNum = [dij.rayNum, currBeam.rayIndices];
+            dij.bixelNum = [dij.bixelNum, currBeam.bixelIx];
+
+            % Collect energy layers for different focus indices (needed to write MCsquare data)
+            for layerIx = 1:size(MCsquareBDL.focusTable,1)
+                % Collect which bixels are in the current energy layer
+                currEnergyLayer.isBixel = (MCsquareBDL.bixelIndices == layerIx);
+
+                % Collect bixels and rays
+                stfMCsquare(i).energyLayer(layerIx).bixelNum = currBeam.bixelIx(currEnergyLayer.isBixel);
+                stfMCsquare(i).energyLayer(layerIx).rayNum   = currBeam.rayIndices(currEnergyLayer.isBixel);
+
+                % Collect Target points
+                currEnergyLayer.targetPoints = cell2mat({stf(i).ray(stfMCsquare(i).energyLayer(layerIx).rayNum').rayPos_bev}');
+                stfMCsquare(i).energyLayer(layerIx).targetPoints = [-currEnergyLayer.targetPoints(:,1) currEnergyLayer.targetPoints(:,3)];
+
+                % Get number of primaries and MU (equal)
+                stfMCsquare(i).energyLayer(layerIx).numOfPrimaries = pln.propMC.numHistories * currBeam.weights(currEnergyLayer.isBixel)';
+                stfMCsquare(i).energyLayer(layerIx).MU = pln.propMC.numHistories * currBeam.weights(currEnergyLayer.isBixel)';
+
+                %Now add the range shifter
+                raShis = [stf(1).ray.rangeShifter];
+                %sanity check range shifters
+                if ~isscalar(unique([raShis.ID]))
+                    matRad_cfg.dispError('MCsquare only supports one range shifter setting (on or off) per energy! Aborting.\n');
                 end
-
-                for k = 1:numel(stfMCsquare(i).energies)
-
-                    %Check if ray has a spot in the current energy layer
-                    if any(stf(i).ray(j).energy == stfMCsquare(i).energies(k))
-                        %Set up the ray geometries and add current ray to energy
-                        %layer
-                        energyIx = find(stf(i).ray(j).energy == stfMCsquare(i).energies(k));
-                        stfMCsquare(i).energyLayer(k).rayNum   = [stfMCsquare(i).energyLayer(k).rayNum j];
-                        stfMCsquare(i).energyLayer(k).bixelNum = [stfMCsquare(i).energyLayer(k).bixelNum energyIx];
-                        stfMCsquare(i).energyLayer(k).targetPoints = [stfMCsquare(i).energyLayer(k).targetPoints; ...
-                            -stf(i).ray(j).rayPos_bev(1) stf(i).ray(j).rayPos_bev(3)];
-
-                        %Number of primaries depending on beamlet-wise or field-based compuation (direct dose calculation)
-                        if calcDoseDirect
-                            stfMCsquare(i).energyLayer(k).numOfPrimaries = [stfMCsquare(i).energyLayer(k).numOfPrimaries ...
-                                round(stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k))*pln.propMC.numHistories)];
-
-                            stfMCsquare(i).energyLayer(k).MU = [stfMCsquare(i).energyLayer(k).MU ...
-                                round(stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k))*pln.propMC.numHistories)];
-
-                            totalWeights = totalWeights + stf(i).ray(j).weight(stf(i).ray(j).energy == stfMCsquare(i).energies(k));
-                        else
-                            stfMCsquare(i).energyLayer(k).numOfPrimaries = [stfMCsquare(i).energyLayer(k).numOfPrimaries ...
-                                pln.propMC.numHistories];
-
-                            stfMCsquare(i).energyLayer(k).MU = [stfMCsquare(i).energyLayer(k).MU ...
-                                pln.propMC.numHistories];
-                        end
-
-                        %Now add the range shifter
-                        raShis = stf(i).ray(j).rangeShifter(energyIx);
-
-                        %sanity check range shifters
-                        raShiIDs = unique([raShis.ID]);
-                        %raShiIDs = raShiIDs(raShiIDs ~= 0);
-
-                        if ~isscalar(raShiIDs)
-                            matRad_cfg.dispError('MCsquare only supports one range shifter setting (on or off) per energy! Aborting.\n');
-                        end
-
-                        stfMCsquare(i).energyLayer(k).rangeShifter = raShis(1);
-                    end
-                end
-
+                stfMCsquare(i).energyLayer(layerIx).rangeShifter = raShis(1);
             end
 
         end
@@ -372,12 +361,14 @@ for scenarioIx = 1:pln.multScen.totNumScen
         counterMCsquare = 0;
         MCsquareOrder = NaN * ones(dij.totalNumOfBixels,1);
         for i = 1:length(stf)
-            for j = 1:numel(stfMCsquare(i).energies)
+            for j = 1:size(MCsquareBDL.focusTable,1)
                 for k = 1:numel(stfMCsquare(i).energyLayer(j).numOfPrimaries)
                     counterMCsquare = counterMCsquare + 1;
-                    ix = find(i                                         == dij.beamNum & ...
+                    ix = find( ...
+                        i                                         == dij.beamNum & ...
                         stfMCsquare(i).energyLayer(j).rayNum(k)   == dij.rayNum & ...
-                        stfMCsquare(i).energyLayer(j).bixelNum(k) == dij.bixelNum);
+                        stfMCsquare(i).energyLayer(j).bixelNum(k) == dij.bixelNum ...
+                        );
 
                     MCsquareOrder(ix) = counterMCsquare;
                 end
@@ -410,9 +401,9 @@ for scenarioIx = 1:pln.multScen.totNumScen
             % write material conversion
             fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'],'a');
             % fprintf(fID,'\n6000    40      # Schneider_Lung');
-%             fprintf(fID,'\n6000    17      # Water');
+            %             fprintf(fID,'\n6000    17      # Water');
             fprintf(fID,'\n6000    14      # Lung (use 40 for Schneider_Lung)');
-            
+
             fclose(fID);
 
             % set custom HU conversion files to be used by MCsquare
@@ -435,7 +426,7 @@ for scenarioIx = 1:pln.multScen.totNumScen
         pln.propMC.BDL_Machine_Parameter_File = [pln.propMC.MCrun_Directory 'BDL_file.txt'];
 
         % write config file
-        pln.propMC.writeMCsquareinputAllFiles(MCsquareConfigFile,stfMCsquare);
+        pln.propMC.writeMCsquareinputAllFiles(MCsquareConfigFile,stfMCsquare,MCsquareBDL.focusTable);
 
         if isfield(dij,'RBE_model')
             [dij.ax,dij.bx] = matRad_getPhotonLQMParameters(cst,dij.doseGrid.numOfVoxels,ct.numOfCtScen);

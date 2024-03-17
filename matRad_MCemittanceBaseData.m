@@ -29,7 +29,8 @@ classdef matRad_MCemittanceBaseData
         smx                                 %Scanning magnet X to isocenter Distance
         smy                                 %Scanning magnet y to isocenter Distance
         monteCarloData                      %MC Phase space data struct
-        selectedFocus                       %array containing selected focus indices per energy
+        focusTable                          %Table of energies and focusIndices
+        bixelIndices                        %Bixel with energy incides for focusTable
         defaultRelativeEnergySpread = 0;    %default energy spread
         rangeShifters                       %Stores range shifters
 
@@ -69,7 +70,6 @@ classdef matRad_MCemittanceBaseData
 
             obj.machine = machine;
             obj.problemSigma = false;
-            obj.selectedFocus = ones(numel(machine.data),1) * NaN;
 
             if isfield(machine.meta,'BAMStoIsoDist')
                 obj.nozzleToIso = machine.meta.BAMStoIsoDist;
@@ -91,36 +91,35 @@ classdef matRad_MCemittanceBaseData
 
             obj.monteCarloData = [];
 
-            %select needed energies and according focus indices by using stf
+            %select needed energies by using stf
             if obj.stfCompressed
                 tmp = [stf(:).ray];
                 plannedEnergies     = [tmp.energy];
-                focusIndex          = [tmp.focusIx];
-                [~, ind]            = unique(plannedEnergies);
-                plannedEnergies     = plannedEnergies(ind);
-                focusIndex          = focusIndex(ind);
                 [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
 
                 %if no stf was refered all energies are chosen, while setting
                 %the focus index for all energies to preliminary 1
             else
                 plannedEnergies = [machine.data(:).energy];
-                focusIndex = ones(size(plannedEnergies));
                 [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
             end
 
-            obj.selectedFocus(obj.energyIndex) = focusIndex;
+            % Store focus indices
+            [obj.focusTable,~,obj.bixelIndices] = unique(table(plannedEnergies',[tmp.focusIx]','VariableNames',{'Energy' 'FocusIndex'}),'rows');
 
             % Loop through all required energies
             for i = 1:length(obj.energyIndex)
                 ixE = obj.energyIndex(i);
+                % Clear some arrays just to be sure
+                energyData = [];
+                opticsData = [];
 
                 %look up whether MonteCarlo data are already present in
                 %machine file , if so do not recalculate
                 if isfield(machine.data(ixE), 'energySpectrum') && ~obj.forceSpectrumApproximation
                     energySpectrum = machine.data(ixE).energySpectrum;
                     if isfield(energySpectrum,'type') && strcmp(energySpectrum.type,'gaussian')
-                        energyData.NominalEnergy    = ones(1,4) * machine.data(ixE).energy(:);
+                        energyData.NominalEnergy    = machine.data(ixE).energy(:);
                         energyData.MeanEnergy       = machine.data(ixE).energySpectrum.mean(:);
                         energyData.EnergySpread     = machine.data(ixE).energySpectrum.sigma(:);
                     else
@@ -137,86 +136,75 @@ classdef matRad_MCemittanceBaseData
                 end
 
                 %% Skip emittance approximation if emittance was found in base data
+                % Get number of available focusIdx
+                maxNumFocusIdx = size(machine.data(ixE).initFocus.sigma,1);
+
                 if isfield(machine.data(ixE).initFocus,'emittance') && ~obj.forceEmittanceApproximation
                     % Write emittance data from base data
                     data = [];
-                    focusIx = obj.selectedFocus(ixE);
-                    emittance = machine.data(ixE).initFocus.emittance(focusIx);
+                    emittance = machine.data(ixE).initFocus.emittance;
 
-                    if ~strcmpi(emittance.type,'bigaussian')
+                    if length(emittance) ~= maxNumFocusIdx
+                        matRad_cfg.dispError('Incomplete emittance data');
+                    end
+                    if any(~strcmp({emittance.type},'bigaussian'))
                         matRad_cfg.dispError('Can not handle emittance of type ''%S''!',emittance.type);
                     end
 
-                    if isfield(emittance,'weight')
-                        nGauss = length(emittance.weight) + 1;
-                    else
-                        nGauss = 1;
+                    for focusIx = 1:length(emittance)
+                        if isfield(emittance(focusIx),'weight')
+                            nGauss = length(emittance(focusIx).weight) + 1;
+                        else
+                            nGauss = 1;
+                        end
+
+                        if nGauss > 2
+                            matRad_cfg.dispError('Can not process more than two Gaussians in Emittance parameterization!');
+                        end
+
+                        opticsData.Weight1(focusIx)          = 1;
+                        opticsData.SpotSize1x(focusIx)       = emittance(focusIx).sigmaX(1);
+                        opticsData.Divergence1x(focusIx)     = emittance(focusIx).divX(1);
+                        opticsData.Correlation1x(focusIx)    = emittance(focusIx).corrX(1);
+                        opticsData.SpotSize1y(focusIx)       = emittance(focusIx).sigmaY(1);
+                        opticsData.Divergence1y(focusIx)     = emittance(focusIx).divY(1);
+                        opticsData.Correlation1y(focusIx)    = emittance(focusIx).corrY(1);
+
+                        if nGauss == 1
+                            opticsData.Weight2(focusIx)          = 0;
+                            opticsData.SpotSize2x(focusIx)      = 0;
+                            opticsData.Divergence2x(focusIx)     = 0;
+                            opticsData.Correlation2x(focusIx)    = 0;
+                            opticsData.SpotSize2y(focusIx)       = 0;
+                            opticsData.Divergence2y(focusIx)     = 0;
+                            opticsData.Correlation2y(focusIx)    = 0;
+                        else
+                            opticsData.Weight1(focusIx)          = 1 - emittance(focusIx).weight(1);
+                            opticsData.Weight2(focusIx)          = emittance(focusIx).weight(1);
+                            opticsData.SpotSize2x(focusIx)       = emittance(focusIx).sigmaX(2);
+                            opticsData.Divergence2x(focusIx)     = emittance(focusIx).divX(2);
+                            opticsData.Correlation2x(focusIx)    = emittance(focusIx).corrX(2);
+                            opticsData.SpotSize2y(focusIx)       = emittance(focusIx).sigmaY(2);
+                            opticsData.Divergence2y(focusIx)     = emittance(focusIx).divY(2);
+                            opticsData.Correlation2y(focusIx)    = emittance(focusIx).corrY(2);
+                        end
                     end
-
-                    if nGauss > 2
-                        matRad_cfg.dispError('Can not process more than two Gaussians in Emittance parameterization!');
-                    end
-
-                    opticsData.Weight1          = 1;
-                    opticsData.SpotSize1x       = emittance.sigmaX(1);
-                    opticsData.Divergence1x     = emittance.divX(1);
-                    opticsData.Correlation1x    = emittance.corrX(1);
-                    opticsData.SpotSize1y       = emittance.sigmaY(1);
-                    opticsData.Divergence1y     = emittance.divY(1);
-                    opticsData.Correlation1y    = emittance.corrY(1);
-
-                    if nGauss == 1
-                        opticsData.Weight2          = 0;
-                        opticsData.SpotSize2x       = 0;
-                        opticsData.Divergence2x     = 0;
-                        opticsData.Correlation2x    = 0;
-                        opticsData.SpotSize2y       = 0;
-                        opticsData.Divergence2y     = 0;
-                        opticsData.Correlation2y    = 0;
-                    else
-                        opticsData.Weight1          = 1 - emittance.weight(1);
-                        opticsData.Weight2          = emittance.weight(1);
-                        opticsData.SpotSize2x       = emittance.sigmaX(2);
-                        opticsData.Divergence2x     = emittance.divX(2);
-                        opticsData.Correlation2x    = emittance.corrX(2);
-                        opticsData.SpotSize2y       = emittance.sigmaY(2);
-                        opticsData.Divergence2y     = emittance.divY(2);
-                        opticsData.Correlation2y    = emittance.corrY(2);
-                    end
-
                     %opticsData.FWHMatIso = 2.355 * sigmaNull;
                     opticsData.FWHMatIso = machine.data(ixE).initFocus.SisFWHMAtIso;
 
-                    tmp = energyData;
-                    f = fieldnames(opticsData);
-                    for a = 1:length(f)
-                        tmp.(f{a}) = opticsData.(f{a});
-                    end
-
-                    data = [data; tmp];
                 else
-                    % Fit emittance data
-                    data = [];
-                    tmp = energyData;
-                    for j = 1:size(machine.data(ixE).initFocus.sigma,1)
+                    % Fit beam optics for all available focusIdx
 
-                        %                         tmp = energyData;
-                        opticsData = obj.fitBeamOpticsForEnergy(ixE, j);
-
-                        f = fieldnames(opticsData);
-                        for a = 1:length(f)
-                            if j == 1
-                                tmp.(f{a}) = opticsData.(f{a});
-                            else
-                                tmp.(f{a}) = [tmp.(f{a}), opticsData.(f{a})];
-                            end
-                        end
-
-                        data = tmp;
+                    for j = 1:maxNumFocusIdx
+                        opticsData = [opticsData, obj.fitBeamOpticsForEnergy(ixE, j)];
                     end
-
                 end
 
+                % Get energyData from above (repeat for all available focusIdx)
+                energyData = structfun(@(fld) repmat(fld,1,maxNumFocusIdx), energyData, 'UniformOutput', false);
+
+                % Merge energyData and opticsData
+                data = cell2struct([struct2cell(energyData);struct2cell(opticsData)],[fieldnames(energyData);fieldnames(opticsData)]);
 
                 obj.monteCarloData = [obj.monteCarloData, data];
             end
@@ -252,7 +240,7 @@ classdef matRad_MCemittanceBaseData
             % Find range of 80% does fall off after the peak
             [maxDose, maxDoseIdx] = max(obj.machine.data(energyIx).Z);
             % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
-            r80 = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.8 * maxDose);
+            r80 = matRad_interp1(flip(obj.machine.data(energyIx).Z(maxDoseIdx:end)), flip(obj.machine.data(energyIx).depths(maxDoseIdx:end)), 0.8 * maxDose);
             % Correct r80 with air offset and potential offset from basedata
             r80 = r80 + airOffsetCorrection + obj.machine.data(energyIx).offset;
 
@@ -284,7 +272,7 @@ classdef matRad_MCemittanceBaseData
 
                     % Calculate energy straggling using formulae deducted from paper
                     % "An analytical approximation of the Bragg curve for therapeutic proton beams" by T. Bortfeld et al.
-                    % After inversion of the formula to obtain the two values z_50 where d(z_50) = 0.5*dMax, 
+                    % After inversion of the formula to obtain the two values z_50 where d(z_50) = 0.5*dMax,
                     % we obtain that the width is 6.14 * the total (energy + range) straggling sigma
                     stragglingFactor = 6.289; % Using new fitted p and 5 digits for the maximum
                     % parabolicCylinderWidth = 6.14; % using p=1.77 and 2 digits for the maximum (original)
@@ -306,7 +294,7 @@ classdef matRad_MCemittanceBaseData
                     %Squared difference to obtain residual width from energy spectrum
                     if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
                         sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
-                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));                
+                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
                     else
                         energySpreadInMeV = 1e-8; %monoenergetic, but let's not write 0 to avoid division by zero in some codes
                     end
@@ -369,7 +357,7 @@ classdef matRad_MCemittanceBaseData
             sigma = obj.machine.data(energyIx).initFocus.sigma(focusIndex,:);
 
             %correct for in-air scattering with polynomial or interpolation
-            sigma = arrayfun(@(d,sigma) obj.spotSizeAirCorrection(obj.machine.meta.radiationMode,obj.machine.data(energyIx).energy,d,sigma),-z+obj.machine.meta.BAMStoIsoDist,sigma);
+            sigma = arrayfun(@(d,sigma) obj.spotSizeAirCorrection(obj.machine.meta.radiationMode,obj.machine.data(energyIx).energy,d,sigma),-z+obj.nozzleToIso,sigma);
 
             %square and interpolate at isocenter
             sigmaSq = sigma.^2;
@@ -413,8 +401,6 @@ classdef matRad_MCemittanceBaseData
 
 
             % Save calcuated beam optics data in mcData
-            mcDataOptics.ProtonsMU     = 1e6;
-
             mcDataOptics.Weight1       = 1;
             mcDataOptics.SpotSize1x    = SpotsizeAtNozzle;
             mcDataOptics.Divergence1x  = DivergenceAtNozzle;
@@ -451,27 +437,27 @@ classdef matRad_MCemittanceBaseData
             % Instance of MatRad Config
             matRad_cfg = MatRad_Config.instance();
 
-            %             [~ ,energyIndex, ~] = intersect([obj.machine.data(:).energy], [obj.monteCarloData(:).NominalEnergy]);
-
             machineName = [obj.machine.meta.radiationMode, '_', name];
 
             count = 1;
             for i = 1:length(obj.energyIndex)
 
                 ixE = obj.energyIndex(i);
-
-                obj.machine.data(ixE).initFocus.emittance.type  = 'bigaussian';
-                obj.machine.data(ixE).initFocus.emittance.sigmaX = [obj.monteCarloData(:,count).SpotSize1x obj.monteCarloData(:,count).SpotSize2x];
-                obj.machine.data(ixE).initFocus.emittance.sigmaY = [obj.monteCarloData(:,count).SpotSize1y obj.monteCarloData(:,count).SpotSize2y];
-                obj.machine.data(ixE).initFocus.emittance.divX = [obj.monteCarloData(:,count).Divergence1x obj.monteCarloData(:,count).Divergence2x];
-                obj.machine.data(ixE).initFocus.emittance.divY = [obj.monteCarloData(:,count).Divergence1y obj.monteCarloData(:,count).Divergence2y];
-                obj.machine.data(ixE).initFocus.emittance.corrX = [obj.monteCarloData(:,count).Correlation1x obj.monteCarloData(:,count).Correlation2x];
-                obj.machine.data(ixE).initFocus.emittance.corrY = [obj.monteCarloData(:,count).Correlation1y obj.monteCarloData(:,count).Correlation2y];
-                obj.machine.data(ixE).initFocus.emittance.weight = [obj.monteCarloData(:,count).Weight2]; %Weight one will not be stored explicitly due to normalization
+                [type{1:4}] = deal('bigaussian');
+                newEmittance = struct( ...
+                    'sigmaX',num2cell(obj.monteCarloData(:,count).SpotSize1x), ...
+                    'sigmaY',num2cell(obj.monteCarloData(:,count).SpotSize1y), ...
+                    'divX',num2cell(obj.monteCarloData(:,count).Divergence1x), ...
+                    'divY',num2cell(obj.monteCarloData(:,count).Divergence1y), ...
+                    'corrX',num2cell(obj.monteCarloData(:,count).Correlation1x), ...
+                    'corrY',num2cell(obj.monteCarloData(:,count).Correlation1y), ...
+                    'weight',num2cell(obj.monteCarloData(:,count).Weight2), ... %Weight one will not be stored explicitly due to normalization
+                    'type',type ...
+                    );
 
                 obj.machine.data(ixE).energySpectrum.type  = 'gaussian';
-                obj.machine.data(ixE).energySpectrum.mean   = [obj.monteCarloData(:,count).MeanEnergy];
-                obj.machine.data(ixE).energySpectrum.sigma = [obj.monteCarloData(:,count).EnergySpread];
+                obj.machine.data(ixE).energySpectrum.mean   = unique(obj.monteCarloData(:,count).MeanEnergy);
+                obj.machine.data(ixE).energySpectrum.sigma = unique(obj.monteCarloData(:,count).EnergySpread);
 
                 count = count + 1;
             end
