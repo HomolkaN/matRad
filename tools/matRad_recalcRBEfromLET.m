@@ -21,13 +21,13 @@ end
 if isfield(resultGUI,'LET')
     numOfVoxel = numel(resultGUI.LET);
     numOfBeams = sum(contains(fieldnames(resultGUI),'LET_beam'));
-    doseGrid = size(resultGUI.LET);
+    cubeDim = size(resultGUI.LET);
     dij = 0;
 elseif isfield(resultGUI,'mLETDose')
     numOfVoxel = size(resultGUI.mLETDose{1},1);
     numOfBeams = resultGUI.numOfBeams;
     numOfBeamlets = size(resultGUI.mLETDose{1},2);
-    doseGrid = resultGUI.doseGrid.dimensions;
+    cubeDim = resultGUI.doseGrid.dimensions;
     dij = 1;
 end
 
@@ -45,8 +45,8 @@ if ~isscalar(alphaX) && ~isscalar(betaX)
         matRad_cfg.dispError('Multiple alpha/beta ratios in one cube is not yet implemented');
     end
 else
-    ax = alphaX * ones(prod(doseGrid),1);
-    bx = betaX * ones(prod(doseGrid),1);
+    ax = alphaX * ones(prod(cubeDim),1);
+    bx = betaX * ones(prod(cubeDim),1);
 end
 
 ABratio = alphaX ./ betaX;
@@ -66,7 +66,7 @@ if ~dij
 
     for i = 1:numOfBeams
         beamInfo(i).suffix = ['_beam', num2str(i)];
-        beamInfo(i).logIx  = ([1:numOfBeams]' == i);
+        beamInfo(i).logIx  = ((1:numOfBeams)' == i);
     end
     beamInfo(numOfBeams+1).suffix = '';
     beamInfo(numOfBeams+1).logIx  = true(numOfBeams,1);
@@ -78,8 +78,9 @@ if ~dij
         % consider biological optimization
         if exist('bx','var')
             ix = bx~=0 & resultGUI.(['physicalDose', beamInfo(i).suffix])(:) > 0;
+            %             ix = true(prod(cubeDim),1);
         else
-            ix = ones(1,prod(doseGrid));
+            ix = true(prod(cubeDim),1);
         end
 
         switch modelName
@@ -88,21 +89,18 @@ if ~dij
                 RBEmax     = modelParam.p0_MCN + ((modelParam.p1_MCN * LET )./ ABratio);
                 RBEmin     = modelParam.p2_MCN + (modelParam.p3_MCN  * sqrt(ABratio) .* LET);
 
-                resultGUI.(['alpha_recalc_MCN', beamInfo(i).suffix]) = zeros(doseGrid);
-                resultGUI.(['beta_recalc_MCN', beamInfo(i).suffix]) = zeros(doseGrid);
-
-                resultGUI.(['alpha_recalc_MCN', beamInfo(i).suffix])(ix) = RBEmax(ix)    .* alphaX;
-                resultGUI.(['beta_recalc_MCN', beamInfo(i).suffix])(ix)  = RBEmin(ix).^2 .* betaX;
-
             case 'WED'
 
                 RBEmax     = modelParam.p0_WED + ((modelParam.p1_WED * LET )./ ABratio);
-                RBEmin     = modelParam.p2_WED;
-
-                resultGUI.(['alpha_recalc_WED', beamInfo(i).suffix])(ix) = RBEmax(ix)    .* alphaX;
-                resultGUI.(['beta_recalc_WED', beamInfo(i).suffix])(ix)  = RBEmin(ix).^2 .* betaX;
+                RBEmin     = modelParam.p2_WED .* ones(cubeDim);
 
         end
+
+        resultGUI.(['alpha_recalc_', modelName, beamInfo(i).suffix]) = zeros(cubeDim);
+        resultGUI.(['beta_recalc_', modelName, beamInfo(i).suffix]) = zeros(cubeDim);
+
+        resultGUI.(['alpha_recalc_', modelName, beamInfo(i).suffix])(ix) = RBEmax(ix)    .* alphaX;
+        resultGUI.(['beta_recalc_', modelName, beamInfo(i).suffix])(ix)  = RBEmin(ix).^2 .* betaX;
 
         mAlphaDose(:,i)         = reshape(resultGUI.(['alpha_recalc_' modelName, beamInfo(i).suffix]) .* resultGUI.(['physicalDose', beamInfo(i).suffix]),[],1);
         mSqrtBetaDose(:,i)      = reshape(sqrt(resultGUI.(['beta_recalc_' modelName, beamInfo(i).suffix])) .* resultGUI.(['physicalDose', beamInfo(i).suffix]),[],1);
@@ -114,12 +112,13 @@ if ~dij
         % consider biological optimization
         if exist('bx','var')
             ix = bx~=0 & resultGUI.(['physicalDose', beamInfo(i).suffix])(:) > 0;
+            %             ix = true(prod(cubeDim),1);
         else
-            ix = ones(1,prod(doseGrid));
+            ix = true(prod(cubeDim),1);
         end
 
         resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix])       = full(mAlphaDose * beamInfo(i).logIx + (mSqrtBetaDose * beamInfo(i).logIx).^2);
-        resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix])       = reshape(resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix]),doseGrid);
+        resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix])       = reshape(resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix]),cubeDim);
 
         resultGUI.(['RBExD_recalc_' modelName, beamInfo(i).suffix])        = zeros(size(resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix])));
         resultGUI.(['RBExD_recalc_' modelName, beamInfo(i).suffix])(ix)    = (sqrt(ax(ix).^2 + 4 .* bx(ix) .* resultGUI.(['effect_recalc_' modelName, beamInfo(i).suffix])(ix)) - ax(ix))./(2.*bx(ix));
@@ -137,13 +136,13 @@ else
     resultGUI.(['beta_recalc_' modelName]){1} = sparse(zeros(size(resultGUI.physicalDose{1})));
 
     for beamlet = 1:numOfBeamlets
-        
+
         % consider biological optimization
         if exist('bx','var')
             ix = bx~=0 & resultGUI.physicalDose{1}(:,beamlet) > 0;
             ix = full(ix);
         else
-            ix = ones(1,prod(doseGrid));
+            ix = ones(1,prod(cubeDim));
         end
 
         switch modelName
