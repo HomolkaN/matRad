@@ -1,6 +1,6 @@
-function p = matRad_showDVH(axesHandle,dvh,cst,pln,lineStyleIndicator)
+function [p,myLegend] = matRad_showDVH(axesHandle,dvh,cst,pln,lineStyleIndicator)
 % matRad dvh visualizaion
-% 
+%
 % call
 %   matRad_showDVH(dvh,cst)
 %   matRad_showDVH(dvh,cst,pln)
@@ -17,20 +17,20 @@ function p = matRad_showDVH(axesHandle,dvh,cst,pln,lineStyleIndicator)
 %                       different dvhs)
 %
 % output
-%   graphical display of DVH   
+%   graphical display of DVH
 %
 % References
 %   -
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Copyright 2015 the matRad development team. 
-% 
-% This file is part of the matRad project. It is subject to the license 
-% terms in the LICENSE file found in the top-level directory of this 
-% distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part 
-% of the matRad project, including this file, may be copied, modified, 
-% propagated, or distributed except according to the terms contained in the 
+% Copyright 2015 the matRad development team.
+%
+% This file is part of the matRad project. It is subject to the license
+% terms in the LICENSE file found in the top-level directory of this
+% distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part
+% of the matRad project, including this file, may be copied, modified,
+% propagated, or distributed except according to the terms contained in the
 % LICENSE file.
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -56,7 +56,7 @@ cstInfo = cst(visibleIx,5);
 dvh = dvh(visibleIx);
 
 numOfVois = numel(cstNames);
-        
+
 %% print the dvh
 
 %try to get colors from cst
@@ -78,10 +78,10 @@ for i = 1:numOfVois
     % behind
     ix      = max([1 find(dvh(i).volumePoints>0,1,'last')]);
     currDvh = [dvh(i).doseGrid(1:ix);dvh(i).volumePoints(1:ix)];
-    
+
     p(i) = plot(axesHandle,currDvh(1,:),currDvh(2,:),'LineWidth',lineWidth,'Color',colorMx(i,:), ...
         'LineStyle',lineStyles{lineStyleIndicator},'DisplayName',cstNames{i},'HandleVisibility',visible);
-    
+
     maxDVHvol  = max(maxDVHvol,max(currDvh(2,:)));
     maxDVHdose = max(maxDVHdose,max(currDvh(1,:)));
 end
@@ -94,20 +94,20 @@ legend(axesHandle,'boxoff')
 ylim(axesHandle,[0 1.1*maxDVHvol]);
 xlim(axesHandle,[0 1.2*maxDVHdose]);
 
-grid(axesHandle,'on'),grid(axesHandle,'minor')
+grid(axesHandle,'on')
 box(axesHandle,'on'); %box(gca,'on');
 set(axesHandle,'LineWidth',1.5,'FontSize',fontSizeValue); %set(gca,'LineWidth',1.5,'FontSize',fontSizeValue);
-ylabel(axesHandle,'Volume [%]','FontSize',fontSizeValue)
+ylabel(axesHandle,'Volume (%)','FontSize',fontSizeValue)
 
 if exist('pln','var') && ~isempty(pln)
 
     if strcmp(pln.bioParam.model,'none')
-        xlabel('Dose [Gy]','FontSize',fontSizeValue);
+        xlabel(axesHandle,'Absorbed Dose (Gy)','FontSize',fontSizeValue);
     else
-        xlabel(axesHandle,'RBE x Dose [Gy(RBE)]','FontSize',fontSizeValue);
+        xlabel(axesHandle,'RBE x Dose (Gy)','FontSize',fontSizeValue);
     end
 else
-    xlabel('Dose [Gy]','FontSize',fontSizeValue);
+    xlabel(axesHandle,'Absorbed Dose (Gy)','FontSize',fontSizeValue);
 
 end
 hold(axesHandle,'off');
