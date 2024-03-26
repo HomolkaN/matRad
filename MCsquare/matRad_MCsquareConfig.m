@@ -547,9 +547,9 @@ classdef matRad_MCsquareConfig
             
             % Calc RBE from LET
             if obj.calcRBE && isfield(dij,'RBE_model')
-%                 dij.ax = 0.1 * ones(prod(dij.doseGrid.dimensions),1);
-%                 dij.bx = 0.05 * ones(prod(dij.doseGrid.dimensions),1);
-                dij = matRad_recalcRBEfromLET(dij,'MCN');
+                for modelIx = 1:length(dij.RBE_model)
+                    dij = matRad_recalcRBEfromLET(dij,dij.RBE_model{modelIx});
+                end
             end
 
             if size(dij.physicalDose{1},2)>1
