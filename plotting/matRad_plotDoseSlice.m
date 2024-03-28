@@ -82,7 +82,8 @@ end
 if ~isempty(threshold)
     mask = alpha * (dose_slice < window(2) & dose_slice > window(1) & dose_slice > threshold*maxDose);
 else
-    mask = alpha * (dose_slice <= window(2) & dose_slice > window(1));
+    mask = alpha * (dose_slice > window(1));
+%     mask = alpha * (dose_slice <= window(2) & dose_slice > window(1));
 end
 
 dose_slice = uint8(cMapScale*(dose_slice - window(1))/(window(2)-window(1)));
