@@ -2188,7 +2188,8 @@ classdef matRad_TopasConfig < handle
                                 end
                                 switch obj.materialConverter.addSection
                                     case 'lung'
-                                        addSection = [0.00012 1.05];
+                                        rhoLung = 1.05;
+                                        addSection = [0.00012 rhoLung];
                                     case 'poisson'
                                         addSection = [0.001,0.1/3:0.1/3:1.2];
                                     case 'sampledDensities'
