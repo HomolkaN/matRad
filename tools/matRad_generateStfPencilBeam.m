@@ -93,7 +93,7 @@ for i = 1:length(pln.propStf.gantryAngles)
         [~,l{1},rho{1},~,~] = matRad_siddonRayTracer(pln.propStf.isoCenter(i,:) + pln.multScen.isoShift(1,:), ...
             ct.resolution, stf(i).sourcePoint, stf(i).ray.targetPoint, [ct.cube]);
         radDepths = cumsum(l{1} .* rho{1}{1});
-        currRadDepths = radDepths(80);
+        currRadDepths = radDepths(end);
         [~,energyIx] = min(abs([machine.data.peakPos]-currRadDepths));
     end
 
