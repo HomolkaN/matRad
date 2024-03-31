@@ -210,9 +210,6 @@ classdef matRad_HeterogeneityConfig < handle
                 a = p .* (n-1);
                 b = (1-p) .* (n-1);
                 
-                %     a = p.*n;
-                %     b = (1-p).*n;
-                
                 % sample from continuous beta distribution using "numOfSamples" random numbers
                 samples = betaincinv(rand([numOfSamples,1]),a,b);
             else
