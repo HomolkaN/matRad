@@ -582,7 +582,7 @@ classdef matRad_HeterogeneityConfig < handle
             elseif isstruct(baseData(1).Z) && (~isfield(baseData(1).Z,'profileORG') && ~isfield(baseData(1).Z,'doseORG'))
                 warning('No original depths available in base data. Nothing changed.');
             else
-                warning('Base data depths are already in the desired format.');
+                matRad_cfg.dispInfo('Base data depths are already in the desired format.\n');
             end
             
         end

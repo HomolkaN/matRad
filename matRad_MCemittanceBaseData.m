@@ -51,7 +51,7 @@ classdef matRad_MCemittanceBaseData
     end
 
     methods
-        function obj = matRad_MCemittanceBaseData(machine,stf)
+        function obj = matRad_MCemittanceBaseData(machine,stf,forceApproximation)
             %matRad_MCsquareBaseData construct an instance of the MCsquare
             %Base data format using a focus index
 
@@ -66,6 +66,11 @@ classdef matRad_MCemittanceBaseData
             else
                 obj.stfCompressed = true;
                 obj = obj.getRangeShiftersFromStf(stf);
+            end
+
+            if exist('forceApproximation','var')
+                obj.forceSpectrumApproximation = forceApproximation(1);
+                obj.forceEmittanceApproximation = forceApproximation(2);
             end
 
             obj.machine = machine;
@@ -100,7 +105,9 @@ classdef matRad_MCemittanceBaseData
                 %if no stf was refered all energies are chosen, while setting
                 %the focus index for all energies to preliminary 1
             else
-                plannedEnergies = [machine.data(:).energy];
+                initFocus = squeeze(struct2cell([machine.data(:).initFocus]));
+                tmp.focusIx = cell2mat(cellfun(@(x) 1:length(x), initFocus(1,:), 'UniformOutput', false));
+                plannedEnergies = repelem([machine.data(:).energy],cell2mat(cellfun(@(x) length(x), initFocus(1,:), 'UniformOutput', false)));;
                 [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
             end
 
@@ -188,15 +195,20 @@ classdef matRad_MCemittanceBaseData
                             opticsData.Divergence2y(focusIx)     = emittance(focusIx).divY(2);
                             opticsData.Correlation2y(focusIx)    = emittance(focusIx).corrY(2);
                         end
+
+                        %opticsData.FWHMatIso = 2.355 * sigmaNull;
+                        opticsData.FWHMatIso(focusIx) = machine.data(ixE).initFocus.SisFWHMAtIso(focusIx);
                     end
-                    %opticsData.FWHMatIso = 2.355 * sigmaNull;
-                    opticsData.FWHMatIso = machine.data(ixE).initFocus.SisFWHMAtIso;
 
                 else
                     % Fit beam optics for all available focusIdx
-
+                    tmp = [];
                     for j = 1:maxNumFocusIdx
-                        opticsData = [opticsData, obj.fitBeamOpticsForEnergy(ixE, j)];
+                        tmp = [tmp, obj.fitBeamOpticsForEnergy(ixE, j)];
+                    end
+                    fnames = fieldnames(tmp);
+                    for f = 1:length(fnames)
+                        opticsData.(fnames{f}) = [tmp.(fnames{f})];
                     end
                 end
 
@@ -239,10 +251,22 @@ classdef matRad_MCemittanceBaseData
 
             % Find range of 80% does fall off after the peak
             [maxDose, maxDoseIdx] = max(obj.machine.data(energyIx).Z);
+            
+            % Sanity check if the position is in fact after the peak
+            if obj.machine.data(energyIx).depths(maxDoseIdx) < 0.5*obj.machine.data(energyIx).peakPos
+                % Search for new peak
+                [~,maxDoseIdx] = min(diff(obj.machine.data(energyIx).depths-((obj.machine.data(energyIx).peakPos + obj.machine.data(energyIx).depths(maxDoseIdx)) / 2)));
+                [maxDose, maxDoseIdx2] = max(obj.machine.data(energyIx).Z(maxDoseIdx:end));
+                maxDoseIdx = maxDoseIdx2 + maxDoseIdx;
+            end
+
             % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
             r80 = matRad_interp1(flip(obj.machine.data(energyIx).Z(maxDoseIdx:end)), flip(obj.machine.data(energyIx).depths(maxDoseIdx:end)), 0.8 * maxDose);
             % Correct r80 with air offset and potential offset from basedata
             r80 = r80 + airOffsetCorrection + obj.machine.data(energyIx).offset;
+
+            % Define constants
+            alphaPrime = 0.0087; % (MeV^2/mm) stopping matter property
 
             % Calcualte mean energy used my mcSquare with a formula fitted to TOPAS data
             switch obj.machine.meta.radiationMode
@@ -283,9 +307,9 @@ classdef matRad_MCemittanceBaseData
                     % (original values are commented behind)
                     alpha   = 0.02383;  % alpha = 0.022; [alpha] = mm MeV^-p
                     p       = 1.756;    % p = 1.77; [p] = 1
-                    alphaPrime = 0.0087; % (MeV^2/mm)
 
-                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
+                    particleZ = 1;
+                    sigmaRangeStragglingOnlySq = @(R) particleZ * alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
 
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
                     % and the range straggling (Bortfeld 1997, Eq.19, in mm)
@@ -309,16 +333,60 @@ classdef matRad_MCemittanceBaseData
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
                     meanEnergyFromRange = @(R) 14.35 * R^0.5915;
 
-                    %                     alpha = 0.0127;
-                    %                     p = 1.667;
-                    % alphaPrime = 0.0087; % (MeV^2/mm) This would need to be adjusted using Bortfeld Eq.B2
+                    if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
+                        try
+                            d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
+                            d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                        catch
+                            matRad_cfg.dispWarning('Could not find FWHM, trying to smooth');
+                            try
+                                % Sometimes doesn't work, if using the carbon_HIT base data, as it has 2 peaks
+                                d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
+                                X = obj.machine.data(energyIx).Z(1:maxDoseIdx);
+                                diffX = diff(X);
+                                diffX(diffX<=0) = 1e-12;
+                                X = cumsum([min(X), diffX']);
+                                d50_l = interp1(X, obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                            catch
+                                matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
+                            end
+                        end
+                    end
+                    % Combine for FWHM
+                    if exist('d50_r','var')
+                        FWHM = d50_r - d50_l;
+                    else
+                        % if width left of peak cannot be determined use r80 as width
+                        FWHM = r80;
+                        obj.problemSigma = true;
+                        matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
+                    end
+
+                    % From range-energy fit
+                    alpha = 0.0127;
+                    p = 1.667;
+
+                    % Get full straggling from p=1.667 (parabolic cylinder)
+                    stragglingFactor = 7.335;
+                    totalSigmaSq = (FWHM / stragglingFactor)^2;
 
                     %%% Energy spread
-                    % Reading in a potential given energyspread could go here directly. How would you parse the energyspread
-                    % into the function? Through a field in the machine?
-                    % TODO this could be done analogously to protons, adjusting the alpha and p parameter from a E0(R0)
-                    % graph (inverse of the fit above)
-                    energySpreadRelative = obj.defaultRelativeEnergySpread;
+                    particleZ = 6;
+                    sigmaRangeStragglingOnlySq = @(R) particleZ * alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
+
+
+                    % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
+                    % and the range straggling (Bortfeld 1997, Eq.19, in mm)
+                    energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
+
+                    %Squared difference to obtain residual width from energy spectrum
+                    if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
+                        sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
+                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
+                        energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
+                    else
+                        energySpreadRelative = obj.defaultRelativeEnergySpread;
+                    end
 
                 case 'helium'
                     %%% Fit to Range-Energy relationship
@@ -327,11 +395,76 @@ classdef matRad_MCemittanceBaseData
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
                     meanEnergyFromRange = @(R) 8.465* R.^0.5672;
 
-                    %                     alpha = 0.02461;
-                    %                     p = 1.751;
+                    if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
+                        try
+                            d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
+                            d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                        catch
+                            matRad_cfg.dispWarning('Could not find FWHM, trying to smooth');
+                            try
+                                % Sometimes doesn't work, if using the carbon_HIT base data, as it has 2 peaks
+                                d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
+                                X = obj.machine.data(energyIx).Z(1:maxDoseIdx);
+                                diffX = diff(X);
+                                diffX(diffX<=0) = 1e-12;
+                                X = cumsum([min(X), diffX']);
+                                d50_l = interp1(X, obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                            catch
+                                matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
+                            end
+                        end
+                    end
+
+                    % Combine for FWHM
+                    if exist('d50_r','var')
+                        FWHM = d50_r - d50_l;
+                        mcDataEnergy.usedGaussianfit = false;
+                    else
+                        % if width left of peak cannot be determined use r80 as width
+                        FWHM = r80;
+                        obj.problemSigma = true;
+                        matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
+
+                        % if width left of peak cannot be determined use Gaussian fit
+                        % Set up fittype and options.
+                        ft = fittype( 'a*exp(-(x-b)^2/(2*c^2))', 'independent', 'x', 'dependent', 'y' );
+                        fitOptions = fitoptions( 'Method', 'NonlinearLeastSquares' );
+                        % Get boundaries
+                        fitOptions.Lower = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) 0];
+                        fitOptions.StartPoint = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) 10];
+                        fitOptions.Upper = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) Inf];
+                        % Fit model to data.
+                        [fitresult, ~] = fit(obj.machine.data(energyIx).depths, obj.machine.data(energyIx).Z, ft, fitOptions);
+                        % Get FWHM
+                        FWHM = 2.355 * fitresult.c;
+
+                        mcDataEnergy.usedGaussianfit = true;
+                    end
+
+                    % From range-energy fit
+                    alpha = 0.02461;
+                    p = 1.751;
+
+                    % Get full straggling from p=1.751 (parabolic cylinder)
+                    stragglingFactor = 6.337;
+                    totalSigmaSq = (FWHM / stragglingFactor)^2;
 
                     %%% Energy spread
-                    energySpreadRelative = obj.defaultRelativeEnergySpread;
+                    particleZ = 1;
+                    sigmaRangeStragglingOnlySq = @(R) particleZ * alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
+
+                    % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
+                    % and the range straggling (Bortfeld 1997, Eq.19, in mm)
+                    energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
+
+                    %Squared difference to obtain residual width from energy spectrum
+                    if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
+                        sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
+                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
+                        energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
+                    else
+                        energySpreadRelative = obj.defaultRelativeEnergySpread;
+                    end
 
                 otherwise
                     error('not implemented')
@@ -339,6 +472,9 @@ classdef matRad_MCemittanceBaseData
 
             % Write previously approximated meanEnergy and energySpread
             mcDataEnergy.MeanEnergy = meanEnergyFromRange(r80);
+            if isnan(mcDataEnergy.MeanEnergy)
+                matRad_cfg.dispError('MeanEnergy is NaN.\n');
+            end
             mcDataEnergy.EnergySpread = energySpreadRelative;
         end
 
@@ -387,7 +523,7 @@ classdef matRad_MCemittanceBaseData
 
                 [result, ~] = ipopt (start, funcs, options);
             else
-                [result, ~] = sqp (start, phi, [], [], lb, ub);
+                [result, ~] = sqp (start, funcs.objective, [], [], options.lb, options.ub);
 
             end
 
@@ -398,7 +534,6 @@ classdef matRad_MCemittanceBaseData
             DivergenceAtNozzle  = sigmaT;
             SpotsizeAtNozzle    = sqrt(sigmaIso^2 - 2 * rho * sigmaIso * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
             CorrelationAtNozzle = (rho * sigmaIso - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
-
 
             % Save calcuated beam optics data in mcData
             mcDataOptics.Weight1       = 1;
@@ -425,7 +560,7 @@ classdef matRad_MCemittanceBaseData
                 hold on; plot(zNew,y);
             end
 
-            mcDataOptics.FWHMatIso = 2.355 * sigmaIso;
+            mcDataOptics.FWHMatIso = 2.355 * sigmaIso; % 2*sqrt(2*ln(2))
         end
 
 
@@ -454,6 +589,7 @@ classdef matRad_MCemittanceBaseData
                     'weight',num2cell(obj.monteCarloData(:,count).Weight2), ... %Weight one will not be stored explicitly due to normalization
                     'type',type ...
                     );
+                obj.machine.data(ixE).initFocus.emittance = newEmittance;
 
                 obj.machine.data(ixE).energySpectrum.type  = 'gaussian';
                 obj.machine.data(ixE).energySpectrum.mean   = unique(obj.monteCarloData(:,count).MeanEnergy);
