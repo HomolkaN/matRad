@@ -251,14 +251,6 @@ classdef matRad_MCemittanceBaseData
 
             % Find range of 80% does fall off after the peak
             [maxDose, maxDoseIdx] = max(obj.machine.data(energyIx).Z);
-            
-            % Sanity check if the position is in fact after the peak
-            if obj.machine.data(energyIx).depths(maxDoseIdx) < 0.5*obj.machine.data(energyIx).peakPos
-                % Search for new peak
-                [~,maxDoseIdx] = min(diff(obj.machine.data(energyIx).depths-((obj.machine.data(energyIx).peakPos + obj.machine.data(energyIx).depths(maxDoseIdx)) / 2)));
-                [maxDose, maxDoseIdx2] = max(obj.machine.data(energyIx).Z(maxDoseIdx:end));
-                maxDoseIdx = maxDoseIdx2 + maxDoseIdx;
-            end
 
             % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
             r80 = matRad_interp1(flip(obj.machine.data(energyIx).Z(maxDoseIdx:end)), flip(obj.machine.data(energyIx).depths(maxDoseIdx:end)), 0.8 * maxDose);
@@ -336,29 +328,24 @@ classdef matRad_MCemittanceBaseData
                         try
                             d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
                             d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                            FWHM = d50_r - d50_l;
+                            % mcDataEnergy.usedGaussianfit = false;
+
                         catch
-                            matRad_cfg.dispWarning('Could not find FWHM, trying to smooth');
+                            matRad_cfg.dispWarning('Could not find FWHM, trying Gaussian fit');
+                            obj.problemSigma = true;
+
                             try
-                                % Sometimes doesn't work, if using the carbon_HIT base data, as it has 2 peaks
-                                d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
-                                X = obj.machine.data(energyIx).Z(1:maxDoseIdx);
-                                diffX = diff(X);
-                                diffX(diffX<=0) = 1e-12;
-                                X = cumsum([min(X), diffX']);
-                                d50_l = interp1(X, obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                                % if width left of peak cannot be determined use Gaussian fit
+                                FWHM = obj.fitGaussianFWHM(energyIx);
+                                % mcDataEnergy.usedGaussianfit = true;
+
                             catch
-                                matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
+                                % if width left of peak cannot be determined use r80 as width
+                                matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
+                                FWHM = r80;
                             end
                         end
-                    end
-                    % Combine for FWHM
-                    if exist('d50_r','var')
-                        FWHM = d50_r - d50_l;
-                    else
-                        % if width left of peak cannot be determined use r80 as width
-                        FWHM = r80;
-                        obj.problemSigma = true;
-                        matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
                     end
 
                     % From range-energy fit
@@ -396,46 +383,23 @@ classdef matRad_MCemittanceBaseData
                         try
                             d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
                             d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                            FWHM = d50_r - d50_l;
+                            % mcDataEnergy.usedGaussianfit = false;
                         catch
-                            matRad_cfg.dispWarning('Could not find FWHM, trying to smooth');
+                            matRad_cfg.dispWarning('Could not find FWHM, trying Gaussian fit');
+                            obj.problemSigma = true;
+
                             try
-                                % Sometimes doesn't work, if using the carbon_HIT base data, as it has 2 peaks
-                                d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
-                                X = obj.machine.data(energyIx).Z(1:maxDoseIdx);
-                                diffX = diff(X);
-                                diffX(diffX<=0) = 1e-12;
-                                X = cumsum([min(X), diffX']);
-                                d50_l = interp1(X, obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                                % if width left of peak cannot be determined use Gaussian fit
+                                FWHM = obj.fitGaussianFWHM(energyIx);
+                                % mcDataEnergy.usedGaussianfit = true;
+
                             catch
-                                matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
+                                % if width left of peak cannot be determined use r80 as width
+                                matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
+                                FWHM = r80;
                             end
                         end
-                    end
-
-                    % Combine for FWHM
-                    if exist('d50_r','var')
-                        FWHM = d50_r - d50_l;
-                        mcDataEnergy.usedGaussianfit = false;
-                    else
-                        % if width left of peak cannot be determined use r80 as width
-                        FWHM = r80;
-                        obj.problemSigma = true;
-                        matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
-
-                        % if width left of peak cannot be determined use Gaussian fit
-                        % Set up fittype and options.
-                        ft = fittype( 'a*exp(-(x-b)^2/(2*c^2))', 'independent', 'x', 'dependent', 'y' );
-                        fitOptions = fitoptions( 'Method', 'NonlinearLeastSquares' );
-                        % Get boundaries
-                        fitOptions.Lower = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) 0];
-                        fitOptions.StartPoint = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) 10];
-                        fitOptions.Upper = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) Inf];
-                        % Fit model to data.
-                        [fitresult, ~] = fit(obj.machine.data(energyIx).depths, obj.machine.data(energyIx).Z, ft, fitOptions);
-                        % Get FWHM
-                        FWHM = 2.355 * fitresult.c;
-
-                        mcDataEnergy.usedGaussianfit = true;
                     end
 
                     % From range-energy fit
@@ -559,8 +523,6 @@ classdef matRad_MCemittanceBaseData
             mcDataOptics.FWHMatIso = 2.355 * sigmaIso; % 2*sqrt(2*ln(2))
         end
 
-
-
         function obj = saveMatradMachine(obj,name)
             %save previously calculated monteCarloData in new baseData file
             %with given name
@@ -598,6 +560,27 @@ classdef matRad_MCemittanceBaseData
 
             save('-v7',machineFilePath,'machine');
             matRad_cfg.dispInfo('Saved Emittance to matRad base data in %s\n',machineFilePath);
+        end
+
+        function FWHM = fitGaussianFWHM(obj,energyIx,maxDose)
+            % Calculate FWHM from gaussian fit from machine data
+            % Set up fittype and options.
+            ft = fittype( 'a*exp(-(x-b)^2/(2*c^2))', 'independent', 'x', 'dependent', 'y' );
+            fitOptions = fitoptions( 'Method', 'NonlinearLeastSquares' );
+
+            % Find maximum dose and index for boundaries
+            [maxDose,maxDoseIdx] = max(obj.machine.data(energyIx).Z);
+
+            % Get boundaries
+            fitOptions.Lower = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) 0];
+            fitOptions.StartPoint = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) 10];
+            fitOptions.Upper = [maxDose obj.machine.data(energyIx).depths(maxDoseIdx) Inf];
+
+            % Fit model to data.
+            [fitresult, ~] = fit(obj.machine.data(energyIx).depths, obj.machine.data(energyIx).Z, ft, fitOptions);
+
+            % Get FWHM from fitted width (2.355 from Gaussian width) and double it (Gaussian fit consistently underestimates the actual FWHM)
+            FWHM = 2 * 2.355 * fitresult.c;
         end
     end
 
