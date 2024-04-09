@@ -308,8 +308,7 @@ classdef matRad_MCemittanceBaseData
                     alpha   = 0.02383;  % alpha = 0.022; [alpha] = mm MeV^-p
                     p       = 1.756;    % p = 1.77; [p] = 1
 
-                    particleZ = 1;
-                    sigmaRangeStragglingOnlySq = @(R) particleZ * alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
+                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
 
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
                     % and the range straggling (Bortfeld 1997, Eq.19, in mm)
@@ -371,9 +370,7 @@ classdef matRad_MCemittanceBaseData
                     totalSigmaSq = (FWHM / stragglingFactor)^2;
 
                     %%% Energy spread
-                    particleZ = 6;
-                    sigmaRangeStragglingOnlySq = @(R) particleZ * alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
-
+                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
 
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
                     % and the range straggling (Bortfeld 1997, Eq.19, in mm)
@@ -450,8 +447,7 @@ classdef matRad_MCemittanceBaseData
                     totalSigmaSq = (FWHM / stragglingFactor)^2;
 
                     %%% Energy spread
-                    particleZ = 1;
-                    sigmaRangeStragglingOnlySq = @(R) particleZ * alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
+                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
 
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
                     % and the range straggling (Bortfeld 1997, Eq.19, in mm)
