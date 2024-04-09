@@ -210,9 +210,6 @@ classdef matRad_HeterogeneityConfig < handle
                 a = p .* (n-1);
                 b = (1-p) .* (n-1);
                 
-                %     a = p.*n;
-                %     b = (1-p).*n;
-                
                 % sample from continuous beta distribution using "numOfSamples" random numbers
                 samples = betaincinv(rand([numOfSamples,1]),a,b);
             else
@@ -372,10 +369,10 @@ classdef matRad_HeterogeneityConfig < handle
             % density to material converters.
             if any(cellfun(@(teststr) ~isempty(strfind(pln.propHeterogeneity.sampling.mode,teststr)), {'TOPAS','MCsquare'}))
                 % Only include different densities that are significantly different (1e-3)
-                % This is done to significantly increase the computation time
+                % This is done to significantly decrease the computation time
                 lung = round(ct.cube{1}(lungIdx),3);
                 
-                % Set minimum air density to 0.001225 to avoid deviding by 0
+                % Set minimum air density to 0.001225 to avoid dividing by 0
                 lung(lung < 0.001225) = 0.001225;
                 
                 % Extract distinct densities and respective number of occurences
@@ -384,12 +381,12 @@ classdef matRad_HeterogeneityConfig < handle
                 %
                 if (isprop(pln.propMC,'materialConverter') || isfield(pln.propMC,'materialConverter')) && isfield(pln.propMC.materialConverter,'addSection') && ~strcmp(pln.propMC.materialConverter.addSection,'sampledDensities')
                     switch pln.propMC.materialConverter.addSection
-                        % Modes used to include samples in material converter in case of discrete sampling (either 0 or 1.05)
+                        % Modes used to include samples in material converter in case of discrete sampling (either 0 or rhoLung (1.05))
                         case 'lung'
-                            ct.cubeHU{1}(lungIdx(lung == 1.05)) = 0;
+                            ct.cubeHU{1}(lungIdx(lung == rhoLung)) = 0;
                             ct.cubeHU{1}(lungIdx(lung == 0))    = -999;
                         case 'poisson'
-                            ct.cubeHU{1}(lungIdx(lung == 1.05)) = 3020;
+                            ct.cubeHU{1}(lungIdx(lung == rhoLung)) = 3020;
                             ct.cubeHU{1}(lungIdx(lung == 0))    = 2997;
                             % Main mode used by TOPAS and MCsquare pipeline to include samples in material converter
                         otherwise
@@ -402,7 +399,7 @@ classdef matRad_HeterogeneityConfig < handle
                     % Set individual "virtual" Hounsfield Units (beginning at 6000) for each density and repeat for their number of occurence
                     lungDensitiesNewSorted = repelem(6000:5999+numel(numOfOccurences),1,numOfOccurences);
                     
-                    % Write sorted lung densities to HU cube (using also sorted indices)
+                    % Write artificial HUs to HU cube (using also sorted indices)
                     ct.cubeHU{1}(lungIdx(sortIdx)) = lungDensitiesNewSorted;
                     
                     % Save sampled densities and indices to CT to write in material converter
