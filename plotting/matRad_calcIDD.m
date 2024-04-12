@@ -1,4 +1,4 @@
-function outputDD = matRad_calcIDD(doseCube,calcProfile,direction,slice,averageProfiles)
+function outputDD = matRad_calcIDD(doseCube,calcProfile,direction,rayPosition,averageProfiles)
 % function to calculate depth dose (DD) of a simple boxphantom
 % for beams in x-, y- or z-direction
 %
@@ -35,7 +35,7 @@ if nargin < 2
 end
 
 if nargin < 4
-    slice = floor(size(doseCube)/2); %voxels
+    rayPosition = floor(size(doseCube)/2); %voxels
 end
 
 if nargin < 5
@@ -49,11 +49,19 @@ if calcProfile
         % Calculate average profiles
         switch direction
             case 'y'
+<<<<<<< Updated upstream
                 outputDD = squeeze(sum(doseCube(:,slice(2)-intWidth:slice(2)+intWidth,slice(3)-intWidth:slice(3)+intWidth), [2,3])) ./ (2*intWidth+1)^2;
             case 'x'
                 outputDD = squeeze(sum(doseCube(slice(1)-intWidth:slice(1)+intWidth,:,slice(3)-intWidth:slice(3)+intWidth), [1,3]))' ./ (2*intWidth+1)^2;
             case 'z'
                 outputDD = squeeze(sum(doseCube(slice(1)-intWidth:slice(1)+intWidth,slice(2)-intWidth:slice(2)+intWidth,:), [1,2])) ./ (2*intWidth+1)^2;
+=======
+                outputDD = squeeze(sum(doseCube(:,rayPosition(2)-intWidth:rayPosition(2)+intWidth,rayPosition(3)-intWidth:rayPosition(3)+intWidth), [2,3]));
+            case 'x'
+                outputDD = squeeze(sum(doseCube(rayPosition(1)-intWidth:rayPosition(1)+intWidth,:,rayPosition(3)-intWidth:rayPosition(3)+intWidth), [1,3]))';
+            case 'z'
+                outputDD = squeeze(sum(doseCube(rayPosition(1)-intWidth:rayPosition(1)+intWidth,rayPosition(2)-intWidth:rayPosition(2)+intWidth,:), [1,2]))';
+>>>>>>> Stashed changes
             otherwise
                 matRad_cfg.dispError('Please choose valid direction');
         end
@@ -62,11 +70,11 @@ if calcProfile
         % Calculate single profiles
         switch direction
             case 'y'
-                outputDD = squeeze(doseCube(:,slice(2),slice(3)));
+                outputDD = squeeze(doseCube(:,rayPosition(2),rayPosition(3)));
             case 'x'
-                outputDD = squeeze(doseCube(slice(1),:,slice(3)));
+                outputDD = squeeze(doseCube(rayPosition(1),:,rayPosition(3)));
             case 'z'
-                outputDD = squeeze(doseCube(slice(1),slice(2),:));
+                outputDD = squeeze(doseCube(rayPosition(1),rayPosition(2),:));
             otherwise
                 matRad_cfg.dispError('Please choose valid direction');
         end

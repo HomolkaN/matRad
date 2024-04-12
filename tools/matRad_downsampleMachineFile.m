@@ -83,16 +83,16 @@ for energyIx = energies%numel(machine.data)
     newDepths = round(newDepths,5);
 
     % Plot
-%     if energyIx == 1
-%         plotPoints = newDepths<machine.data(energyIx).peakPos*depthCutOff;
-%         edges = 0:2:max(newDepths(plotPoints));
-%         figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths(plotPoints),edges)
-%         xlim([0 max(newDepths(plotPoints))])
-%         xlabel('Depth (mm)')
-%         ylabel('counts')
-%         yyaxis right, plot(depths,machine.data(energyIx).Z,'LineWidth',2), hold on, plot(newDepths(plotPoints),matRad_interp1(depths,machine.data(energyIx).Z,newDepths(plotPoints)),'LineWidth',2,'LineStyle','--');
-%         ylabel('Dose Z (a.u.)')
-%     end
+    % if energyIx == 10
+    %     plotPoints = newDepths<machine.data(energyIx).peakPos*depthCutOff;
+    %     edges = 0:2:max(newDepths(plotPoints));
+    %     figure, yyaxis left, histogram(depths,edges), hold on, histogram(newDepths(plotPoints),edges)
+    %     xlim([0 max(newDepths(plotPoints))])
+    %     xlabel('Depth (mm)')
+    %     ylabel('counts')
+    %     yyaxis right, plot(depths,machine.data(energyIx).Z,'LineWidth',2), hold on, plot(newDepths(plotPoints),matRad_interp1(depths,machine.data(energyIx).Z,newDepths(plotPoints)),'LineWidth',2,'LineStyle','--');
+    %     ylabel('Dose Z (a.u.)')
+    % end
 
 
     % Loop through all fields and apply downsampling

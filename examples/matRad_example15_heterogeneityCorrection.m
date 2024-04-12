@@ -44,7 +44,7 @@ load('BOXPHANTOM_LUNG_LARGE');
 % 'carbon_GenericAPM.mat'; consequently the machine has to be set accordingly
 
 pln.radiationMode   = 'protons';     % either photons / protons / carbon
-pln.machine         = 'generic_TOPAS_cropped_APM';
+pln.machine         = 'generic_TOPAS_APM';
 
 %%
 % Define the biological optimization model for treatment planning along
@@ -77,7 +77,7 @@ pln.propOpt.runDAO        = 0;
 pln.propOpt.runSequencing = 0;
 
 % retrieve bio model parameters
-pln.bioParam = matRad_bioModel(pln.radiationMode,quantityOpt,modelName);
+pln.bioParam = matRad_BioModel(pln.radiationMode,quantityOpt,modelName);
 
 % retrieve scenarios for dose calculation and optimziation
 pln.multScen = matRad_multScen(ct,'nomScen'); % optimize on the nominal scenario                                            
@@ -95,6 +95,7 @@ pln.propHeterogeneity = matRad_HeterogeneityConfig();
 %% Generate Beam Geometry STF
 % stf = matRad_generateStf(ct,cst,pln);
 stf = matRad_generateStfPencilBeam(pln,ct);
+
 
 %%
 dij = matRad_calcParticleDose(ct,stf,pln,cst);
