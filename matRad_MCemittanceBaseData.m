@@ -268,7 +268,7 @@ classdef matRad_MCemittanceBaseData
                     % Bragg-Kleeman rule R(E_0)=\alpha E_0^p (Bragg 1905) inversely fitted to data.
                     % Only used ranges [10 300] mm for fit. Units: [E]=MeV/u, [R]=mm.
                     % data from Berger2023 https://dx.doi.org/10.18434/T4NC7P
-                    meanEnergyFromRange = @(R) 8.531* R.^0.5663;
+                    meanEnergyFromRange = @(R) 8.3967* R.^0.5694;
 
                     %%% Calculate energy spread from FWHM
                     % Calculate FWHM of bragg peak if the plateau is lower than 50% of the max Dose
@@ -322,7 +322,7 @@ classdef matRad_MCemittanceBaseData
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    meanEnergyFromRange = @(R) 14.35 * R^0.5915;
+                    meanEnergyFromRange = @(R) 13.7226 * R^0.5999;
 
                     if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
                         try
@@ -377,7 +377,7 @@ classdef matRad_MCemittanceBaseData
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    meanEnergyFromRange = @(R) 8.465* R.^0.5672;
+                    meanEnergyFromRange = @(R) 8.2948* R.^0.5711;
 
                     if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
                         try
