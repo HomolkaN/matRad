@@ -36,11 +36,13 @@ matRad_cfg = MatRad_Config.instance();
 
 % handle inputs
 if ~isempty(varargin)
-    for i = 1:nargin-2
+    for i = 1:length(varargin)
         if isstruct(varargin{i})
             stf = varargin{i};
         elseif isscalar(varargin{i})
             thres = varargin{i};
+        elseif ischar(varargin{i})
+            method = varargin{i};
         end
     end
 end
@@ -59,15 +61,24 @@ if ~exist('thres','var')
     thres = 0.03;
     %     thres = 0.00001;
 end
+if ~exist('method','var')
+    method = 'mean';
+end
 
 % Save spots that have larger weight than the set threshold
-newSpots = w>thres*mean(w);
+switch method
+    case 'mean'
+        newSpots = w>thres*mean(w);
+    case 'max'
+        newSpots = w>thres*max(w);
+    case 'total'
+        % Generate new spots according to a percentage of the total spots
+        newSpots = (1:numel(w))';
+        [~,wIdx] = sort(w);
+        wIdx = sort(wIdx(round(thres*numel(w)):end));
+        newSpots = ismember(newSpots,wIdx);
+end
 
-% Generate new spots according to a percentage of the total spots
-% newSpots = (1:numel(w))';
-% [~,wIdx] = sort(w);
-% wIdx = sort(wIdx(round(thres*numel(w)):end));
-% newSpots = ismember(newSpots,wIdx);
 
 %% rewrite dij and stf with new spots
 if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any(size(w)>1)
@@ -163,7 +174,7 @@ if ((sum(newSpots) ~= numel(w)) && sum(newSpots) ~= dij.totalNumOfBixels) && any
 
     % save number of removed spots and output to console (as warning to be visible)
     dij.numOfRemovedSpots = sum(~newSpots);
-    matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the mean weight.\n'])
+    matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the' method 'weight.\n'])
     % matRad_cfg.dispWarning([num2str(sum(~newSpots)),'/',num2str(numel(newSpots)) ,' spots have been removed below ',num2str(100*thres),'% of the number of weight.\n'])
 
     % Set MU to set minimum threshold for optimization
