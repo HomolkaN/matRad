@@ -332,12 +332,15 @@ for scenarioIx = 1:pln.multScen.totNumScen
             % Collect energy layers for different focus indices (needed to write MCsquare data)
             for layerIx = 1:size(MCsquareBDL.focusTable,1)
                 % Collect which bixels are in the current energy layer
-                currEnergyLayer.isBixel = (MCsquareBDL.bixelIndices == layerIx);
+                currEnergyLayer.isBixel = (MCsquareBDL.bixelIndices{i} == layerIx);
 
                 % Collect bixels and rays
                 stfMCsquare(i).energyLayer(layerIx).bixelNum = currBeam.bixelIx(currEnergyLayer.isBixel);
                 stfMCsquare(i).energyLayer(layerIx).rayNum   = currBeam.rayIndices(currEnergyLayer.isBixel);
 
+                if isempty(stfMCsquare(i).energyLayer(layerIx).bixelNum)
+                    continue
+                end
                 % Collect Target points
                 currEnergyLayer.targetPoints = cell2mat({stf(i).ray(stfMCsquare(i).energyLayer(layerIx).rayNum').rayPos_bev}');
                 stfMCsquare(i).energyLayer(layerIx).targetPoints = [-currEnergyLayer.targetPoints(:,1) currEnergyLayer.targetPoints(:,3)];

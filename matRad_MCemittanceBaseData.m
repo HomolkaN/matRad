@@ -112,8 +112,12 @@ classdef matRad_MCemittanceBaseData
             end
 
             % Store focus indices
-            [obj.focusTable,~,obj.bixelIndices] = unique(table(plannedEnergies',[tmp.focusIx]','VariableNames',{'Energy' 'FocusIndex'}),'rows');
-
+            [obj.focusTable,~,bixelIndices_tmp] = unique(table(plannedEnergies',[tmp.focusIx]','VariableNames',{'Energy' 'FocusIndex'}),'rows');
+            beamNum = repelem(1:length(stf),[stf.totalNumOfBixels]);
+            obj.bixelIndices = cell(1,length(stf));
+            for i = 1:length(stf)
+                obj.bixelIndices{i} = bixelIndices_tmp(beamNum==i);
+            end
             % Loop through all required energies
             for i = 1:length(obj.energyIndex)
                 ixE = obj.energyIndex(i);
