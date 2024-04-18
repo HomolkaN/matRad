@@ -520,7 +520,7 @@ classdef matRad_MCemittanceBaseData
                 hold on; plot(zNew,y);
             end
 
-            mcDataOptics.FWHMatIso = 2.355 * sigmaIso; % 2*sqrt(2*ln(2))
+            mcDataOptics.FWHMatIso = 2*sqrt(2*log(2)) * sigmaIso;
         end
 
         function obj = saveMatradMachine(obj,name)
