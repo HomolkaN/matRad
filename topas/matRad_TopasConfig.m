@@ -112,7 +112,7 @@ classdef matRad_TopasConfig < handle
         modules_photons       = {'g4em-standard_opt4','g4h-phy_QGSP_BIC_HP','g4decay'};
 
         %Geometry / World
-        worldMaterial = 'G4_AIR';  % 'G4_AIR', 'Vacuum'
+        worldMaterial = 'AIR';  % 'AIR', 'Vacuum'
 
         %filenames
         converterFolder = 'materialConverter';
@@ -2277,12 +2277,12 @@ classdef matRad_TopasConfig < handle
                                                 case 'lungEquivalent'
                                                     % Write Lung material composition
                                                     fprintf(fID,'# This section controls the material composition of the sampled lung (use lung-equivalent)\n');
-                                                    fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 5 0.10404040 0.75656566 0.03131313 0.10606061 0.00202020\n',length(materials)-2);
+                                                    fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 4 0.1023724  0.7652525  0.0289596  0.1034155  \n',length(materials)-2);
                                                     ExcitationEnergies = [ExcitationEnergies 75.3];
                                                 case 'waterEquivalent'
                                                     % Use water equivalent Lung material composition
                                                     fprintf(fID,'# This section controls the material composition of the sampled lung (use water-equivalent)\n');
-                                                    fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 5 0.111894    0.888106    0.0         0.0         0.0\n',length(materials)-2);
+                                                    fprintf(fID,'uv:Ge/Patient/SchneiderMaterialsWeight%i = 4 0.111894    0.888106    0.0         0.0       \n',length(materials)-2);
                                                     ExcitationEnergies = [ExcitationEnergies 78];
                                             end
                                         end

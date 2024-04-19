@@ -4,5 +4,5 @@
 
 -1050	13		# Air
 -999	17		# Water
--800 	40		# Schneider_Lung
+-800 	14		# Lung
 -750 	17 		# Water 
