@@ -92,7 +92,8 @@ if enable(1)==0
     gammaCube = [];
     gammaPassRate = [];
 end
-% Load colormap for difference
+% Load colormaps
+doseMap = matRad_getColormap('doseMap');
 diffCMap = matRad_getColormap('diffMap');
 
 %% Calculate iso-center slices and resolution
@@ -169,7 +170,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('cube1').Ct,...
             hfig.(planename{plane}).('cube1').Contour,...
             hfig.(planename{plane}).('cube1').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,jet,doseWindow);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,doseMap,doseWindow);
         
         % Plot Dose 2
         hfig.(planename{plane}).('cube2').Axes = subplot(2,2,2);
@@ -178,7 +179,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('cube2').Ct,...
             hfig.(planename{plane}).('cube2').Contour,...
             hfig.(planename{plane}).('cube2').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,jet,doseWindow);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,doseMap,doseWindow);
         
         % Plot absolute difference
         hfig.(planename{plane}).('diff').Axes = subplot(2,2,3);
