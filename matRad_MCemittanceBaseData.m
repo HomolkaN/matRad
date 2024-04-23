@@ -101,18 +101,19 @@ classdef matRad_MCemittanceBaseData
                 tmp = [stf(:).ray];
                 plannedEnergies     = [tmp.energy];
                 [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
+                [~,plannedEnergies_index] = ismember(plannedEnergies,[machine.data(:).energy]);
 
                 %if no stf was refered all energies are chosen, while setting
                 %the focus index for all energies to preliminary 1
             else
                 initFocus = squeeze(struct2cell([machine.data(:).initFocus]));
                 tmp.focusIx = cell2mat(cellfun(@(x) 1:length(x), initFocus(1,:), 'UniformOutput', false));
-                plannedEnergies = repelem([machine.data(:).energy],cell2mat(cellfun(@(x) length(x), initFocus(1,:), 'UniformOutput', false)));;
+                plannedEnergies = repelem([machine.data(:).energy],cell2mat(cellfun(@(x) length(x), initFocus(1,:), 'UniformOutput', false)));
                 [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
             end
 
             % Store focus indices
-            [obj.focusTable,~,bixelIndices_tmp] = unique(table(plannedEnergies',[tmp.focusIx]','VariableNames',{'Energy' 'FocusIndex'}),'rows');
+            [obj.focusTable,~,bixelIndices_tmp] = unique(table(plannedEnergies',plannedEnergies_index',[tmp.focusIx]','VariableNames',{'Energy' 'machineIndex' 'FocusIndex'}),'rows');
             beamNum = repelem(1:length(stf),[stf.totalNumOfBixels]);
             obj.bixelIndices = cell(1,length(stf));
             for i = 1:length(stf)

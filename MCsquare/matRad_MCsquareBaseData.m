@@ -59,11 +59,15 @@ classdef matRad_MCsquareBaseData < matRad_MCemittanceBaseData
                     fprintf(fileID,'RS_WET = %f\n\n',raShi.eqThickness);
                 end
                     
-                % Get unique energies with focusIndices
-                uniqueEnergyFocus = unique(obj.focusTable,'rows');
+                % Get unique energies and adjust doubled energies
+                [~,~, obj.focusTable.MCdataIndex] = unique(obj.focusTable.Energy);
+                adjustEnergylayer = [false; (diff(obj.focusTable.MCdataIndex)==0)];
+                if any(adjustEnergylayer)
+                    obj.focusTable.Energy(adjustEnergylayer) = obj.focusTable.Energy(adjustEnergylayer) + 0.1;
+                end
 
                 % Write number of unique energies
-                fprintf(fileID,'Beam parameters\n%d energies\n\n',size(uniqueEnergyFocus,1));
+                fprintf(fileID,'Beam parameters\n%d energies\n\n',size(obj.focusTable,1));
                 
                 % Write header fields
                 fn = fieldnames(obj.monteCarloData)';
@@ -71,11 +75,10 @@ classdef matRad_MCsquareBaseData < matRad_MCemittanceBaseData
                 fprintf(fileID, '\n');
 
                 % Write energies
-                for k = 1:size(uniqueEnergyFocus,1)
-                    currentEnergyFocus = table2array(uniqueEnergyFocus(k,:));
-                    [~,energyIx] = intersect(unique([obj.monteCarloData.NominalEnergy]),currentEnergyFocus(1));
-
-                    fprintf(fileID, '%g\t', structfun(@(fld) fld(currentEnergyFocus(2)), obj.monteCarloData(energyIx))');
+                for k = 1:size(obj.focusTable,1)
+                    energyLayerParam = structfun(@(fld) fld(obj.focusTable.FocusIndex(k)), obj.monteCarloData(obj.focusTable.MCdataIndex(k)));
+                    energyLayerParam(1) = obj.focusTable.Energy(k);
+                    fprintf(fileID, '%g\t', energyLayerParam');
                     fprintf(fileID, '\n');
                 end
                 
