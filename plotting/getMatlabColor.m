@@ -17,6 +17,8 @@ switch color
         rgb = [0.6350, 0.0780, 0.1840];
     case 'magenta'
         rgb = [1, 0, 1];
+    case 'black'
+        rgb = [0, 0, 0];
 end
 
 end

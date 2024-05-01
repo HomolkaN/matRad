@@ -1,5 +1,5 @@
 function colorMap = doseMap(cMapSize)
-% matRad difference colormap
+% matRad dose colormap
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -13,7 +13,6 @@ function colorMap = doseMap(cMapSize)
 % LICENSE file.
 %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 colorMapData = ...
     [0	    0	    0.6000
@@ -90,15 +89,7 @@ else
     newX = linspace(1,64,cMapSize);
     oldX = 1:64;
     colorMap = interp1(oldX,colorMapData,newX);
-    %{
-    %resample via HSV.. more color-true than above, but doesn't work with
-    %every colormap
-    hsv                        = rgb2hsv(cm);
-    hsv(144:end,1)             = hsv(144:end,1)+1;
-    ColorMap                   = interp1(linspace(0,1,size(cm,1)),hsv,linspace(0,1,cMapSize));
-    ColorMap(cm(:,1)>1,1) = ColorMap(cm(:,1)>1,1)-1;
-    ColorMap                   = hsv2rgb(cm);
-    %}
+
 end
 
 end
