@@ -41,8 +41,8 @@ classdef matRad_MCsquareConfig
 
         %%% Input files
         CT_File                     = 'Patient.mhd';				% Name of the CT file. Default: CT.mhd
-        HU_Density_Conversion_File	= 'Scanners/matRad_default_lung/HU_Density_Conversion.txt';	% Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
-        HU_Material_Conversion_File	= 'Scanners/matRad_default_lung/HU_Material_Conversion.txt';	% Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
+        HU_Density_Conversion_File	= 'Scanners/matRad_default/HU_Density_Conversion.txt';	% Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
+        HU_Material_Conversion_File	= 'Scanners/matRad_default/HU_Material_Conversion.txt';	% Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
         BDL_Machine_Parameter_File  = 'BDL/BDL_matrad.txt';			% Name of the machine parameter file for the beam data library. Default: BDL.txt
         BDL_Plan_File               = 'PlanPencil.txt';			% Name of the plan file for the beam data library. Default: Plan.txt
 
@@ -512,6 +512,10 @@ classdef matRad_MCsquareConfig
                 heterogeneityConfig = matRad_HeterogeneityConfig();
             end
 
+            if numOfSamples==0
+                error('No valid folder found.')
+            end
+
             for f = 1:numOfSamples
                 % read in MCsquare files in dij
                 dij = obj.readFiles([folderNames{f} filesep 'MCsquareOutput' filesep]);
@@ -547,6 +551,9 @@ classdef matRad_MCsquareConfig
             
             % Calc RBE from LET
             if obj.calcRBE && isfield(dij,'RBE_model')
+                if ~iscell(dij.RBE_model) && ischar(dij.RBE_model)
+                    dij.RBE_model = {dij.RBE_model};
+                end
                 for modelIx = 1:length(dij.RBE_model)
                     dij = matRad_recalcRBEfromLET(dij,dij.RBE_model{modelIx});
                 end
