@@ -44,8 +44,6 @@ classdef matRad_MCemittanceBaseData
     end
 
     properties (SetAccess = private)
-        stfCompressed   %measure whether function has additional info about
-        %the stf
         problemSigma    % = 1, when there was a problem calculating sigma
         energyIndex     %Indices of calculated energies
     end
@@ -58,13 +56,7 @@ classdef matRad_MCemittanceBaseData
             % Instance of MatRad Config
             matRad_cfg = MatRad_Config.instance();
 
-            %stfCompressed states whether monteCarloData are calculated for
-            %all energies (false) or only for energies which exist in given
-            %stf. If function is called without stf stfCompressed = false.
-            if nargin < 2 || isempty(stf)
-                obj.stfCompressed = false;
-            else
-                obj.stfCompressed = true;
+            if exist('stf','var') && ~isempty(stf)
                 obj = obj.getRangeShiftersFromStf(stf);
             end
 
@@ -97,26 +89,25 @@ classdef matRad_MCemittanceBaseData
             obj.monteCarloData = [];
 
             %select needed energies by using stf
-            if obj.stfCompressed
-                tmp = [stf(:).ray];
-                plannedEnergies     = [tmp.energy];
-                [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
-                [~,plannedEnergies_index] = ismember(plannedEnergies,[machine.data(:).energy]);
-
-                %if no stf was refered all energies are chosen, while setting
-                %the focus index for all energies to preliminary 1
+            if exist('stf','var') && ~isempty(stf)
+                rayData = [stf(:).ray];
+                plannedEnergies     = [rayData.energy];
+                beamNum = repelem(1:length(stf),[stf.totalNumOfBixels]);
             else
                 initFocus = squeeze(struct2cell([machine.data(:).initFocus]));
-                tmp.focusIx = cell2mat(cellfun(@(x) 1:length(x), initFocus(1,:), 'UniformOutput', false));
+                rayData.focusIx = cell2mat(cellfun(@(x) 1:length(x), initFocus(1,:), 'UniformOutput', false));
                 plannedEnergies = repelem([machine.data(:).energy],cell2mat(cellfun(@(x) length(x), initFocus(1,:), 'UniformOutput', false)));
-                [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
+                %                 plannedEnergies = [machine.data(:).energy];
+                beamNum = ones(numel(plannedEnergies),1);
             end
+            [~ ,obj.energyIndex, ~] = intersect([machine.data(:).energy],plannedEnergies);
+            [~,plannedEnergies_index] = ismember(plannedEnergies,[machine.data(:).energy]);
 
             % Store focus indices
-            [obj.focusTable,~,bixelIndices_tmp] = unique(table(plannedEnergies',plannedEnergies_index',[tmp.focusIx]','VariableNames',{'Energy' 'machineIndex' 'FocusIndex'}),'rows');
-            beamNum = repelem(1:length(stf),[stf.totalNumOfBixels]);
-            obj.bixelIndices = cell(1,length(stf));
-            for i = 1:length(stf)
+            [obj.focusTable,~,bixelIndices_tmp] = unique(table(plannedEnergies',plannedEnergies_index',[rayData.focusIx]','VariableNames',{'Energy' 'machineIndex' 'FocusIndex'}),'rows');
+
+            obj.bixelIndices = cell(1,max(beamNum));
+            for i = 1:max(beamNum)
                 obj.bixelIndices{i} = bixelIndices_tmp(beamNum==i);
             end
             % Loop through all required energies
@@ -255,41 +246,96 @@ classdef matRad_MCemittanceBaseData
             mcDataEnergy.NominalEnergy = obj.machine.data(energyIx).energy;
 
             % Find range of 80% does fall off after the peak
-            [maxDose, maxDoseIdx] = max(obj.machine.data(energyIx).Z);
+            baseData = obj.machine.data(energyIx);
+            LatDose = getScaling(baseData);
+            baseData.Z = baseData.Z .* LatDose;
 
-            % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
-            r80 = matRad_interp1(flip(obj.machine.data(energyIx).Z(maxDoseIdx:end)), flip(obj.machine.data(energyIx).depths(maxDoseIdx:end)), 0.8 * maxDose);
+            % Find absolute maxima
+            [maxDose, maxDoseIdx] = max(baseData.Z);
+
+            % Find local maxima within range of peak (90% of max)
+            localmax = find(islocalmax(baseData.Z));
+            localmax = localmax(baseData.Z(localmax) > 0.9 * max(baseData.Z));
+            if length(localmax)>1
+                matRad_cfg.dispWarning(sprintf('Multiple (%i) local maxima found!',length(localmax)));
+            end
+            for i = 1:length(localmax)
+                % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
+                r80(i) = matRad_interp1(flip(baseData.Z(localmax(i):end)), flip(baseData.depths(localmax(i):end)), 0.8 * baseData.Z(localmax(i)));
+            end
+            r80 = max(r80);
+            
             % Correct r80 with air offset and potential offset from basedata
             r80 = r80 + airOffsetCorrection + obj.machine.data(energyIx).offset;
 
             % Define constants
             alphaPrime = 0.0087; % (MeV^2/mm) stopping matter property
 
+            % Calculate FWHM
+            if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
+                try
+                    d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
+                    d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
+                    FWHM = d50_r - d50_l;
+                    % mcDataEnergy.usedGaussianfit = false;
+                catch
+                    matRad_cfg.dispWarning('Could not find FWHM, trying Gaussian fit');
+                    obj.problemSigma = true;
+
+                    try
+                        % if width left of peak cannot be determined use Gaussian fit
+                        FWHM = obj.fitGaussianFWHM(energyIx);
+                        % mcDataEnergy.usedGaussianfit = true;
+
+                    catch
+                        % if width left of peak cannot be determined use r80 as width
+                        matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
+                        FWHM = r80;
+                    end
+                end
+            end
+
+
+            obj.problemSigma = false;
+            try
+                d50_r = interp1(baseData.Z(maxDoseIdx:end), baseData.depths(maxDoseIdx:end), 0.5 * maxDose);
+                d50_l = interp1(baseData.Z(1:maxDoseIdx), baseData.depths(1:maxDoseIdx), 0.5 * maxDose);
+                FWHM = d50_r - d50_l;
+                % mcDataEnergy.usedGaussianfit = false;
+
+            catch
+                obj.problemSigma = true;
+                   
+            end
+
+            % Try Gaussian fit or use r80, if FWHM could not be determined
+            if obj.problemSigma
+                try
+                    FWHM = obj.fitGaussianFWHM(energyIx);
+                    matRad_cfg.dispWarning('Could not find FWHM, using Gaussian fit');
+
+                catch
+                    % if width left of peak cannot be determined use r80 as width
+                    FWHM = r80;
+                    matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
+
+                end
+            end
+
             % Calcualte mean energy used my mcSquare with a formula fitted to TOPAS data
             switch obj.machine.meta.radiationMode
                 case 'protons'
                     %%% Approximate mean energy
-                    % This rangeEnergy relationship was created analogously to the helium and carbon relationship below
-                    % Bragg-Kleeman rule R(E_0)=\alpha E_0^p (Bragg 1905) inversely fitted to data.
-                    % Only used ranges [10 300] mm for fit. Units: [E]=MeV/u, [R]=mm.
-                    % data from Berger2023 https://dx.doi.org/10.18434/T4NC7P
-                    meanEnergyFromRange = @(R) 8.3967* R.^0.5694;
-
-                    %%% Calculate energy spread from FWHM
-                    % Calculate FWHM of bragg peak if the plateau is lower than 50% of the max Dose
-                    if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
-                        % Calculate left and right flank, where dose falls to 50%
-                        d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
-                        d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
-
-                        % Combine for FWHM
-                        FWHM = d50_r - d50_l;
-                    else
-                        % if width left of peak cannot be determined use r80 as width
-                        FWHM = r80;
-                        obj.problemSigma = true;
-                        matRad_cfg.warning('Could not find FWHM, using r80 as approximation');
-                    end
+                    % Fit to Range-Energy relationship
+                    % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
+                    % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
+                    % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
+                    % (original values are commented behind)
+                    alpha = 0.0238293060464717;     % alpha = 0.022; [alpha] = mm MeV^-p
+                    p = 1.75616354148752;           % p = 1.77; [p] = 1
+                    % a = 8.39672981893256;
+                    % b = 0.569423049947256;
+                    meanEnergyFromRange = @(R) (1/alpha)^(1/p) * R.^(1/p);
 
                     % Calculate energy straggling using formulae deducted from paper
                     % "An analytical approximation of the Bragg curve for therapeutic proton beams" by T. Bortfeld et al.
@@ -300,116 +346,23 @@ classdef matRad_MCemittanceBaseData
                     totalSigmaSq = (FWHM / stragglingFactor)^2;
 
                     % Bortfeld 1997, Eq.17
-                    % Changed alpha and p based on new energy-range fit made analogously to range-energy fit above
-                    % (original values are commented behind)
-                    alpha   = 0.02383;  % alpha = 0.022; [alpha] = mm MeV^-p
-                    p       = 1.756;    % p = 1.77; [p] = 1
-
                     sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
 
                     % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
                     % and the range straggling (Bortfeld 1997, Eq.19, in mm)
                     energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
 
-                    %Squared difference to obtain residual width from energy spectrum
-                    if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
-                        sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
-                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
-                    else
-                        energySpreadInMeV = 1e-8; %monoenergetic, but let's not write 0 to avoid division by zero in some codes
-                    end
-
-                    energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
-
-                case 'carbon'
+                case 'helium'
                     %%% Approximate mean energy
                     % Fit to Range-Energy relationship
                     % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
                     % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
                     % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    meanEnergyFromRange = @(R) 13.7226 * R^0.5999;
-
-                    if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
-                        try
-                            d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
-                            d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
-                            FWHM = d50_r - d50_l;
-                            % mcDataEnergy.usedGaussianfit = false;
-
-                        catch
-                            matRad_cfg.dispWarning('Could not find FWHM, trying Gaussian fit');
-                            obj.problemSigma = true;
-
-                            try
-                                % if width left of peak cannot be determined use Gaussian fit
-                                FWHM = obj.fitGaussianFWHM(energyIx);
-                                % mcDataEnergy.usedGaussianfit = true;
-
-                            catch
-                                % if width left of peak cannot be determined use r80 as width
-                                matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
-                                FWHM = r80;
-                            end
-                        end
-                    end
-
-                    % From range-energy fit
-                    alpha = 0.0127;
-                    p = 1.667;
-
-                    % Get full straggling from p=1.667 (parabolic cylinder)
-                    stragglingFactor = 7.335;
-                    totalSigmaSq = (FWHM / stragglingFactor)^2;
-
-                    %%% Energy spread
-                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
-
-                    % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
-                    % and the range straggling (Bortfeld 1997, Eq.19, in mm)
-                    energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
-
-                    %Squared difference to obtain residual width from energy spectrum
-                    if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
-                        sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
-                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
-                        energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
-                    else
-                        energySpreadRelative = obj.defaultRelativeEnergySpread;
-                    end
-
-                case 'helium'
-                    %%% Fit to Range-Energy relationship
-                    % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
-                    % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
-                    % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
-                    meanEnergyFromRange = @(R) 8.2948* R.^0.5711;
-
-                    if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
-                        try
-                            d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
-                            d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
-                            FWHM = d50_r - d50_l;
-                            % mcDataEnergy.usedGaussianfit = false;
-                        catch
-                            matRad_cfg.dispWarning('Could not find FWHM, trying Gaussian fit');
-                            obj.problemSigma = true;
-
-                            try
-                                % if width left of peak cannot be determined use Gaussian fit
-                                FWHM = obj.fitGaussianFWHM(energyIx);
-                                % mcDataEnergy.usedGaussianfit = true;
-
-                            catch
-                                % if width left of peak cannot be determined use r80 as width
-                                matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
-                                FWHM = r80;
-                            end
-                        end
-                    end
-
-                    % From range-energy fit
-                    alpha = 0.02461;
-                    p = 1.751;
+                    alpha = 0.0246145412276126;     % [alpha] = mm MeV^-p
+                    p = 1.7509761202874;            % [p] = 1
+                    % a = 8.29481124569269;
+                    % b = 0.571110015958335;
+                    meanEnergyFromRange = @(R) (1/alpha)^(1/p) * R.^(1/p);
 
                     % Get full straggling from p=1.751 (parabolic cylinder)
                     stragglingFactor = 6.337;
@@ -422,17 +375,40 @@ classdef matRad_MCemittanceBaseData
                     % and the range straggling (Bortfeld 1997, Eq.19, in mm)
                     energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
 
-                    %Squared difference to obtain residual width from energy spectrum
-                    if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
-                        sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
-                        energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
-                        energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
-                    else
-                        energySpreadRelative = obj.defaultRelativeEnergySpread;
-                    end
+                case 'carbon'
+                    %%% Approximate mean energy
+                    % Fit to Range-Energy relationship
+                    % Data from "Update to ESTAR, PSTAR, and ASTAR Databases" - ICRU Report 90, 2014
+                    % Normalized energy before fit (MeV/u)! Only used ranges [10 300] mm for fit
+                    % https://www.nist.gov/system/files/documents/2017/04/26/newstar.pdf
+                    alpha = 0.0127032452505579;     % [alpha] = mm MeV^-p
+                    p = 1.66697953636342;           % [p] = 1
+                    % a = 13.7226399463655;
+                    % b = 0.599887388048888;
+                    meanEnergyFromRange = @(R) (1/alpha)^(1/p) * R.^(1/p);
+
+                    % Get full straggling from p=1.667 (parabolic cylinder)
+                    stragglingFactor = 7.335;
+                    totalSigmaSq = (FWHM / stragglingFactor)^2;
+
+                    %%% Energy spread
+                    sigmaRangeStragglingOnlySq = @(R) alphaPrime * (p^3*alpha^(2/p))/(3*p-2) * R ^(3-2/p);
+
+                    % Use formula deducted from Bragg Kleeman rule to calcuate energy straggling given the total sigma
+                    % and the range straggling (Bortfeld 1997, Eq.19, in mm)
+                    energySpreadFromWidth = @(sigmaSq,E) sqrt(sigmaSq ./ (alpha^2 * p^2 * E^(2*p-2)));
 
                 otherwise
                     error('not implemented')
+            end
+
+            %Squared difference to obtain residual width from energy spectrum
+            if totalSigmaSq > sigmaRangeStragglingOnlySq(r80)
+                sigmaEnergyContributionSq = totalSigmaSq - sigmaRangeStragglingOnlySq(r80);
+                energySpreadInMeV = energySpreadFromWidth(sigmaEnergyContributionSq,meanEnergyFromRange(r80));
+                energySpreadRelative = energySpreadInMeV ./ meanEnergyFromRange(r80) * 100;
+            else
+                energySpreadRelative = obj.defaultRelativeEnergySpread;
             end
 
             % Write previously approximated meanEnergy and energySpread
@@ -444,30 +420,28 @@ classdef matRad_MCemittanceBaseData
         end
 
 
-
-
         function mcDataOptics = fitBeamOpticsForEnergy(obj,energyIx, focusIndex)
             % function to calculate beam optics used by Monte Carlo for given energy
 
             % Instance of MatRad Config
             matRad_cfg = MatRad_Config.instance();
 
-            %calculate geometric distances and extrapolate spot size at nozzle
+            % calculate geometric distances and extrapolate spot size at nozzle
             SAD = obj.machine.meta.SAD;
             z     = -(obj.machine.data(energyIx).initFocus.dist(focusIndex,:) - SAD);
             sigma = obj.machine.data(energyIx).initFocus.sigma(focusIndex,:);
 
-            %correct for in-air scattering with polynomial or interpolation
+            % correct for in-air scattering with polynomial or interpolation
             sigma = arrayfun(@(d,sigma) obj.spotSizeAirCorrection(obj.machine.meta.radiationMode,obj.machine.data(energyIx).energy,d,sigma),-z+obj.nozzleToIso,sigma);
 
-            %square and interpolate at isocenter
+            % square and interpolate at isocenter
             sigmaSq = sigma.^2;
             sigmaIso = sqrt(interp1(z,sigmaSq,0));
 
-            %fit Courant-Synder equation to data using ipopt, formulae
-            %given in mcSquare documentation
+            % fit Courant-Synder equation to data using ipopt, formulae
+            % given in mcSquare documentation
 
-            %fit function
+            % fit function
             qRes = @(rho, sigmaT) (sigmaSq -  (sigmaIso^2 - 2*sigmaIso*rho*sigmaT.*z + sigmaT^2.*z.^2));
 
             % Define optimization parameters
@@ -495,7 +469,7 @@ classdef matRad_MCemittanceBaseData
             rho    = result(1);
             sigmaT = result(2);
 
-            %calculate divergence, spotsize and correlation at nozzle
+            % calculate divergence, spotsize and correlation at nozzle
             DivergenceAtNozzle  = sigmaT;
             SpotsizeAtNozzle    = sqrt(sigmaIso^2 - 2 * rho * sigmaIso * sigmaT * obj.nozzleToIso + sigmaT^2 * obj.nozzleToIso^2);
             CorrelationAtNozzle = (rho * sigmaIso - sigmaT * obj.nozzleToIso) / SpotsizeAtNozzle;
@@ -529,8 +503,7 @@ classdef matRad_MCemittanceBaseData
         end
 
         function obj = saveMatradMachine(obj,name)
-            %save previously calculated monteCarloData in new baseData file
-            %with given name
+            % save previously calculated monteCarloData in new baseData file with given name
 
             % Instance of MatRad Config
             matRad_cfg = MatRad_Config.instance();
