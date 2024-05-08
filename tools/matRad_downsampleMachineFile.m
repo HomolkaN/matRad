@@ -30,9 +30,9 @@ if nargin < 3
     fineSamplingFirst = true;
 end
 
-downsampleFactor = 0.2; % Specifies percentage of grid spacing, the smaller the broader the grid
-lowerPeakArea = 0.05; % Specifies percentage of peak area
-upperPeakArea = 0.04; % Specifies percentage of peak area
+downsampleFactor = 0.1; % Specifies percentage of grid spacing, the smaller the broader the grid
+lowerPeakArea = 0.08; % Specifies percentage of peak area
+upperPeakArea = 0.06; % Specifies percentage of peak area
 depthCutOff = 1.2;
 % depthCutOff = 0;
 % cutOff = 0.005; %cutOff data at 0.001*max(Z)
