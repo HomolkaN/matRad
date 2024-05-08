@@ -233,7 +233,7 @@ for scenarioIx = 1:pln.multScen.totNumScen
     if pln.multScen.scenMask(ctScen,shiftScen,rangeShiftScen)
 
         %For direct dose calculation
-        totalWeights = 0;
+        totalWeights = [];
 
         %Count the scenarios
         scenCount = scenCount + 1;
@@ -321,7 +321,7 @@ for scenarioIx = 1:pln.multScen.totNumScen
 
             % Collect totalWeights
             if calcDoseDirect
-                totalWeights = sum(currBeam.weights);
+                totalWeights(i) = sum(currBeam.weights);
             end
 
             % Get dij counter for current bea,
@@ -445,7 +445,7 @@ for scenarioIx = 1:pln.multScen.totNumScen
         end
         MCparam.VdoseGrid = VdoseGrid;
         MCparam.calcDoseDirect = calcDoseDirect;
-        MCparam.totalWeights = totalWeights;
+        MCparam.totalWeights = sum(totalWeights);
         MCparam.Beamlet_Mode = pln.propMC.Beamlet_Mode;
         MCparam.nbHistoriesTotal = pln.propMC.numHistories;
         MCparam.MCsquareOrder = MCsquareOrder;
