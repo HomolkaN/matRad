@@ -1,4 +1,4 @@
-function outputDD = matRad_calcIDD(doseCube,calcProfile,direction,rayPosition,averageProfiles)
+function outputDD = matRad_calcIDD(doseCube,calcProfile,direction,rayPosition,averageProfiles,intWidth)
 % function to calculate depth dose (DD) of a simple boxphantom
 % for beams in x-, y- or z-direction
 %
@@ -42,7 +42,9 @@ if nargin < 5
     averageProfiles = true;
 end
 doseCube(isnan(doseCube))=0;
-intWidth = 1; %voxels (equals (2n+1)² central rays)
+if nargin < 6
+    intWidth = 1; %voxels (equals (2n+1)² central rays)
+end
 
 if calcProfile
     if averageProfiles
