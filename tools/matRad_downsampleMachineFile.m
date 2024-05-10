@@ -99,7 +99,17 @@ for energyIx = energies%numel(machine.data)
         % Loop through all fields and apply downsampling
         depthSize = numel(depths);
         fnames = fieldnames(machine.data(energyIx));
+        fnames = fnames(~contains(fnames,'depths'));
         for fieldIx = 1:length(fnames)
+            % Select voxels to average (at the beginning), omit first voxel
+            % that is always too low
+            averageFirstVoxels = (depths<=newDepths(1)+diff(newDepths(1:2)/2));
+            averageFirstVoxels(1) = 0;
+
+            % Set voxels that exceed depth cutOff
+            depthCutOffSelection = newDepths>machine.data(energyIx).peakPos*depthCutOff;
+            
+            % Loop through data
             if isstruct(machine.data(energyIx).(fnames{fieldIx}))
                 subFnames = fieldnames(machine.data(energyIx).(fnames{fieldIx}));
                 for subFieldIx = 1:length(subFnames)
@@ -117,14 +127,14 @@ for energyIx = energies%numel(machine.data)
                         % Spline interpolation
                         newCurrData = interp1(depths,machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx}),newDepths,'makima');
                         % Adjust first value as mean of the first half new depth
-                        newCurrData(1) = mean(machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx})(depths<=newDepths(1)+diff(newDepths(1:2)/2)));
+                        newCurrData(1) = mean(machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx})(averageFirstVoxels));
 
                         % Write new interpolated data
                         machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx}) = newCurrData;
 
                         % Cutoff with depth
                         if depthCutOff>0
-                            machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx})(newDepths>machine.data(energyIx).peakPos*depthCutOff) = [];
+                            machine.data(energyIx).(fnames{fieldIx}).(subFnames{subFieldIx})(depthCutOffSelection) = [];
                         end
                     end
                 end
@@ -133,18 +143,21 @@ for energyIx = energies%numel(machine.data)
                 % Spline interpolation
                 newCurrData = interp1(depths,machine.data(energyIx).(fnames{fieldIx}),newDepths,'makima');
                 % Adjust first value as mean of the first half new depth
-                newCurrData(1) = mean(machine.data(energyIx).(fnames{fieldIx})(depths<=newDepths(1)+diff(newDepths(1:2)/2)));
+                newCurrData(1) = mean(machine.data(energyIx).(fnames{fieldIx})(averageFirstVoxels));
 
                 % Write new interpolated data
                 machine.data(energyIx).(fnames{fieldIx}) = newCurrData;
 
                 % Cutoff with depth
                 if depthCutOff>0
-                    machine.data(energyIx).(fnames{fieldIx})(newDepths>machine.data(energyIx).peakPos*depthCutOff) = [];
+                    machine.data(energyIx).(fnames{fieldIx})(depthCutOffSelection) = [];
                 end
 
             end
         end
+
+        % Write new depths vector
+        machine.data(energyIx).depths = newDepths;
 
         clear depths newDepths
     end
