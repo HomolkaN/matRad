@@ -143,6 +143,15 @@ if isfield(ct,'sampleIdx')
     pln.propMC.MCrun_Directory = [pln.propMC.MCrun_Directory '_sample' num2str(ct.sampleIdx,'%02.f')];
 end
 
+% Check if Directory name is too long (yes this is a thing apparently)
+if numel(pln.propMC.MCrun_Directory) > 75
+    matRad_cfg.dispWarning('MCsquare MCrunDirectory too long, trying to short name.');
+    pln.propMC.MCrun_Directory = erase(pln.propMC.MCrun_Directory,'_');
+    if numel(pln.propMC.MCrun_Directory) > 75
+        matRad_cfg.dispError('MCsquare MCrunDirectory too long.');
+    end
+end
+
 % Set appropriate output Directory
 pln.propMC.MCrun_Directory  = [pln.propMC.MCrun_Directory '/'];
 pln.propMC.Output_Directory = [pln.propMC.MCrun_Directory 'MCsquareOutput/'];
