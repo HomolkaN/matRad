@@ -407,14 +407,14 @@ for scenarioIx = 1:pln.multScen.totNumScen
 
             % write sampled densities
             fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Density_Conversion.txt'],'a');
-            fprintf(fID,'\n%i       %.3f',sampledDensities);
+            fprintf(fID,'\n%i\t%.3f',sampledDensities);
             fclose(fID);
 
             % write material conversion
             fID = fopen(['Scanners' '/' 'densitySampling' '/' 'HU_Material_Conversion.txt'],'a');
             % fprintf(fID,'\n6000    40      # Schneider_Lung');
             %             fprintf(fID,'\n6000    17      # Water');
-            fprintf(fID,'\n6000    14      # Lung (use 40 for Schneider_Lung)');
+            fprintf(fID,'\n6000\t14\t\t# Lung (use 40 for Schneider_Lung)');
 
             fclose(fID);
 
