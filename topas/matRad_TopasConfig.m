@@ -112,7 +112,7 @@ classdef matRad_TopasConfig < handle
         modules_photons       = {'g4em-standard_opt4','g4h-phy_QGSP_BIC_HP','g4decay'};
 
         %Geometry / World
-        worldMaterial = 'AIR';  % 'AIR', 'Vacuum'
+        worldMaterial = 'Vacuum';  % 'AIR', 'Vacuum'
 
         %filenames
         converterFolder = 'materialConverter';
