@@ -51,15 +51,15 @@ if calcProfile
         % Calculate average profiles
         switch direction
             case 'y'
-                outputDD = squeeze(sum(doseCube(:,rayPosition(2)-intWidth:rayPosition(2)+intWidth,rayPosition(3)-intWidth:rayPosition(3)+intWidth), [2,3]));
+                outputDD = squeeze(mean(doseCube(:,rayPosition(2)-intWidth:rayPosition(2)+intWidth,rayPosition(3)-intWidth:rayPosition(3)+intWidth), [2,3]));
             case 'x'
-                outputDD = squeeze(sum(doseCube(rayPosition(1)-intWidth:rayPosition(1)+intWidth,:,rayPosition(3)-intWidth:rayPosition(3)+intWidth), [1,3]))';
+                outputDD = squeeze(mean(doseCube(rayPosition(1)-intWidth:rayPosition(1)+intWidth,:,rayPosition(3)-intWidth:rayPosition(3)+intWidth), [1,3]))';
             case 'z'
-                outputDD = squeeze(sum(doseCube(rayPosition(1)-intWidth:rayPosition(1)+intWidth,rayPosition(2)-intWidth:rayPosition(2)+intWidth,:), [1,2]))';
+                outputDD = squeeze(mean(doseCube(rayPosition(1)-intWidth:rayPosition(1)+intWidth,rayPosition(2)-intWidth:rayPosition(2)+intWidth,:), [1,2]))';
             otherwise
                 matRad_cfg.dispError('Please choose valid direction');
         end
-
+        
     else
         % Calculate single profiles
         switch direction
