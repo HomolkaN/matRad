@@ -263,7 +263,7 @@ classdef matRad_MCemittanceBaseData
                 % interpolation to evaluate interpolated depths at 80% maxDose (constrain interpolation to area after peak)
                 r80(i) = matRad_interp1(flip(baseData.Z(localmax(i):end)), flip(baseData.depths(localmax(i):end)), 0.8 * baseData.Z(localmax(i)));
             end
-            r80 = max(r80);
+            r80 = mean(r80);
             
             % Correct r80 with air offset and potential offset from basedata
             r80 = r80 + airOffsetCorrection + obj.machine.data(energyIx).offset;
