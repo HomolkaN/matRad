@@ -855,7 +855,7 @@ classdef matRad_PlanWidget < matRad_Widget
             contentQuantityOpt = get(handles.popMenuQuantityOpt,'String');
             contentBioModel = get(handles.popMenuBioModel,'String');
             contentMultScen = get(handles.popMenuMultScen,'String');
-            pln.bioParam = matRad_bioModel(pln.radiationMode, contentQuantityOpt{get(handles.popMenuQuantityOpt,'Value'),:}, contentBioModel{get(handles.popMenuBioModel,'Value'),:});
+            pln.bioParam = matRad_BioModel(pln.radiationMode, contentQuantityOpt{get(handles.popMenuQuantityOpt,'Value'),:}, contentBioModel{get(handles.popMenuBioModel,'Value'),:});
             if evalin('base','exist(''ct'')')
                 ct = evalin('base','ct');
                 pln.numOfVoxels     = prod(ct.cubeDim);
