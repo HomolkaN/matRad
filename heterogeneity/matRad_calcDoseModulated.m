@@ -106,6 +106,7 @@ data = cell(samples,1);
 for i = 1:samples
     % Modulate density of ct cube
     if pln.propHeterogeneity.sampling.obliqueAngleCorrection
+        % This is done later in case of angle correction
         ct_mod = ct;
     else
         ct_mod = pln.propHeterogeneity.modulateDensity(ctR,cstR,pln);

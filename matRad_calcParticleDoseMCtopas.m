@@ -108,12 +108,11 @@ if isfield(ct,'sampleIdx')
 end
 
 %% Initialize dose grid and dij
+% for TOPAS we explicitly downsample the ct to the dose grid (might not be necessary in future versions with separated grids)
+[ctR,~,~] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
 
 % load calcDoseInit as usual
 matRad_calcDoseInit;
-
-% for TOPAS we explicitly downsample the ct to the dose grid (might not be necessary in future versions with separated grids)
-[ctR,~,~] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
 
 % overwrite CT grid in dij in case of modulation.
 if isfield(ctR,'ctGrid')

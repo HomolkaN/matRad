@@ -241,14 +241,14 @@ classdef matRad_MCemittanceBaseData
             end
             % Introduce air offset correction
             airOffsetCorrection = 0.0011 * (fitAirOffset);
-
+    
             % Save given energy as nominal energy
             mcDataEnergy.NominalEnergy = obj.machine.data(energyIx).energy;
 
             % Find range of 80% does fall off after the peak
             baseData = obj.machine.data(energyIx);
-            LatDose = getScaling(baseData);
-            baseData.Z = baseData.Z .* LatDose;
+            % LatDose = getScaling(baseData);
+            % baseData.Z = baseData.Z .* LatDose;
 
             % Find absolute maxima
             [maxDose, maxDoseIdx] = max(baseData.Z);
@@ -272,30 +272,6 @@ classdef matRad_MCemittanceBaseData
             alphaPrime = 0.0087; % (MeV^2/mm) stopping matter property
 
             % Calculate FWHM
-            if (obj.machine.data(energyIx).Z(1) < 0.5 * maxDose)
-                try
-                    d50_r = interp1(obj.machine.data(energyIx).Z(maxDoseIdx:end), obj.machine.data(energyIx).depths(maxDoseIdx:end), 0.5 * maxDose);
-                    d50_l = interp1(obj.machine.data(energyIx).Z(1:maxDoseIdx), obj.machine.data(energyIx).depths(1:maxDoseIdx), 0.5 * maxDose);
-                    FWHM = d50_r - d50_l;
-                    % mcDataEnergy.usedGaussianfit = false;
-                catch
-                    matRad_cfg.dispWarning('Could not find FWHM, trying Gaussian fit');
-                    obj.problemSigma = true;
-
-                    try
-                        % if width left of peak cannot be determined use Gaussian fit
-                        FWHM = obj.fitGaussianFWHM(energyIx);
-                        % mcDataEnergy.usedGaussianfit = true;
-
-                    catch
-                        % if width left of peak cannot be determined use r80 as width
-                        matRad_cfg.dispInfo('Could not find FWHM, using Gaussian fit as approximation');
-                        FWHM = r80;
-                    end
-                end
-            end
-
-
             obj.problemSigma = false;
             try
                 d50_r = interp1(baseData.Z(maxDoseIdx:end), baseData.depths(maxDoseIdx:end), 0.5 * maxDose);
@@ -303,22 +279,14 @@ classdef matRad_MCemittanceBaseData
                 FWHM = d50_r - d50_l;
                 % mcDataEnergy.usedGaussianfit = false;
 
-            catch
+            catch              
                 obj.problemSigma = true;
-                   
-            end
+                matRad_cfg.dispWarning('Could not find FWHM, using Approximation');
 
-            % Try Gaussian fit or use r80, if FWHM could not be determined
-            if obj.problemSigma
                 try
-                    FWHM = obj.fitGaussianFWHM(energyIx);
-                    matRad_cfg.dispWarning('Could not find FWHM, using Gaussian fit');
-
+                    FWHM = obj.fitGaussianFWHM(energyIx);                   
                 catch
-                    % if width left of peak cannot be determined use r80 as width
                     FWHM = r80;
-                    matRad_cfg.dispWarning('Could not find FWHM, using r80 as approximation');
-
                 end
             end
 
