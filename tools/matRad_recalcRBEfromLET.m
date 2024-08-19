@@ -173,13 +173,17 @@ end
 
 if isfield(resultGUI,'RBE_model')
     if iscell(resultGUI.RBE_model)
-        resultGUI.RBE_model{end+1} = ['recalc_' modelName];
+        resultGUI.RBE_model{end+1} = modelName;
     else
-        resultGUI.RBE_model = cellstr(['recalc_' modelName]);
+        resultGUI.RBE_model = cellstr(modelName);
+%         resultGUI.mAlphaDose = resultGUI.(['mAlphaDose_' modelName]);
+%         resultGUI.mSqrtBetaDose = resultGUI.(['mSqrtBetaDose_' modelName]);
+%         resultGUI = rmfield(resultGUI,{['mAlphaDose_' modelName],['mSqrtBetaDose_' modelName]});
     end
 else
-    resultGUI.RBE_model{1} = ['recalc_' modelName];
+    resultGUI.RBE_model{1} = modelName;
 end
+resultGUI.recalculatedRBE = true;
 
 resultGUI = orderfields(resultGUI);
 end
