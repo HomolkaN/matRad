@@ -83,6 +83,9 @@ switch pln.radiationMode
         switch pln.propMC.engine
             case 'MCsquare'
                 dij = matRad_calcParticleDoseMCsquare(ct,stf,pln,cst,calcDoseDirect);
+                if pln.bioParam.bioOpt
+                    dij = matRad_recalcRBEfromLET(dij,pln.bioParam.model);
+                end
             case 'TOPAS'
                 dij = matRad_calcParticleDoseMCtopas(ct,stf,pln,cst,calcDoseDirect);
         end
