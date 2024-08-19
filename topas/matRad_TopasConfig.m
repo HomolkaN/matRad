@@ -503,8 +503,8 @@ classdef matRad_TopasConfig < handle
 
             if isfield(dij,'mLETDose')
                 % Send message
-                matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
-                matRad_cfg.dispInfo('Correcting LET\n');
+                % matRad_cfg = MatRad_Config.instance(); %Instance of matRad configuration class
+                % matRad_cfg.dispInfo('Correcting LET\n');
 
                 % Import HU cube from saved .dat file
                 fID_hu = fopen(fullfile(folder, obj.outfilenames.patientCube),'r');
@@ -543,6 +543,7 @@ classdef matRad_TopasConfig < handle
                         densityCorrection.density(densSelection(densSelection~=0)) ...
                         );
                 end
+                densCube(isnan(densCube)) = 0.001;
 
                 % Actually convert LET
                 for i = 1:size(dij.mLETDose{1},2)
@@ -828,7 +829,11 @@ classdef matRad_TopasConfig < handle
 
             % Write dij grids
             dij.doseGrid = obj.MCparam.ctGrid;
-            dij.ctGrid = obj.MCparam.originalGrid;
+            if isfield(obj.MCparam,'originalGrid')
+                dij.ctGrid = obj.MCparam.originalGrid;
+            else
+                dij.ctGrid = obj.MCparam.ctGrid;
+            end
 
             % Save RBE models in dij for postprocessing in calcCubes
             if obj.scorer.RBE
