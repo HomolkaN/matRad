@@ -41,8 +41,8 @@ classdef matRad_MCsquareConfig
 
         %%% Input files
         CT_File                     = 'Patient.mhd';				% Name of the CT file. Default: CT.mhd
-        HU_Density_Conversion_File	= 'Scanners/matRad_default_lung/HU_Density_Conversion.txt';	% Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
-        HU_Material_Conversion_File	= 'Scanners/matRad_default_lung/HU_Material_Conversion.txt';	% Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
+        HU_Density_Conversion_File	= 'Scanners/matRad_default/HU_Density_Conversion.txt';	% Name of the file containing HU to density conversion data. Default: HU_Density_Conversion.txt
+        HU_Material_Conversion_File	= 'Scanners/matRad_default/HU_Material_Conversion.txt';	% Name of the file containing HU to material conversion data. Default: HU_Material_Conversion.txt
         BDL_Machine_Parameter_File  = 'BDL/BDL_matrad.txt';			% Name of the machine parameter file for the beam data library. Default: BDL.txt
         BDL_Plan_File               = 'PlanPencil.txt';			% Name of the plan file for the beam data library. Default: Plan.txt
 
@@ -516,23 +516,32 @@ classdef matRad_MCsquareConfig
                 error('No valid folder found.')
             end
 
-            for f = 1:numOfSamples
+            for s = 1:numOfSamples
                 % read in MCsquare files in dij
-                dij = obj.readFiles([folderNames{f} filesep 'MCsquareOutput' filesep]);
+                dij = obj.readFiles([folderNames{s} filesep 'MCsquareOutput' filesep]);
 
                 % Postprocessing
                 resultGUI_mod = obj.getResultGUI(dij);
 
                 if numOfSamples > 1
+                    % Remove recalc
+                    fnames = fieldnames(resultGUI_mod);
+                    if any(contains(fnames, 'MCN'))
+                        for f = 1:length(fnames(contains(fnames, 'MCN')))
+                            resultGUI_mod.(erase(fnames{f},'_MCN')) = resultGUI_mod.(fnames{f});
+                            resultGUI_mod = rmfield(resultGUI_mod,fnames{f});
+                        end
+                    end
+
                     % Accumulate averaged results
                     resultGUI = heterogeneityConfig.accumulateOverSamples(resultGUI,resultGUI_mod,numOfSamples);
 
                     % Save individual physical doses to calculate standard deviation
-                    data{f} = resultGUI_mod.physicalDose;
+                    data{s} = resultGUI_mod.physicalDose;
 
                     % Save individual standard deviation
                     if isfield(resultGUI_mod,'physicalDose_std')
-                        resultGUI.physicalDose_std_individual{f} = resultGUI_mod.physicalDose_std;
+                        resultGUI.physicalDose_std_individual{s} = resultGUI_mod.physicalDose_std;
                     end
                 else
                     resultGUI = resultGUI_mod;
