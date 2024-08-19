@@ -1,4 +1,4 @@
-function colorMap = diffMap(cMapSize)
+function [colorMap,diffWindow] = diffMap(cMapSize,bounds)
 % matRad difference colormap 
 % 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -47,7 +47,6 @@ colorMapData = ...
     0.9355    0.9355    1.0000
     0.9677    0.9677    1.0000
     1.0000    1.0000    1.0000
-    1.0000    1.0000    1.0000
     1.0000    0.9677    0.9677
     1.0000    0.9355    0.9355
     1.0000    0.9032    0.9032
@@ -80,14 +79,23 @@ colorMapData = ...
     1.0000    0.0323    0.0323
     1.0000         0         0];
 
+if exist('bounds','var') && diff(bounds)~=0
+    newBounds = round(62*abs(bounds)/diff(bounds));
+    X1 = interp1(1:32,colorMapData(1:32,:),linspace(1,32,newBounds(1)+1));
+    X2 = interp1(33:63,colorMapData(33:63,:),linspace(32,63,newBounds(2)+1));
+
+    colorMapData = [X1(1:end-1,:); [1 1 1]; X2(2:end,:)];
+    diffWindow = sign(bounds) .* newBounds/62*diff(bounds);
+end
+
 if nargin < 1
     colorMap = colorMapData;
 elseif size(colorMapData,1) == cMapSize
     colorMap = colorMapData;
 else
     %We have to interpolate the colormap
-    newX = linspace(1,64,cMapSize);
-    oldX = 1:64;
+    newX = linspace(1,63,cMapSize);
+    oldX = 1:63;
     colorMap = interp1(oldX,colorMapData,newX);
     %{
     %resample via HSV.. more color-true than above, but doesn't work with
@@ -99,6 +107,5 @@ else
     ColorMap                   = hsv2rgb(cm);
     %}
 end
-
 end
 

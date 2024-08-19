@@ -249,9 +249,9 @@ if enable(2) == 1
     set(gcf,'Color',[1 1 1]);
     
     hfig.profiles.x = subplot(2,2,1);
-    plot(posX,profilex{1},'r')
+    plot(posX,profilex{1},'Color',getMatlabColor('blue'))
     hold on
-    plot(posX,profilex{2},'r--')
+    plot(posX,profilex{2},'Color',getMatlabColor('orange'))
     xlabel('X [mm]','FontSize',fontsize)
     ylabel(yLabelString,'FontSize',fontsize);
     title('x-Profiles');
@@ -259,9 +259,9 @@ if enable(2) == 1
     legend boxoff
     
     hfig.profiles.y = subplot(2,2,2);
-    plot(posY,profiley{1},'r')
+    plot(posY,profiley{1},'Color',getMatlabColor('blue'))
     hold on
-    plot(posY,profiley{2},'r--')
+    plot(posY,profiley{2},'Color',getMatlabColor('orange'))
     xlabel('Y [mm]','FontSize',fontsize)
     ylabel(yLabelString,'FontSize',fontsize);
     title('y-Profiles');
@@ -269,9 +269,9 @@ if enable(2) == 1
     legend boxoff
     
     hfig.profiles.z = subplot(2,2,3);
-    plot(posZ,profilez{1},'r')
+    plot(posZ,profilez{1},'Color',getMatlabColor('blue'))
     hold on
-    plot(posZ,profilez{2},'r--')
+    plot(posZ,profilez{2},'Color',getMatlabColor('orange'))
     xlabel('Z [mm]','FontSize',fontsize)
     ylabel(yLabelString,'FontSize',fontsize);
     title('z-Profiles');
