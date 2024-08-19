@@ -282,7 +282,7 @@ function matlab2tikz(varargin)
         error('matlab2tikz:figureNotFound','MATLAB figure not found.');
     end
     m2t.current.gcf = m2t.args.figurehandle;
-    if m2t.args.colormap
+    if ~isempty(m2t.args.colormap)
         m2t.current.colormap = m2t.args.colormap;
     else
         m2t.current.colormap = get(m2t.current.gcf, 'colormap');
