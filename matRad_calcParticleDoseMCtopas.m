@@ -269,6 +269,8 @@ end
 % Write number of discarded bixels as information
 if isfield(pln.propMC.MCparam,'numOfDiscardedSpots')
     dij.numOfDiscardedSpots = pln.propMC.MCparam.numOfDiscardedSpots;
+else
+    dij.numOfDiscardedSpots = NaN;
 end
 
 % Order fields for easier comparison between different dijs
