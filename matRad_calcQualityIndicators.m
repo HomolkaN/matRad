@@ -39,6 +39,11 @@ function qi = matRad_calcQualityIndicators(cst,pln,doseCube,refGy,refVol)
 
 matRad_cfg = MatRad_Config.instance();
 
+if iscell(doseCube)
+    doseCube_std = doseCube{2};
+    doseCube = doseCube{1};
+end
+
 if ~exist('refVol', 'var') || isempty(refVol)
     refVol = [2 5 50 95 98];
 end
@@ -59,7 +64,7 @@ for c = 1:size(cst,1)
         voiPrint    = sprintf('%3d %20s',cst{c,1},cst{c,2}); %String that will print quality indicators
 
         % get Dose, dose is sorted to simplify calculations
-        doseInVoi    = sort(doseCube(indices));
+        [doseInVoi, sortingIdx]    = sort(doseCube(indices));
 
         if ~isempty(doseInVoi)
 
@@ -68,6 +73,10 @@ for c = 1:size(cst,1)
             % easy stats
             qi(runVoi).mean = mean(doseInVoi);
             qi(runVoi).std  = std(doseInVoi);
+            % Add batch std quadratically if available
+            if exist('doseCube_std','var')
+                qi(runVoi).stdCombined = sqrt(1/numel(indices)*sum(doseCube_std(sortingIdx).^2) + qi(runVoi).std.^2);
+            end
             qi(runVoi).max  = doseInVoi(end);
             qi(runVoi).min  = doseInVoi(1);
 
