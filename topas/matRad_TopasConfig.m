@@ -418,9 +418,15 @@ classdef matRad_TopasConfig < handle
             % LICENSE file.
             %
             % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %Instance of matRad configuration class
+            matRad_cfg = MatRad_Config.instance(); 
+
             % Process input folder(s)
             if ~isempty(strfind(folder,'*'))
                 folder = dir(folder);
+                if isempty(folder)
+                    matRad_cfg.dispError('Invalid input folder. Folder not found.')
+                end
                 for i = 1:length(folder)
                     folderNames{i} = [folder(i).folder filesep folder(i).name];
                 end
@@ -1150,7 +1156,7 @@ classdef matRad_TopasConfig < handle
                         end
 
                         % write RBE scorer
-                        if obj.scorer.RBE
+                        if obj.scorer.RBE && ~strcmp(obj.scorer.RBE_model{1},'constRBE')
                             for i = 1:length(obj.scorer.RBE_model)
                                 switch obj.radiationMode
                                     case 'protons'
@@ -1216,7 +1222,7 @@ classdef matRad_TopasConfig < handle
                         end
 
                         % Write share sub-scorer
-                        if obj.scorer.sharedSubscorers && obj.scorer.RBE
+                        if obj.scorer.sharedSubscorers && obj.scorer.RBE && ~strcmp(obj.scorer.RBE_model{1},'constRBE')
                             % Select appropriate scorer from selected flags
                             for currModel = obj.scorer.RBE_model
                                 scorerNames = {'Alpha','Beta'};
