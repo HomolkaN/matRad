@@ -1,26 +1,26 @@
 classdef matRad_WorkflowWidget < matRad_Widget
     % matRad_WorkflowWidget class to generate GUI widget to run through the
     % treatment planning workflow
-    % 
+    %
     %
     % References
     %   -
     %
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
-    % Copyright 2020 the matRad development team. 
-    % 
-    % This file is part of the matRad project. It is subject to the license 
-    % terms in the LICENSE file found in the top-level directory of this 
-    % distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part 
-    % of the matRad project, including this file, may be copied, modified, 
-    % propagated, or distributed except according to the terms contained in the 
+    % Copyright 2020 the matRad development team.
+    %
+    % This file is part of the matRad project. It is subject to the license
+    % terms in the LICENSE file found in the top-level directory of this
+    % distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part
+    % of the matRad project, including this file, may be copied, modified,
+    % propagated, or distributed except according to the terms contained in the
     % LICENSE file.
     %
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    
     properties
-    end        
+    end
     
     methods
         function this = matRad_WorkflowWidget(handleParent)
@@ -56,7 +56,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
         function this = update(this,evt)
             getFromWorkspace(this);
             %updateInWorkspace(this);
-        end       
+        end
         
         
         % moved so it can be called from the toolbar button
@@ -67,7 +67,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             if FileName == 0 % user pressed cancel --> do nothing.
                 return;
             end
-
+            
             try
                 % delete existing workspace - parse variables from base workspace
                 AllVarNames = evalin('base','who');
@@ -85,7 +85,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             catch ME
                 this.handles=handles;
                 getFromWorkspace(this);
-                showError(this,'LoadMatFileFnc: Could not load *.mat file',ME);                
+                showError(this,'LoadMatFileFnc: Could not load *.mat file',ME);
                 return
             end
             
@@ -126,37 +126,37 @@ classdef matRad_WorkflowWidget < matRad_Widget
     
     methods (Access = protected)
         function this = createLayout(this)
-                       
+            
             parent = this.widgetHandle;
             
             matRad_cfg = MatRad_Config.instance();
-                   
-
+            
+            
             h72 = this.addControlToGrid([2 4],...
                 'Style','text',...
-                'String','Status:',...                                
+                'String','Status:',...
                 'BackgroundColor',matRad_cfg.gui.backgroundColor,...
                 'ForegroundColor',matRad_cfg.gui.textColor,...
                 'Tag','txtStatus',...
                 'FontSize',round(matRad_cfg.gui.fontSize*1.2));
             
-
+            
             h73 = this.addControlToGrid([3 4],...
                 'String','no data loaded',...
-                'Style','text',...               
+                'Style','text',...
                 'BackgroundColor',matRad_cfg.gui.backgroundColor,...
                 'ForegroundColor',matRad_cfg.gui.textColor,...
                 'Tag','txtInfo',...
                 'FontSize',round(matRad_cfg.gui.fontSize*1.2));
             
             hMatLoad = this.addControlToGrid([2 1],...
-                'String','Load  *.mat data',...                
+                'String','Load  *.mat data',...
                 'BackgroundColor',matRad_cfg.gui.elementColor,...
                 'ForegroundColor',matRad_cfg.gui.textColor,...
                 'Callback',@(hObject,eventdata) btnLoadMat_Callback(this,hObject,eventdata),...
                 'Tag','btnLoadMat');
             
-             hDijCalc = this.addControlToGrid([3 1],...
+            hDijCalc = this.addControlToGrid([3 1],...
                 'String','Calc. Dose Influence',...
                 'BackgroundColor',matRad_cfg.gui.elementColor,...
                 'ForegroundColor',matRad_cfg.gui.textColor,...
@@ -164,8 +164,8 @@ classdef matRad_WorkflowWidget < matRad_Widget
                 'Tag','btnCalcDose');
             
             hOpt = this.addControlToGrid([4 1],...
-                'Parent',parent,...                
-                'String','Optimize',...                
+                'Parent',parent,...
+                'String','Optimize',...
                 'BackgroundColor',matRad_cfg.gui.elementColor,...
                 'ForegroundColor',matRad_cfg.gui.textColor,...
                 'Callback',@(hObject,eventdata) btnOptimize_Callback(this,hObject,eventdata),...
@@ -177,7 +177,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
                 'ForegroundColor',matRad_cfg.gui.textColor,...
                 'Callback',@(hObject,eventdata) btnLoadDicom_Callback(this,hObject,eventdata),...
                 'Tag','btnLoadDicom');
-      
+            
             
             hRefresh = this.addControlToGrid([1 1],...
                 'String','Refresh',...
@@ -232,7 +232,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             
             this.createHandles();
             
-             handles=this.handles;
+            handles=this.handles;
             matRad_cfg = MatRad_Config.instance();
             if matRad_cfg.eduMode
                 %Visisbility in Educational Mode
@@ -259,14 +259,14 @@ classdef matRad_WorkflowWidget < matRad_Widget
             set(handles.btn_export,'Enable','off');
             set(handles.exportDicomButton,'Enable','off');
             
-
+            
             if evalin('base','exist(''ct'')') && ...
-                        evalin('base','exist(''cst'')')
-                    
+                    evalin('base','exist(''cst'')')
+                
                 set(handles.txtInfo,'String','loaded and ready');
                 
                 if evalin('base','exist(''pln'')')
-
+                    
                     
                     % ct cst and pln available; ready for dose calculation
                     set(handles.txtInfo,'String','ready for dose calculation');
@@ -276,17 +276,21 @@ classdef matRad_WorkflowWidget < matRad_Widget
                     
                     if evalin('base','exist(''resultGUI'')')
                         % plan is optimized
-                        % check if dij, stf and pln match                        
-                        if matRad_comparePlnDijStf(evalin('base','pln'),evalin('base','stf'),evalin('base','dij'))
-                            set(handles.txtInfo,'String','plan is optimized');
-                            set(handles.btnOptimize ,'Enable','on'); 
+                        % check if dij, stf and pln match
+                        try
+                            if matRad_comparePlnDijStf(evalin('base','pln'),evalin('base','stf'),evalin('base','dij'))
+                                set(handles.txtInfo,'String','plan is optimized');
+                                set(handles.btnOptimize ,'Enable','on');
+                            end
+                            
+                            set(handles.pushbutton_recalc,'Enable','on');
+                            set(handles.btnSaveToGUI,'Enable','on');
+                            % resultGUI struct needs to be available to import dose
+                            % otherwise inconsistent states can be achieved
+                            set(handles.importDoseButton,'Enable','on');
+                        catch
+                            set(handles.txtInfo,'String','dij not available');
                         end
-                        
-                        set(handles.pushbutton_recalc,'Enable','on');
-                        set(handles.btnSaveToGUI,'Enable','on');
-                        % resultGUI struct needs to be available to import dose
-                        % otherwise inconsistent states can be achieved
-                        set(handles.importDoseButton,'Enable','on');
                         
                     elseif evalin('base','exist(''dij'')') &&  evalin('base','exist(''stf'')')
                         % check if dij, stf and pln match
@@ -309,7 +313,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             parent = this.widgetHandle;
             
             %Use a 5 x 5 grid
-            pos = this.computeGridPos(gridPos,[5 5]);                  
+            pos = this.computeGridPos(gridPos,[5 5]);
             
             h = uicontrol('Parent',parent,...
                 'Units','normalized',...
@@ -432,7 +436,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
                 % optimize
                 [resultGUIcurrentRun,usedOptimizer] = matRad_fluenceOptimization(dij,cst,pln);
                 if pln.propOpt.conf3D && strcmp(pln.radiationMode,'photons')
-                    resultGUIcurrentRun.w = resultGUIcurrentRun.w .* ones(dij.totalNumOfBixels,1);  
+                    resultGUIcurrentRun.w = resultGUIcurrentRun.w .* ones(dij.totalNumOfBixels,1);
                     resultGUIcurrentRun.wUnsequenced = resultGUIcurrentRun.w;
                 end
                 
@@ -455,9 +459,9 @@ classdef matRad_WorkflowWidget < matRad_Widget
                 else
                     resultGUI = resultGUIcurrentRun;
                 end
-
+                
                 assignin('base','resultGUI',resultGUI);
-
+                
                 if ~pln.propOpt.runDAO || ~strcmp(pln.radiationMode,'photons')
                     CheckOptimizerStatus(this,usedOptimizer,'Fluence')
                 end
@@ -491,8 +495,8 @@ classdef matRad_WorkflowWidget < matRad_Widget
             try
                 %% DAO
                 if strcmp(pln.radiationMode,'photons') && pln.propOpt.runDAO
-
-                    showWarning(this,['Observe: You are running direct aperture optimization' filesep 'This is experimental code that has not been thoroughly debugged - especially in combination with constrained optimization.']); % was assigned to handles WHY ? 
+                    
+                    showWarning(this,['Observe: You are running direct aperture optimization' filesep 'This is experimental code that has not been thoroughly debugged - especially in combination with constrained optimization.']); % was assigned to handles WHY ?
                     [resultGUI,usedOptimizer] = matRad_directApertureOptimization(evalin('base','dij'),evalin('base','cst'),...
                         resultGUI.apertureInfo,resultGUI,pln);
                     assignin('base','resultGUI',resultGUI);
@@ -500,9 +504,9 @@ classdef matRad_WorkflowWidget < matRad_Widget
                     CheckOptimizerStatus(this,usedOptimizer,'DAO');
                 end
                 
-
+                
                 if strcmp(pln.radiationMode,'photons') && (pln.propSeq.runSequencing || pln.propOpt.runDAO)
-
+                    
                     matRad_visApertureInfo(resultGUI.apertureInfo);
                 end
                 
@@ -546,7 +550,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             end
             
             this.handles = handles;
-
+            
         end
         
         % H78 Callback - button: refresh
@@ -577,7 +581,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
                 ct        = evalin('base','ct');
                 cst       = evalin('base','cst');
                 resultGUI = evalin('base','resultGUI');
-
+                
                 
                 if sum([stf.totalNumOfBixels]) ~= length(resultGUI.w)%(['w' Suffix]))
                     warndlg('weight vector does not corresponding to current steering file');
@@ -618,12 +622,12 @@ classdef matRad_WorkflowWidget < matRad_Widget
                 % assign results to base worksapce
                 assignin('base','dij',dij);
                 assignin('base','resultGUI',resultGUI);
-
+                
                 
                 % change state from busy to normal
                 set(Figures, 'pointer', 'arrow');
                 set(InterfaceObj,'Enable','on');
-               
+                
                 this.handles = handles;
                 this.changedWorkspace('dij','resultGUI');
                 
@@ -680,7 +684,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             
             uiwait(figDialog);
             this.handles = handles;
-
+            
         end
         
         function SaveResultToGUI(this, ~, ~)
@@ -809,14 +813,14 @@ classdef matRad_WorkflowWidget < matRad_Widget
             % handles    structure with handles and user data (see GUIDATA)
             handles = this.handles;
             
-            try               
+            try
                 %call the gui
                 h=matRad_importWidget;
                 uiwait(h.widgetHandle);
                 
                 this.handles = handles;
                 this.changedWorkspace();
-            catch ME                
+            catch ME
                 this.handles = handles;
                 getFromWorkspace(this);
                 showError(this,'Binary Patient Import: Could not import data.  Reason: ', ME);
@@ -832,7 +836,7 @@ classdef matRad_WorkflowWidget < matRad_Widget
             % hObject    handle to exportDicom (see GCBO)
             % eventdata  reserved - to be defined in a future version of MATLAB
             % handles    structure with handles and user data (see GUIDATA)
-            try                
+            try
                 matRad_exportDicomWidget;
             catch ME
                 showError(this,'DicomImport: Could not export data', ME);

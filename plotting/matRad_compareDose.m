@@ -26,7 +26,7 @@ function [gammaCube,gammaPassRate,hfig] = matRad_compareDose(cube1, cube2, ct, c
 %                  interpolation points. The maximum suggested value is 3.
 %                  default n=0
 %   localglobal:   (optional) parameter to choose between 'global' and 'local'
-%                  normalization 
+%                  normalization
 %
 %
 % output
@@ -66,7 +66,7 @@ if ~exist('localglobal','var')
     localglobal = 'global';
 end
 if ~exist('n','var')
-    n = 3;
+    n = 1;
 end
 if ~exist('criteria','var')
     criteria = [3 3];
@@ -92,7 +92,8 @@ if enable(1)==0
     gammaCube = [];
     gammaPassRate = [];
 end
-% Load colormap for difference
+% Load colormaps
+doseMap = matRad_getColormap('doseMap');
 diffCMap = matRad_getColormap('diffMap');
 
 %% Calculate iso-center slices and resolution
@@ -140,6 +141,9 @@ if enable(1) == 1
     % Calculate absolute difference cube and dose windows for plots
     differenceCube  = cube1-cube2;
     doseDiffWindow  = [-max(differenceCube(:)) max(differenceCube(:))];
+    if all(~doseDiffWindow)
+        doseDiffWindow = [0 1];
+    end
     %doseGammaWindow = [0 max(gammaCube(:))];
     doseGammaWindow = [0 2]; %We choose 2 as maximum value since the gamma colormap has a sharp cut in the middle
     
@@ -166,7 +170,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('cube1').Ct,...
             hfig.(planename{plane}).('cube1').Contour,...
             hfig.(planename{plane}).('cube1').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,jet,doseWindow);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube1,plane,slicename{plane},[],[],colorcube,doseMap,doseWindow);
         
         % Plot Dose 2
         hfig.(planename{plane}).('cube2').Axes = subplot(2,2,2);
@@ -175,7 +179,7 @@ if enable(1) == 1
             hfig.(planename{plane}).('cube2').Ct,...
             hfig.(planename{plane}).('cube2').Contour,...
             hfig.(planename{plane}).('cube2').IsoDose] = ...
-            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,jet,doseWindow);
+            matRad_plotSliceWrapper(gca,ct,cstHandle,1,cube2,plane,slicename{plane},[],[],colorcube,doseMap,doseWindow);
         
         % Plot absolute difference
         hfig.(planename{plane}).('diff').Axes = subplot(2,2,3);
@@ -217,7 +221,7 @@ if enable(2) == 1
     profilex{1} = squeeze(cube1(slicename{1},:,slicename{3}));
     profiley{1} = squeeze(cube1(:,slicename{2},slicename{3}));
     profilez{1} = squeeze(cube1(slicename{1},slicename{2},:));
-
+    
     profilex{2} = squeeze(cube2(slicename{1},:,slicename{3}));
     profiley{2} = squeeze(cube2(:,slicename{2},slicename{3}));
     profilez{2} = squeeze(cube2(slicename{1},slicename{2},:));
@@ -230,7 +234,7 @@ if enable(2) == 1
         posY = posY - isoCenter(2);
         posZ = posZ - isoCenter(3);
     end
-
+    
     if exist('pln','var') && ~isempty(pln)
         if strcmp(pln.bioParam.quantityVis,'physicalDose')
             yLabelString = 'Dose [Gy]';
@@ -245,9 +249,9 @@ if enable(2) == 1
     set(gcf,'Color',[1 1 1]);
     
     hfig.profiles.x = subplot(2,2,1);
-    plot(posX,profilex{1},'r')
+    plot(posX,profilex{1},'Color',getMatlabColor('blue'))
     hold on
-    plot(posX,profilex{2},'r--')
+    plot(posX,profilex{2},'Color',getMatlabColor('orange'))
     xlabel('X [mm]','FontSize',fontsize)
     ylabel(yLabelString,'FontSize',fontsize);
     title('x-Profiles');
@@ -255,9 +259,9 @@ if enable(2) == 1
     legend boxoff
     
     hfig.profiles.y = subplot(2,2,2);
-    plot(posY,profiley{1},'r')
+    plot(posY,profiley{1},'Color',getMatlabColor('blue'))
     hold on
-    plot(posY,profiley{2},'r--')
+    plot(posY,profiley{2},'Color',getMatlabColor('orange'))
     xlabel('Y [mm]','FontSize',fontsize)
     ylabel(yLabelString,'FontSize',fontsize);
     title('y-Profiles');
@@ -265,9 +269,9 @@ if enable(2) == 1
     legend boxoff
     
     hfig.profiles.z = subplot(2,2,3);
-    plot(posZ,profilez{1},'r')
+    plot(posZ,profilez{1},'Color',getMatlabColor('blue'))
     hold on
-    plot(posZ,profilez{2},'r--')
+    plot(posZ,profilez{2},'Color',getMatlabColor('orange'))
     xlabel('Z [mm]','FontSize',fontsize)
     ylabel(yLabelString,'FontSize',fontsize);
     title('z-Profiles');
@@ -294,7 +298,7 @@ if enable(3) == 1 && ~isempty(cst)
     matRad_showDVH(gca,dvh2,cst,pln,2);
     xlim([0 dvhWindow*1.2])
     title('Dose Volume Histrogram, Dose 1: solid, Dose 2: dashed')
-
+    
     % Remove second half of the legend since it gets too cluttered
     hfig.dvh.fig.Children(1).String(end/2+1:end) = [];
 end

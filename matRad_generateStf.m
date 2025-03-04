@@ -73,10 +73,14 @@ end
 fileName = [pln.radiationMode '_' pln.machine];
 try
    load([matRad_cfg.matRadRoot filesep 'basedata' filesep fileName]);
-   SAD = machine.meta.SAD;
 catch
-   matRad_cfg.dispError('Could not find the following machine file: %s',fileName); 
+    try 
+        load([pln.radiationMode '_' pln.machine])
+    catch
+        matRad_cfg.dispError('Could not find the following machine file: %s',fileName); 
+    end
 end
+SAD = machine.meta.SAD;
 
 if strcmp(pln.radiationMode,'protons') || strcmp(pln.radiationMode,'helium') || strcmp(pln.radiationMode,'carbon')
       

@@ -162,11 +162,16 @@ VdoseGrid = find(matRad_interp3(dij.ctGrid.x,  dij.ctGrid.y,   dij.ctGrid.z,tmpC
 
 % load base data
 fileName = [pln.radiationMode '_' pln.machine];
-try
-   load([fileparts(mfilename('fullpath')) filesep 'basedata' filesep fileName '.mat']);
+try 
+    load([fileName '.mat']);
 catch
-   matRad_cfg.dispError('Could not find the following machine file: %s\n',fileName); 
+    try
+        load([fileparts(mfilename('fullpath')) filesep 'basedata' filesep fileName '.mat']);
+    catch
+        matRad_cfg.dispError('Could not find the following machine file: %s\n',fileName);
+    end
 end
+
 
 % compute SSDs -> Removed for now because it is scenario-dependent
 % stf = matRad_computeSSD(stf,ct);

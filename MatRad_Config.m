@@ -17,23 +17,24 @@ classdef MatRad_Config < handle
     % LICENSE file.
     %
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
+    
+    
     properties
-
+        
         %Logging
         logLevel = 3; %1 = only Errors, 2 = with Warnings, 3 = Info output, 4 = deprecation warnings, 5 = debug information
         keepLog = false; %Stores the full log in memory
         writeLog = false; %Writes the log to a file on-the-fly
-
+        
         %Default Properties
         propDoseCalc;
         propOpt;
         propMC;
         propStf;
-
+        propHeterogeneity;
+        
         defaults;
-
+        
         %Disable GUI
         disableGUI = false;
         devMode = false;
@@ -41,11 +42,11 @@ classdef MatRad_Config < handle
         
         gui;
     end
-
+    
     properties (SetAccess = private)
         messageLog = {};
         logFileHandle;
-
+        
         %For storing the Environment & its version
         env;
         envVersion;
@@ -53,7 +54,7 @@ classdef MatRad_Config < handle
         isMatlab; %Helper bool to check for Matlab
         matRad_version; %MatRad version string
     end
-
+    
     properties (SetAccess = private)
         matRadRoot;
     end
@@ -67,29 +68,29 @@ classdef MatRad_Config < handle
             %Set Path
             obj.matRadRoot = fileparts(mfilename('fullpath'));
             addpath(genpath(obj.matRadRoot));
-
+            
             %Set Version
             obj.getEnvironment();
             obj.matRad_version = matRad_version();
-
+            
             %Configure Environment
             obj.configureEnvironment();
-
+            
             %Just to catch people messing with the properties in the file
             if ~isempty(obj.writeLog) && obj.writeLog
                 logFile = [obj.matRadRoot filesep 'matRad.log'];
                 obj.logFileHandle = fopen(logFile,'a');
             end
-
+            
             %Call the reset function for remaining inatialization
             obj.reset();
         end
-
+        
         function delete(~)
             %might not be desired by users
             %rmpath(genpath(matRad_cfg.matRadRoot));
         end
-
+        
         function displayToConsole(obj,type,formatSpec,varargin)
             %displayToConsole lowest-level logging function for matRad.
             %   Display to console will be called from the public wrapper
@@ -100,18 +101,18 @@ classdef MatRad_Config < handle
             %                   Needs to be one of 'error', 'warning', 'info' or 'debug'.
             %    formatSpec: 	string to print using format specifications similar to fprintf
             %    varargin:   	variables according to formatSpec
-
+            
             if nargin < 4
                 forwardArgs = {formatSpec};
             else
                 forwardArgs = [{formatSpec},varargin(:)'];
             end
-
+            
             if obj.keepLog
                 obj.messageLog{end+1,1} = upper(type);
                 obj.messageLog{end,2} = sprintf(forwardArgs{:});
             end
-
+            
             switch type
                 case{'info'}
                     if obj.logLevel >= 3
@@ -136,38 +137,38 @@ classdef MatRad_Config < handle
                         %We create an error structure to later clean the
                         %stack trace from the last two files/lines (i.e.,
                         %this function / file)
-
+                        
                         err.message = sprintf(forwardArgs{:});
                         err.identifier = 'matRad:Error';
                         err.stack = dbstack(2);
                         error(err);
-
+                        
                     end
                 otherwise
                     error('Log type %s not defined!',type);
             end
-
+            
             if obj.writeLog
                 fprintf(obj.logFileHandle,forwardArgs{:});
             end
         end
     end
-
+    
     methods
         function reset(obj)
             %Set all default properties for matRad's computations
             obj.setDefaultProperties();
             obj.setDefaultGUIProperties();
         end
-
+        
         function setDefaultProperties(obj)
             %setDefaultProperties set matRad's default computation
             %   properties
             %  input
-
+            
             obj.propStf.defaultLongitudinalSpotSpacing = 2;
             obj.propStf.defaultAddMargin = true; %expand target for beamlet finding
-
+            
             obj.propStf.defaultBixelWidth = 5;
             obj.propDoseCalc.defaultResolution = struct('x',3,'y',3,'z',3); %[mm]
             obj.propDoseCalc.defaultLateralCutOff = 0.995; %[rel.]
@@ -179,55 +180,69 @@ classdef MatRad_Config < handle
             obj.propDoseCalc.defaultVoxelSubIx = []; %Allows specification of a subindex list for dose calculation, empty by default means automatic setting
             obj.propDoseCalc.defaultUseCustomPrimaryPhotonFluence = false; %Use a custom primary photon fluence
             obj.propDoseCalc.defaultCalcLET = true; %calculate LETs for particles
-
+            
             obj.propDoseCalc.defaultAirOffsetCorrection = true;
-
+            
             obj.propOpt.defaultMaxIter = 500;
             obj.propOpt.defaultRunDAO = 0;
             obj.propOpt.defaultRunSequencing = 0;
-
+            
             obj.propMC.ompMC_defaultHistories = 1e6;
             obj.propMC.ompMC_defaultOutputVariance = false;
-
+            
             % Set default histories for MonteCarlo here if necessary
             %             obj.propMC.defaultNumHistories = 100;
-
+            
             obj.propMC.default_photon_engine = 'matRad_OmpConfig';
             %             obj.propMC.default_photon_engine = 'matRad_TopasConfig';
             obj.propMC.default_proton_engine = 'matRad_MCsquareConfig';
             obj.propMC.default_carbon_engine = 'matRad_TopasConfig';
-
+            
             % Default settings for TOPAS
             obj.propMC.default_beamProfile_particles = 'biGaussian';
             obj.propMC.default_beamProfile_photons = 'uniform';
             obj.propMC.defaultExternalCalculation = false;
             obj.propMC.defaultCalcDij = false;
-
+            
+            obj.propHeterogeneity.defaultType = 'voxelwise'; % 'depthBased','voxelwise'
+            obj.propHeterogeneity.defaultCalcHetero = true;
+            obj.propHeterogeneity.defaultUseOriginalDepths = false; % use original base data depths instead of fitted ones
+            obj.propHeterogeneity.defaultModulateBioDose = true; % directly modulate alpha beta curves for RBE
+            obj.propHeterogeneity.defaultModulateLET = false;
+            
+            obj.propHeterogeneity.defaultModPower = 800;
+            obj.propHeterogeneity.sampling.defaultMode = 'matRad';
+            obj.propHeterogeneity.sampling.defaultMethod = 'binomial';
+            obj.propHeterogeneity.sampling.defaultUseContinuous = true;
+            obj.propHeterogeneity.sampling.defaultNumOfSamples = 50;
+            obj.propHeterogeneity.sampling.defaultContinuous = true;
+            
+            
             % default properties for fine sampling calculation
             obj.propDoseCalc.fineSampling.defaultSigmaSub = 1;
             obj.propDoseCalc.fineSampling.defaultN = 21;
             obj.propDoseCalc.fineSampling.defaultMethod = 'russo';
             obj.propDoseCalc.fineSampling.defaultCalcMode = 'standard';
-
+            
             obj.disableGUI = false;
             
             obj.defaults.samplingScenarios = 25;
-
+            
             obj.devMode = false;
             obj.eduMode = false;
-
+            
         end
-
+        
         %%For testing
         function setDefaultPropertiesForTesting(obj)
             %setDefaultPropertiesForTesting sets matRad's default
             %properties during testing to reduce computational load
-
+            
             obj.logLevel   = 3; %Omit output except errors
-
+            
             obj.propStf.defaultLongitudinalSpotSpacing = 20;
             obj.propStf.defaultAddMargin = true; %expand target for beamlet finding
-
+            
             obj.propStf.defaultBixelWidth = 20;
             
             obj.propDoseCalc.defaultResolution = struct('x',5,'y',6,'z',7); %[mm]
@@ -240,32 +255,32 @@ classdef MatRad_Config < handle
             obj.propDoseCalc.defaultVoxelSubIx = []; %Allows specification of a subindex list for dose calculation, empty by default means automatic setting
             obj.propDoseCalc.defaultUseCustomPrimaryPhotonFluence = false; %Use a custom primary photon fluence
             obj.propDoseCalc.defaultCalcLET = true; %calculate LET for particles
-
+            
             % default properties for fine sampling calculation
             obj.propDoseCalc.fineSamplingProperties.sigmaSub = 2;
             obj.propDoseCalc.fineSamplingProperties.N = 5;
             obj.propDoseCalc.fineSamplingProperties.method = 'russo';
-
+            
             obj.propOpt.defaultMaxIter = 10;
-
+            
             obj.propMC.ompMC_defaultHistories = 100;
             obj.propMC.ompMC_defaultOutputVariance = true;
-
+            
             % Set default histories for MonteCarlo
             obj.propMC.defaultNumHistories = 100;
-
+            
             obj.propMC.default_photon_engine = 'matRad_OmpConfig';
             %             obj.propMC.default_photon_engine = 'matRad_TopasConfig';
             obj.propMC.default_proton_engine = 'matRad_MCsquareConfig';
             obj.propMC.default_carbon_engine = 'matRad_TopasConfig';
-
+            
             obj.defaults.samplingScenarios = 2;
-
+            
             obj.disableGUI = true;
-
+            
             obj.devMode = true;
             obj.eduMode = false;
-        end  
+        end
         
         %%for edu mode
         function setDefaultPropertiesForEduMode(obj)
@@ -294,28 +309,28 @@ classdef MatRad_Config < handle
             
             obj.devMode = false;
             obj.eduMode = true;
-
+            
         end
-
+        
         function setDefaultGUIProperties(obj)
-           obj.gui.backgroundColor = [0.5 0.5 0.5];
-           obj.gui.elementColor = [0.75 0.75 0.75];
-           obj.gui.textColor = [0 0 0];
-           
-           obj.gui.fontSize = 8;
-           obj.gui.fontWeight = 'bold';
-           obj.gui.fontName = 'Helvetica';
+            obj.gui.backgroundColor = [0.5 0.5 0.5];
+            obj.gui.elementColor = [0.75 0.75 0.75];
+            obj.gui.textColor = [0 0 0];
+            
+            obj.gui.fontSize = 8;
+            obj.gui.fontWeight = 'bold';
+            obj.gui.fontName = 'Helvetica';
         end
-
+        
         function dispDebug(obj,formatSpec,varargin)
             %dispDebug print debug messages (log level >= 4)
             %  input
             %    formatSpec: 	string to print using format specifications similar to fprintf
             %    varargin:   	variables according to formatSpec
-
+            
             obj.displayToConsole('debug',formatSpec,varargin{:});
         end
-
+        
         function dispInfo(obj,formatSpec,varargin)
             %dispInfo print information console output (log level >= 3)
             %  input
@@ -323,7 +338,7 @@ classdef MatRad_Config < handle
             %    varargin:   	variables according to formatSpec
             obj.displayToConsole('info',formatSpec,varargin{:});
         end
-
+        
         function dispError(obj,formatSpec,varargin)
             %dispError print errors (forwarded to "error" that will stop the program) (log level >= 1)
             %  input
@@ -332,7 +347,7 @@ classdef MatRad_Config < handle
             %    varargin:   	variables according to formatSpec
             obj.displayToConsole('error',formatSpec,varargin{:});
         end
-
+        
         function dispWarning(obj,formatSpec,varargin)
             %dispError print warning (forwarded to 'warning') (log level >= 2)
             %  input
@@ -341,22 +356,22 @@ classdef MatRad_Config < handle
             %    varargin:   	variables according to formatSpec
             obj.displayToConsole('warning',formatSpec,varargin{:});
         end
-
+        
         function dispDeprecationWarning(obj,formatSpec,varargin)
             %dispDeprecationWarning wrapper for deprecation warnings forwarded to displayToConsole
             obj.displayToConsole('dep',formatSpec,varargin{:});
         end
-
+        
         function obj = writeLogToFile(obj,filename)
             %writeLogToFile writes the log kept in MatRad_Config to file.
             %  Note that the switch keepLog must be enabled for MatRad_Config to store all logging output.
-
+            
             singleString = '%s: %s\n';
             fID = fopen(filename,'w');
             fprintf(fID,repmat(singleString,1,size(obj.messageLog,1)),obj.messageLog{:});
             fclose(fID);
         end
-
+        
         function set.logLevel(obj,newLogLevel)
             %%Property set methods for logLevel
             minLevel = 1;
@@ -367,25 +382,27 @@ classdef MatRad_Config < handle
                 obj.dispError('Invalid log level. Value must be between %d and %d',minLevel,maxLevel);
             end
         end
-
+        
         function set.writeLog(obj,writeLog)
             if writeLog
                 logFile = [obj.matRadRoot filesep 'matRad.log'];
                 obj.logFileHandle = fopen(logFile,'a');
                 obj.writeLog = true;
             else
-                fclose(obj.logFileHandle);
+                if ~isempty(obj.logFileHandle)
+                    fclose(obj.logFileHandle);
+                end
                 obj.writeLog = false;
             end
         end
-
+        
         function getEnvironment(obj)
             % getEnvironment function to get the software environment
             %   matRad is running on
-
+            
             obj.isOctave = exist('OCTAVE_VERSION', 'builtin') ~= 0;
             obj.isMatlab = ~obj.isOctave;
-
+            
             if obj.isOctave
                 obj.env = 'OCTAVE';
                 obj.envVersion = OCTAVE_VERSION;
@@ -393,28 +410,28 @@ classdef MatRad_Config < handle
                 obj.env = 'MATLAB';
                 vData = ver(obj.env);
                 obj.envVersion = vData.Version;
-
+                
             end
         end
-
+        
         function pln = getDefaultProperties(obj,pln,fields)
             % Function to load all non-set parameters into pln struct
-            standardFields = {'propDoseCalc','propOpt','propStf'};
-
+            standardFields = {'propHeterogeneity','propDoseCalc','propOpt','propStf'};
+            
             % Check if only one argument was given
             if ~iscell(fields)
                 fields = cellstr(fields);
             end
-
+            
             for i = 1:length(fields)
                 currField = fields{i};
-
+                
                 if ismember(currField,standardFields)
                     % Get defaults for standard fields that can easily be read from set default values
                     if ~isfield(pln,currField)
                         pln.(currField) = struct();
                     end
-
+                    
                     fnames = fieldnames(obj.(currField));
                     for f = 1:length(fnames)
                         if ~isempty(strfind(fnames{f},'default'))
@@ -444,7 +461,7 @@ classdef MatRad_Config < handle
                 end
             end
         end
-
+        
         function pln = getDefaultClass(obj,pln,propName,configName)
             % load config from pln or from class
             if (isfield(pln,propName) && isstruct(pln.(propName)) && nargin < 4) || (~isfield(pln,propName) && nargin < 4)%if there is no config found
@@ -472,18 +489,20 @@ classdef MatRad_Config < handle
                                 end
                             end
                         end
+                    case 'propHeterogeneity'
+                        configName = 'matRad_HeterogeneityConfig';
                     otherwise
                         obj.dispError('Config for ''%s'' not implemented',configName);
                 end
             elseif nargin == 4
-
+                
             elseif nargin < 4 && ~isstruct(pln.(propName))
                 % get config name from input field
                 configName = class(pln.(propName));
             else
                 obj.dispError('Error in default clasee');
             end
-
+            
             if ~isfield(pln,propName)
                 pln.(propName) = struct();
             end
@@ -504,7 +523,7 @@ classdef MatRad_Config < handle
                     case 'matRad_HeterogeneityConfig'
                         config = matRad_HeterogeneityConfig;
                 end
-
+                
                 props = fieldnames(pln.(propName));
                 for fIx = 1:numel(props)
                     fName = props{fIx};
@@ -540,16 +559,15 @@ classdef MatRad_Config < handle
                         obj.dispWarning(['Unkown property ''%s'' for ' class(config) ' will be omitted.'],fName);
                     end
                 end
-
+                
                 % Write config to pln
                 pln.(propName) = config;
             end
-
+            
             % Send info to console
             obj.dispInfo(['Class ' class(pln.(propName)) ' has been loaded to pln.' propName '!\n']);
-
         end
-
+        
         function configureEnvironment(obj)
             if obj.isOctave
                 struct_levels_to_print(0);                  %Disables full printing of struct array fields
@@ -557,15 +575,15 @@ classdef MatRad_Config < handle
             end
         end
     end
-
+    
     methods(Static)
-
+        
         function obj = instance()
             %instance creates a singleton instance of MatRad_Config
             %  In MatRad_Config, the constructor is private to make sure only on global instance exists.
             %  Call this static functino to get or create an instance of the matRad configuration class
             persistent uniqueInstance;
-
+            
             if isempty(uniqueInstance)
                 obj = MatRad_Config();
                 uniqueInstance = obj;
@@ -573,11 +591,11 @@ classdef MatRad_Config < handle
                 obj = uniqueInstance;
             end
         end
-
+        
         function obj = loadobj(sobj)
             % Overload the loadobj function to allow downward compatibility
             % with workspaces which where saved as an older version of this class
-
+            
             function basic_struct = mergeStructs(basic_struct, changed_struct)
                 % nested function for merging the properties of the loaded
                 % obj into a new obj.
@@ -595,7 +613,7 @@ classdef MatRad_Config < handle
                     end
                 end
             end
-
+            
             % If the saved object is loaded as a struct there was a problem
             % with the generic loading process most likly a version-conflict
             % regarding the structs, in order to fix this, do a custom
@@ -637,8 +655,8 @@ classdef MatRad_Config < handle
                 obj = sobj;
             end
         end
-
-
+        
+        
     end
 end
 

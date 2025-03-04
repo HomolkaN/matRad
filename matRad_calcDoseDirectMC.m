@@ -110,7 +110,7 @@ if ~isprop(pln.propMC,'externalCalculation') || ~pln.propMC.externalCalculation
             dij.beamNum = (1:dij.numOfBeams)';
         end
         resultGUI    = matRad_calcCubes(ones(dij.numOfBeams,1),dij,1);
-
+        
         % calc individual scenarios
     else
         Cnt          = 1;
@@ -124,9 +124,9 @@ if ~isprop(pln.propMC,'externalCalculation') || ~pln.propMC.externalCalculation
             resultGUI.phaseDose{1,i} = tmpResultGUI.(pln.bioParam.quantityVis);
             Cnt = Cnt + 1;
         end
-
+        
     end
-
+    
     if pln.multScen.numOfCtScen ~= 1
         resultGUI.accPhysicalDose = zeros(size(resultGUI.phaseDose{1}));
         for i = 1:pln.multScen.numOfCtScen

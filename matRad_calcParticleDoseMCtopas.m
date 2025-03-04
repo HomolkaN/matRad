@@ -70,7 +70,13 @@ pln = matRad_cfg.getDefaultProperties(pln,{'propDoseCalc'});
 
 % set nested folder structure (this will put new simulations in subfolders)
 pln.propMC.workingDir = [pln.propMC.thisFolder filesep 'MCrun' filesep];
-pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',datestr(now, 'dd-mm-yy')];
+
+% Write patientID to foldername
+if isfield(ct,'patientID')
+    pln.propMC.workingDir = [pln.propMC.workingDir ct.patientID '_'];
+end
+
+pln.propMC.workingDir = [pln.propMC.workingDir pln.radiationMode,'_',pln.machine,'_',date];
 if pln.propMC.scorer.RBE
     if strcmp(pln.propMC.scorer.RBE_model,'default')
         pln.propMC.workingDir = [pln.propMC.workingDir '_' pln.bioParam.model];
@@ -79,27 +85,23 @@ if pln.propMC.scorer.RBE
     end
 end
 
-% Set numOfRuns to 1 if phaseSpace is being calculated
-if strcmp(pln.propMC.scorer.scorePhaseSpace,'write')
+% Set numOfRuns to 1 if phaseSpace is being calculated (but adjust
+% histories accordingly)
+if strcmp(pln.propMC.scorePhaseSpace.mode,'score')
+    pln.propMC.numHistories = pln.propMC.numHistories / pln.propMC.numOfRuns;
     pln.propMC.numOfRuns = 1;
     pln.propMC.workingDir = [pln.propMC.workingDir '_scorePhaseSpace'];
     matRad_cfg.dispInfo('numOfRuns overwritten with 1 by phase space scoring!\n');
-elseif strcmp(pln.propMC.scorer.scorePhaseSpace,'read')
+elseif strcmp(pln.propMC.scorePhaseSpace.mode,'read')
     pln.propMC.workingDir = [pln.propMC.workingDir '_readPhaseSpace'];
 end
 
 %% Initialize dose grid and dij
-
-% load calcDoseInit as usual
-matRad_calcDoseInit;
-
 % for TOPAS we explicitly downsample the ct to the dose grid (might not be necessary in future versions with separated grids)
 [ctR,~,~] = matRad_resampleCTtoGrid(ct,cst,pln,stf);
 
-% overwrite CT grid in dij in case of modulation.
-if isfield(ctR,'ctGrid')
-    dij.ctGrid = ctR.ctGrid;
-end
+% load calcDoseInit as usual
+matRad_calcDoseInit;
 
 %% sending data to topas
 
@@ -233,11 +235,6 @@ for shiftScen = 1:pln.multScen.totNumShiftScen
     
     % revert back to original directory
     cd(currDir);
-
-    % manipulate isocenter back
-    for k = 1:length(stf)
-        stf(k).isoCenter = stf(k).isoCenter - pln.multScen.isoShift(ixShiftScen,:);
-    end
     
 end
 
@@ -255,6 +252,16 @@ end
 % Write number of discarded bixels as information
 if isfield(pln.propMC.MCparam,'numOfDiscardedSpots')
     dij.numOfDiscardedSpots = pln.propMC.MCparam.numOfDiscardedSpots;
+else
+    dij.numOfDiscardedSpots = NaN;
+end
+
+% Order fields for easier comparison between different dijs
+dij = orderfields(dij);
+
+% manipulate isocenter back
+for k = 1:length(stf)
+    stf(k).isoCenter = stf(k).isoCenter - pln.multScen.isoShift(ixShiftScen,:);
 end
 
 end

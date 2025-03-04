@@ -7,17 +7,17 @@ classdef matRad_PlanWidget < matRad_Widget
     %
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %
-    % Copyright 2020 the matRad development team. 
-    % 
-    % This file is part of the matRad project. It is subject to the license 
-    % terms in the LICENSE file found in the top-level directory of this 
-    % distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part 
-    % of the matRad project, including this file, may be copied, modified, 
-    % propagated, or distributed except according to the terms contained in the 
+    % Copyright 2020 the matRad development team.
+    %
+    % This file is part of the matRad project. It is subject to the license
+    % terms in the LICENSE file found in the top-level directory of this
+    % distribution and at https://github.com/e0404/matRad/LICENSES.txt. No part
+    % of the matRad project, including this file, may be copied, modified,
+    % propagated, or distributed except according to the terms contained in the
     % LICENSE file.
     %
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    
     properties
         State = false
         Machines
@@ -40,7 +40,7 @@ classdef matRad_PlanWidget < matRad_Widget
                     'Units','characters',...
                     'Position',[100 50 125 15],...
                     'Visible','on',...
-                    'Color',matRad_cfg.gui.backgroundColor,... 
+                    'Color',matRad_cfg.gui.backgroundColor,...
                     'IntegerHandle','off',...
                     'Colormap',[0 0 0.5625;0 0 0.625;0 0 0.6875;0 0 0.75;0 0 0.8125;0 0 0.875;0 0 0.9375;0 0 1;0 0.0625 1;0 0.125 1;0 0.1875 1;0 0.25 1;0 0.3125 1;0 0.375 1;0 0.4375 1;0 0.5 1;0 0.5625 1;0 0.625 1;0 0.6875 1;0 0.75 1;0 0.8125 1;0 0.875 1;0 0.9375 1;0 1 1;0.0625 1 1;0.125 1 0.9375;0.1875 1 0.875;0.25 1 0.8125;0.3125 1 0.75;0.375 1 0.6875;0.4375 1 0.625;0.5 1 0.5625;0.5625 1 0.5;0.625 1 0.4375;0.6875 1 0.375;0.75 1 0.3125;0.8125 1 0.25;0.875 1 0.1875;0.9375 1 0.125;1 1 0.0625;1 1 0;1 0.9375 0;1 0.875 0;1 0.8125 0;1 0.75 0;1 0.6875 0;1 0.625 0;1 0.5625 0;1 0.5 0;1 0.4375 0;1 0.375 0;1 0.3125 0;1 0.25 0;1 0.1875 0;1 0.125 0;1 0.0625 0;1 0 0;0.9375 0 0;0.875 0 0;0.8125 0 0;0.75 0 0;0.6875 0 0;0.625 0 0;0.5625 0 0],...
                     'MenuBar','none',...
@@ -65,25 +65,25 @@ classdef matRad_PlanWidget < matRad_Widget
                 cellfun(@(h) set(h,'Enable','Off'),eduDisableHandles);
             end
             this.handles=handles;
-
+            
         end
         
         function this = initialize(this)
         end
         
-        function this = update(this,evt)          
+        function this = update(this,evt)
             doUpdate = true;
             if nargin == 2
-                %At pln changes and at cst/cst (for Isocenter and new settings) 
+                %At pln changes and at cst/cst (for Isocenter and new settings)
                 %we need to update
                 doUpdate = this.checkUpdateNecessary({'pln','ct','cst'},evt);
             end
             
             if doUpdate
                 if evalin('base','exist(''pln'')')
-                  getPlnFromWorkspace(this);
+                    getPlnFromWorkspace(this);
                 else
-                  setPlnDefaultValues(this);
+                    setPlnDefaultValues(this);
                 end
             end
         end
@@ -110,11 +110,11 @@ classdef matRad_PlanWidget < matRad_Widget
                 'Position',gridPos{1,1},...
                 'BackgroundColor',matRad_cfg.gui.backgroundColor,...
                 'ForegroundColor',matRad_cfg.gui.textColor,...
-                'Tag','txtBixelWidth',...                
+                'Tag','txtBixelWidth',...
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-
+            
             %Edit Bixel Width
             txt = sprintf('Photons: Choose width (and height) of quadratic photon bixel (i.e. discrete fluence elements)\nParticles: Choose lateral spot distance');
             h14 = uicontrol(...
@@ -311,7 +311,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Tag','checkIsoCenter');
-                      
+            
             %Popup menu for Machine file
             txt = sprintf('Choose a base data set\nIf Generic is selected for a photon treatment plan, the already available photons_Generic.mat file is loaded');
             h30 = uicontrol(...
@@ -344,10 +344,10 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Tag','txtMachine' );
-             
-             %Set tissue button
-             txt = sprintf('Set the tissue parameters of the VOIs\nThe base data file contains depth-dependent alpha and beta values, which are different depending on the tissue class');
-             h32 = uicontrol(...
+            
+            %Set tissue button
+            txt = sprintf('Set the tissue parameters of the VOIs\nThe base data file contains depth-dependent alpha and beta values, which are different depending on the tissue class');
+            h32 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','Set Tissue',...
@@ -360,7 +360,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight,...
-                'Tag','btnSetTissue'); 
+                'Tag','btnSetTissue');
             
             %Popup menu for Biological model and optimized quantity
             txt = sprintf('Choose a quantity to optimize \nPhysical Dose: physical dose is optimized\nRBExD: RBE-weighted dose is optimized\neffect: effect calculated according to LQ model is optimized');
@@ -397,31 +397,31 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-
+            
             % Radiobutton 3d Conformal
             pos = gridPos{4,1};
             pos(3) = pos(3)*2;
-                        
+            
             h36 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','3D conformal',...
-                'Tooltip','Check this if you want to execute 3D conformal planning',... 
+                'Tooltip','Check this if you want to execute 3D conformal planning',...
                 'Style','radiobutton',...
                 'Position',pos,...
                 'BackgroundColor',matRad_cfg.gui.backgroundColor,...
-                'ForegroundColor',matRad_cfg.gui.textColor,....              
+                'ForegroundColor',matRad_cfg.gui.textColor,....
                 'Callback',@(hObject,eventdata) standardCallback(this,hObject,eventdata),...
                 'Enable','off',...
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Tag','radiobutton3Dconf' );
-             
+            
             %Run Sequencing radiobutton
             pos = gridPos{5,1};
             pos(3) = pos(3)*2;
-                
+            
             txt = sprintf('Check this if you want to run a MLC sequencing\nThe number of stratification levels can be adjusted below');
             h26 = uicontrol(...
                 'Parent',h12,...
@@ -457,11 +457,11 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Tag','txtSequencing' );
-                        
-            %Sequencing Level Edit 
+            
+            %Sequencing Level Edit
             pos = gridPos{5,2};
             pos(3) = pos(3) / 2;
-
+            
             h29 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
@@ -483,7 +483,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','Sequencer : ',...
-                'Tooltip','Set the sequencing algorithm',... 
+                'Tooltip','Set the sequencing algorithm',...
                 'HorizontalAlignment','left',...
                 'Style','text',...
                 'Position',gridPos{4,3},...
@@ -513,11 +513,11 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-
+            
             % Direct Aperture Optimization radiobutton
             pos = gridPos{4,4};
             pos(3) = pos(3)*2;
-                        
+            
             h27 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
@@ -533,7 +533,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Enable','off',...
                 'Tag','btnRunDAO' );
-
+            
             %Biological Model
             pos = gridPos{4,5};
             pos(3) = pos(3) * 1.5;
@@ -552,7 +552,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Tag','txtBioModel');
-
+            
             pos = gridPos{5,5};
             pos(3) = pos(3) / 2;
             h55 = uicontrol(...
@@ -570,11 +570,11 @@ classdef matRad_PlanWidget < matRad_Widget
                 'Enable', 'off',...
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
-                'FontWeight',matRad_cfg.gui.fontWeight);     
-
+                'FontWeight',matRad_cfg.gui.fontWeight);
+            
             pos = gridPos{4,6};
             pos(3) = pos(3) * 1.5;
-
+            
             h46 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
@@ -590,7 +590,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontWeight',matRad_cfg.gui.fontWeight,...
                 'Tag','txtMultScen' );
             
-
+            
             pos = gridPos{5,6};
             pos(3) = pos(3) / 2;
             h56 = uicontrol(...
@@ -610,7 +610,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
             
-                      
+            
             % Text for dose Grid resolution
             pos = gridPos{4,7};
             pos(3) = pos(3)*2;
@@ -619,7 +619,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','Dose Grid Resolution: ',...
-                'Tooltip','Set the size of an individual voxel in the dose cube',... 
+                'Tooltip','Set the size of an individual voxel in the dose cube',...
                 'HorizontalAlignment','left',...
                 'Style','text',...
                 'Position',pos,...
@@ -630,8 +630,8 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-
-            % Edit dose grid x  
+            
+            % Edit dose grid x
             pos = gridPos{4,8};
             pos(3) = pos(3)*0.5;
             
@@ -639,7 +639,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','5',...
-                'Tooltip','Set the size of an individual voxel in the dose cube in x-direction',... 
+                'Tooltip','Set the size of an individual voxel in the dose cube in x-direction',...
                 'Style','edit',...
                 'Position',pos,...
                 'BackgroundColor',matRad_cfg.gui.elementColor,...
@@ -649,14 +649,14 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-              % positioning dose grid size input boxes
-              pos(1) = pos(1) + pos(3) + 0.005;
-              % Edit dose grid y  
-              h38 = uicontrol(...
+            % positioning dose grid size input boxes
+            pos(1) = pos(1) + pos(3) + 0.005;
+            % Edit dose grid y
+            h38 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','5',...
-                'Tooltip','Set the size of an individual voxel in the dose cube in y-direction',... 
+                'Tooltip','Set the size of an individual voxel in the dose cube in y-direction',...
                 'Style','edit',...
                 'Position',pos,...
                 'BackgroundColor',matRad_cfg.gui.elementColor,...
@@ -666,14 +666,14 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-              
+            
             pos(1) = pos(1) + pos(3) + 0.005;
-              % Edit dose grid z
-              h39 = uicontrol(...
+            % Edit dose grid z
+            h39 = uicontrol(...
                 'Parent',h12,...
                 'Units','normalized',...
                 'String','5',...
-                'Tooltip','Set the size of an individual voxel in the dose cube in z-direction',... 
+                'Tooltip','Set the size of an individual voxel in the dose cube in z-direction',...
                 'Style','edit',...
                 'Position',pos,...
                 'BackgroundColor',matRad_cfg.gui.elementColor,...
@@ -701,26 +701,26 @@ classdef matRad_PlanWidget < matRad_Widget
                 'FontSize',matRad_cfg.gui.fontSize,...
                 'FontName',matRad_cfg.gui.fontName,...
                 'FontWeight',matRad_cfg.gui.fontWeight);
-           
-             
+            
+            
             this.createHandles();
         end
-       
+        
         %Set default values for the PLN on matRadGUI startup
         function this = setPlnDefaultValues(this)
             
             handles = this.handles;
             
             this.getMachines()
-
+            
             %
             vChar = get(handles.editGantryAngle,'String');
             if strcmp(vChar(1,1),'0') && length(vChar)==6
-              set(handles.editGantryAngle,'String','0');
+                set(handles.editGantryAngle,'String','0');
             end
             vChar = get(handles.editCouchAngle,'String');
             if strcmp(vChar(1,1),'0') && length(vChar)==3
-              set(handles.editCouchAngle,'String','0')
+                set(handles.editCouchAngle,'String','0')
             end
             
             % do not calculate / suggest isoCenter new by default
@@ -744,7 +744,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 pln.propStf.isoCenter = ones(pln.propStf.numOfBeams,1) * pln.propStf.isoCenter(1,:);
             elseif size(pln.propStf.isoCenter,1) ~= pln.propStf.numOfBeams && size(pln.propStf.isoCenter,1) ~= 1
                 error('Isocenter in plan file are incosistent.');
-            end           
+            end
             
             
             set(handles.editBixelWidth,'String',num2str(pln.propStf.bixelWidth));
@@ -755,8 +755,8 @@ classdef matRad_PlanWidget < matRad_Widget
             set(handles.popupRadMode,'Value',modIx);
             
             getMachines(this);
-            modIy = find(strcmp(pln.machine,this.Machines{modIx})); 
-            set(handles.popUpMachine,'Value',modIy); 
+            modIy = find(strcmp(pln.machine,this.Machines{modIx}));
+            set(handles.popUpMachine,'Value',modIy);
             
             if isfield(pln.propStf,'isoCenter')
                 if size(unique(pln.propStf.isoCenter,'rows'),1) == 1
@@ -787,13 +787,13 @@ classdef matRad_PlanWidget < matRad_Widget
             ix = find(strcmp(pln.bioParam.model,contentPopUpBioModel));
             set(handles.popMenuBioModel,'Value',ix);
             
-            if evalin('base','exist(''ct'')') 
+            if evalin('base','exist(''ct'')')
                 contentPopUpMultScen = get(handles.popMenuMultScen,'String');
                 ix = find(strcmp(pln.multScen.name,contentPopUpMultScen));
                 set(handles.popMenuMultScen,'Value',ix);
             end
-
-
+            
+            
             set(handles.btnRunDAO,'Value',pln.propOpt.runDAO);
             if isfield(pln, 'propSeq') && isfield(pln.propSeq, 'sequencingLevel')
                 set(handles.btnRunSequencing,'Value',pln.propSeq.runSequencing);
@@ -803,12 +803,12 @@ classdef matRad_PlanWidget < matRad_Widget
             end
             if isfield (pln.propOpt, 'conf3D')
                 set(handles.radiobutton3Dconf,'Value',pln.propOpt.conf3D);
-            end 
-
+            end
+            
             set(handles.editDoseX,'String',num2str(pln.propDoseCalc.doseGrid.resolution.x));
             set(handles.editDoseY,'String',num2str(pln.propDoseCalc.doseGrid.resolution.y));
             set(handles.editDoseZ,'String',num2str(pln.propDoseCalc.doseGrid.resolution.z));
-
+            
             this.handles=handles;
             this.switchEnables();
         end
@@ -817,7 +817,7 @@ classdef matRad_PlanWidget < matRad_Widget
         function updatePlnInWorkspace(this)
             this.getMachines();
             handles = this.handles;
-
+            
             % evalin pln (if existant) in order to decide whether isoCenter should be calculated
             % automatically
             if evalin('base','exist(''pln'',''var'')')
@@ -826,7 +826,7 @@ classdef matRad_PlanWidget < matRad_Widget
             
             pln.propStf.bixelWidth      = this.parseStringAsNum(get(handles.editBixelWidth,'String'),false); % [mm] / also corresponds to lateral spot spacing for particles
             pln.propStf.gantryAngles    = this.parseStringAsNum(get(handles.editGantryAngle,'String'),true); % [???]
-            if numel(this.parseStringAsNum(get(handles.editCouchAngle,'String'),true))==1 % Feature: autofill couch angles to single plane by entering a single value 
+            if numel(this.parseStringAsNum(get(handles.editCouchAngle,'String'),true))==1 % Feature: autofill couch angles to single plane by entering a single value
                 pln.propStf.couchAngles     = this.parseStringAsNum(get(handles.editCouchAngle,'String'),true) * ones(1,numel(pln.propStf.gantryAngles));
             else
                 pln.propStf.couchAngles     = this.parseStringAsNum(get(handles.editCouchAngle,'String'),true); % [???]
@@ -839,13 +839,13 @@ classdef matRad_PlanWidget < matRad_Widget
             popupMachines                       = get(handles.popUpMachine,'String');
             pln.machine                         = popupMachines{selectedMachine};
             
-
+            
             pln.propDoseCalc.doseGrid.resolution.x = this.parseStringAsNum(get(handles.editDoseX,'String'),false);
             pln.propDoseCalc.doseGrid.resolution.y = this.parseStringAsNum(get(handles.editDoseY,'String'),false);
             pln.propDoseCalc.doseGrid.resolution.z = this.parseStringAsNum(get(handles.editDoseZ,'String'),false);
-                  
-           
-     
+            
+            
+            
             pln.numOfFractions  = this.parseStringAsNum(get(handles.editFraction,'String'),false);
             contents            = get(handles.popupRadMode,'String');
             pln.radiationMode   = contents{get(handles.popupRadMode,'Value')}; % either photons / protons / carbon
@@ -855,7 +855,7 @@ classdef matRad_PlanWidget < matRad_Widget
             contentQuantityOpt = get(handles.popMenuQuantityOpt,'String');
             contentBioModel = get(handles.popMenuBioModel,'String');
             contentMultScen = get(handles.popMenuMultScen,'String');
-            pln.bioParam = matRad_bioModel(pln.radiationMode, contentQuantityOpt{get(handles.popMenuQuantityOpt,'Value'),:}, contentBioModel{get(handles.popMenuBioModel,'Value'),:});
+            pln.bioParam = matRad_BioModel(pln.radiationMode, contentQuantityOpt{get(handles.popMenuQuantityOpt,'Value'),:}, contentBioModel{get(handles.popMenuBioModel,'Value'),:});
             if evalin('base','exist(''ct'')')
                 ct = evalin('base','ct');
                 pln.numOfVoxels     = prod(ct.cubeDim);
@@ -923,22 +923,22 @@ classdef matRad_PlanWidget < matRad_Widget
                         end
                     end
                 catch ME
-
-                    showWarning(this,'Could not set isocenter in pln update! Reason: %s\n',ME.message)  %TODO: showWarning vs warning 
+                    
+                    showWarning(this,'Could not set isocenter in pln update! Reason: %s\n',ME.message)  %TODO: showWarning vs warning
                 end
             end
             
             handles.pln = pln;
             assignin('base','pln',pln);
             this.handles = handles;
-            this.changedWorkspace('pln');                     
+            this.changedWorkspace('pln');
         end
     end
     
     methods(Access = private)
         function standardCallback(this, hObject, eventdata)
-           updatePlnInWorkspace(this);
-           
+            updatePlnInWorkspace(this);
+            
         end
         % Enable/disable functionality in PlnWidget depending on the active
         % Radmode
@@ -954,8 +954,8 @@ classdef matRad_PlanWidget < matRad_Widget
                 case 'photons'
                     
                     set(handles.popMenuQuantityOpt,'Enable','on');
-%                     ix = find(strcmp(contentPopUpQuantityOpt,'physicalDose'));
-%                     set(handles.popMenuQuantityOpt,'Value',ix);
+                    %                     ix = find(strcmp(contentPopUpQuantityOpt,'physicalDose'));
+                    %                     set(handles.popMenuQuantityOpt,'Value',ix);
                     ix = find(strcmp(contentPopUpBioModel,'none'));
                     set(handles.popMenuBioModel,'Value',ix);
                     set(handles.popMenuBioModel,'Enable','off');
@@ -965,25 +965,25 @@ classdef matRad_PlanWidget < matRad_Widget
                     set(handles.btnRunDAO,'Enable','on');
                     set(handles.radiobutton3Dconf,'Enable','on');
                     set(handles.txtSequencing,'Enable','on');
-                    set(handles.editSequencingLevel,'Enable','on');    
+                    set(handles.editSequencingLevel,'Enable','on');
                     set(handles.popUpMenuSequencer,'Enable','on');
                     set(handles.txtSequencer,'Enable','on');
                     set(handles.popMenuMultScen, 'Enable','on');
                     
                     if ~(get(handles.btnRunSequencing,'Value') || get(handles.btnRunDAO,'Value'))
-                    
+                        
                         set(handles.txtSequencing,'Enable','off');
-                        set(handles.editSequencingLevel,'Enable','off');    
+                        set(handles.editSequencingLevel,'Enable','off');
                         set(handles.popUpMenuSequencer,'Enable','off');
                         set(handles.txtSequencer,'Enable','off');
-                    else 
+                    else
                         set(handles.txtSequencing,'Enable','on');
-                        set(handles.editSequencingLevel,'Enable','on');    
+                        set(handles.editSequencingLevel,'Enable','on');
                         set(handles.popUpMenuSequencer,'Enable','on');
                         set(handles.txtSequencer,'Enable','on');
                     end
                     
-                case 'protons'                    
+                case 'protons'
                     set(handles.popMenuQuantityOpt,'Enable','on');
                     set(handles.popMenuBioModel,'Enable','on');
                     set(handles.popMenuMultScen, 'Enable','on');
@@ -1003,12 +1003,12 @@ classdef matRad_PlanWidget < matRad_Widget
                     set(handles.popMenuBioModel,'Enable','on');
                     set(handles.btnSetTissue,'Enable','on');
                     set(handles.popMenuMultScen, 'Enable','on');
-
+                    
                     set(handles.btnRunSequencing,'Enable','off');
                     set(handles.btnRunDAO,'Enable','off');
                     set(handles.radiobutton3Dconf,'Enable','off');
                     set(handles.txtSequencing,'Enable','off');
-                    set(handles.editSequencingLevel,'Enable','off');  
+                    set(handles.editSequencingLevel,'Enable','off');
                     set(handles.popUpMenuSequencer,'Enable','off');
                     set(handles.txtSequencer,'Enable','off');
                     
@@ -1020,7 +1020,7 @@ classdef matRad_PlanWidget < matRad_Widget
             else
                 set(handles.btnSetTissue,'Enable','on');
             end
-
+            
             this.handles = handles;
         end
         
@@ -1030,7 +1030,7 @@ classdef matRad_PlanWidget < matRad_Widget
             
             this.handles = handles;
         end
-%% CALLBACKS        
+        %% CALLBACKS
         function popupRadMode_Callback(this, hObject, eventdata)
             handles = this.handles;
             contents      = cellstr(get(hObject,'String'));
@@ -1082,7 +1082,7 @@ classdef matRad_PlanWidget < matRad_Widget
             updatePlnInWorkspace(this);
         end
         
-
+        
         function popUpMenuSequencer_Callback(this, hObject, eventdata)
             handles = this.handles;
             contents      = cellstr(get(hObject,'String'));
@@ -1112,8 +1112,8 @@ classdef matRad_PlanWidget < matRad_Widget
         function popUpMachine_Callback(this, hObject, eventdata)
             % MOEGLICHER FEHLER WEGEN VALUE WERT!
             handles = this.handles;
-             contents = cellstr(get(hObject,'String'));
-             MachineIdentifier = contents{get(hObject,'Value')};
+            contents = cellstr(get(hObject,'String'));
+            MachineIdentifier = contents{get(hObject,'Value')};
             % contentPopUp = get(handles.)
             flag=checkRadiationComposition(this);
             if ~flag
@@ -1138,7 +1138,7 @@ classdef matRad_PlanWidget < matRad_Widget
                     end
                 catch
                 end
-            % MOEGLICHEE FEHLER HIER VALUE UND GENERIC WERDEN VERGLICHEN
+                % MOEGLICHEE FEHLER HIER VALUE UND GENERIC WERDEN VERGLICHEN
             elseif strcmp(contents(get(hObject,'Value')),'generic_MCsquare')
                 try
                     AllVarNames = evalin('base','who');
@@ -1153,15 +1153,15 @@ classdef matRad_PlanWidget < matRad_Widget
                 catch
                 end
             end
-               
+            
             this.handles = handles;
-            updatePlnInWorkspace(this); 
+            updatePlnInWorkspace(this);
         end
         
         function btnSetTissue_Callback(this, hObject, eventdata)
             handles = this.handles;
             
-            if evalin('base','exist(''cst'')') && evalin('base','exist(''pln'')') 
+            if evalin('base','exist(''cst'')') && evalin('base','exist(''pln'')')
                 try
                     %parse variables from base-workspace
                     cst = evalin('base','cst');
@@ -1243,41 +1243,41 @@ classdef matRad_PlanWidget < matRad_Widget
             contentBioModel = get(handles.popMenuBioModel,'String');
             NewBioModel = contentBioModel(get(handles.popMenuBioModel,'Value'),:);
             
-%                 if (strcmp(pln.propOpt.bioOptimization,'LEMIV_effect') && strcmp(NewBioOptimization,'LEMIV_RBExD')) ||...
-%                         (strcmp(pln.propOpt.bioOptimization,'LEMIV_RBExD') && strcmp(NewBioOptimization,'LEMIV_effect'))
-%                     % do nothing - re-optimization is still possible
-%                 elseif ((strcmp(pln.propOpt.bioOptimization,'const_RBE') && strcmp(NewBioOptimization,'none')) ||...
-%                         (strcmp(pln.propOpt.bioOptimization,'none') && strcmp(NewBioOptimization,'const_RBE'))) && isequal(pln.radiationMode,'protons')
-%                     % do nothing - re-optimization is still possible
-%                 end
-%           
+            %                 if (strcmp(pln.propOpt.bioOptimization,'LEMIV_effect') && strcmp(NewBioOptimization,'LEMIV_RBExD')) ||...
+            %                         (strcmp(pln.propOpt.bioOptimization,'LEMIV_RBExD') && strcmp(NewBioOptimization,'LEMIV_effect'))
+            %                     % do nothing - re-optimization is still possible
+            %                 elseif ((strcmp(pln.propOpt.bioOptimization,'const_RBE') && strcmp(NewBioOptimization,'none')) ||...
+            %                         (strcmp(pln.propOpt.bioOptimization,'none') && strcmp(NewBioOptimization,'const_RBE'))) && isequal(pln.radiationMode,'protons')
+            %                     % do nothing - re-optimization is still possible
+            %                 end
+            %
             this.handles = handles;
             updatePlnInWorkspace(this);
         end
         function popMenuMultScen_Callback(this, hObject, eventdata)
+            
+            updatePlnInWorkspace(this);
+        end
         
-            updatePlnInWorkspace(this);
-        end
-
         function popMenuQuantityOpt_Callback(this, hObject, eventdata)
-%             handles = this.handles;
-%             
-%             pln = evalin('base','pln');
-%             contentQuantityOpt = get(handles.popMenuQuantityOpt,'String');
-%             NewQuantityOpt = contentQuantityOpt(get(handles.popMenuQuantityOpt,'Value'),:);
-%             
-% %                 if (strcmp(pln.propOpt.bioOptimization,'LEMIV_effect') && strcmp(NewBioOptimization,'LEMIV_RBExD')) ||...
-% %                         (strcmp(pln.propOpt.bioOptimization,'LEMIV_RBExD') && strcmp(NewBioOptimization,'LEMIV_effect'))
-% %                     % do nothing - re-optimization is still possible
-% %                 elseif ((strcmp(pln.propOpt.bioOptimization,'const_RBE') && strcmp(NewBioOptimization,'none')) ||...
-% %                         (strcmp(pln.propOpt.bioOptimization,'none') && strcmp(NewBioOptimization,'const_RBE'))) && isequal(pln.radiationMode,'protons')
-% %                     % do nothing - re-optimization is still possible
-% %                 end
-% %                 
-%             this.handles = handles;
+            %             handles = this.handles;
+            %
+            %             pln = evalin('base','pln');
+            %             contentQuantityOpt = get(handles.popMenuQuantityOpt,'String');
+            %             NewQuantityOpt = contentQuantityOpt(get(handles.popMenuQuantityOpt,'Value'),:);
+            %
+            % %                 if (strcmp(pln.propOpt.bioOptimization,'LEMIV_effect') && strcmp(NewBioOptimization,'LEMIV_RBExD')) ||...
+            % %                         (strcmp(pln.propOpt.bioOptimization,'LEMIV_RBExD') && strcmp(NewBioOptimization,'LEMIV_effect'))
+            % %                     % do nothing - re-optimization is still possible
+            % %                 elseif ((strcmp(pln.propOpt.bioOptimization,'const_RBE') && strcmp(NewBioOptimization,'none')) ||...
+            % %                         (strcmp(pln.propOpt.bioOptimization,'none') && strcmp(NewBioOptimization,'const_RBE'))) && isequal(pln.radiationMode,'protons')
+            % %                     % do nothing - re-optimization is still possible
+            % %                 end
+            % %
+            %             this.handles = handles;
             updatePlnInWorkspace(this);
         end
-
+        
         function tissueTable_CellEditCallback(this,hObject, eventdata)
             if eventdata.Indices(2) == 2
                 alphaXBetaX = str2num(eventdata.NewData);
@@ -1285,9 +1285,9 @@ classdef matRad_PlanWidget < matRad_Widget
                 data{eventdata.Indices(1),3} = alphaXBetaX(1)/alphaXBetaX(2);
                 set(hObject,'Data',data);
             end
-        end        
-%%      END OF CALLBACKS
-
+        end
+        %%      END OF CALLBACKS
+        
         % load Machine File
         function getMachines(this)
             matRad_cfg = MatRad_Config.instance();
@@ -1300,7 +1300,7 @@ classdef matRad_PlanWidget < matRad_Widget
                 if isdeployed
                     baseroot = [ctfroot filesep 'matRad'];
                 else
-                    baseroot = matRad_cfg.matRadRoot; 
+                    baseroot = matRad_cfg.matRadRoot;
                 end
                 Files = dir([baseroot filesep 'basedata' filesep pattern]);
                 
@@ -1318,7 +1318,7 @@ classdef matRad_PlanWidget < matRad_Widget
             
             if get(handles.popUpMachine,'Value') > nMachines
                 selectedMachine = 1;
-            end            
+            end
             
             set(handles.popUpMachine,'Value',selectedMachine,'String',this.Machines{selectedRadMod});
             this.handles = handles;
@@ -1360,7 +1360,7 @@ classdef matRad_PlanWidget < matRad_Widget
             if isempty(FoundFile)
                 matRad_cfg.dispWarning(['No base data available for machine: ' Machine '. Selecting default machine.']);
                 flag = false;
-              %  set(handles.popUpMachine,'Value',1);
+                %  set(handles.popUpMachine,'Value',1);
             end
             this.handles = handles;
         end
@@ -1390,11 +1390,11 @@ classdef matRad_PlanWidget < matRad_Widget
             end
             assignin('base','cst',cst);
             close
-            updatePlnInWorkspace(this); 
+            updatePlnInWorkspace(this);
         end
         
-
         
-            
+        
+        
     end
 end
