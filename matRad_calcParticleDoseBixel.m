@@ -33,18 +33,6 @@ function bixel = matRad_calcParticleDoseBixel(radDepths, radialDist_sq, sigmaIni
 % Instance of MatRad_Config class
 matRad_cfg = MatRad_Config.instance();
 
-% skip heterogeneity correction for other functions
-if nargin < 5
-    heteroCorrDepths = [];
-    % Load heterogeneity config for Gauss functions that are called even if heterogeneity correction is turned off
-    propHeterogeneity = matRad_HeterogeneityConfig();
-end
-
-% Check if correct base data is loaded for heterogeneity correction
-if ~isempty(heteroCorrDepths) && ~isstruct(baseData.Z) && ~strcmp(propHeterogeneity.type,'numerical')
-    matRad_cfg.dispWarning('calcParticleDoseBixel: heterogeneity correction enabled but no APM base data was loaded.')
-end
-
 % add potential offset
 depths = baseData.depths + baseData.offset;
 
